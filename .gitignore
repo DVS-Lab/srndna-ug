@@ -139,6 +139,7 @@ participants.tsv
 # imaging output
 bids/**/*.nii.gz
 bids/**/*.json
+bids/**/**/*.nii.gz
 derivatives
 fmapless_subs
 sub-*.html
