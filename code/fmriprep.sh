@@ -23,7 +23,7 @@ singularity run --cleanenv -B $maindir:/base -B /data/tools/licenses:/opts -B $s
 /data/tools/fmriprep-23.2.1.simg \
 /base/bids /base/derivatives \
 participant --participant_label $sub \
--t ug \
+-t ultimatum \
 --stop-on-first-crash \
 --output-spaces MNI152NLin6Asym \
 --fs-no-reconall --fs-license-file /opts/fs_license.txt -w /scratch
