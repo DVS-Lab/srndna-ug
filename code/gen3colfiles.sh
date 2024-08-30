@@ -19,7 +19,7 @@ for run in `seq $nruns`; do
   output=${baseout}/sub-${sub}/trust
   mkdir -p $output
   if [ -e $input ]; then
-    bash /data/tools/bidsutils/BIDSto3col/BIDSto3col.sh $input ${output}/run-0${run}
+    bash /ZPOOL/data/tools/BIDSto3col.sh $input ${output}/run-0${run}
   else
     echo "PATH ERROR: cannot locate ${input}."
     exit
