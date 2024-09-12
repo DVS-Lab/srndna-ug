@@ -15,8 +15,8 @@ sub=$1
 nruns=$2
 
 for run in `seq $nruns`; do
-  input=${maindir}/bids/sub-${sub}/func/sub-${sub}_task-trust_run-0${run}_events.tsv
-  output=${baseout}/sub-${sub}/trust
+  input=${maindir}/bids/sub-${sub}/func/sub-${sub}_task-ultimatum_run-0${run}_events.tsv
+  output=${baseout}/sub-${sub}/ultimatum
   mkdir -p $output
   if [ -e $input ]; then
     bash /ZPOOL/data/tools/BIDSto3col.sh $input ${output}/run-0${run}
