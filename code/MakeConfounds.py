@@ -18,13 +18,15 @@ group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('--fmriprepDir',default=None, type=str,help="This is the full path to your fmriprep dir")
 args = parser.parse_args()
 fmriprep_path = args.fmriprepDir
+print("Executing script")
 
 #make list of confound tsvs
 cons=[]
 for root, dirs, files in os.walk(fmriprep_path):
-    for f in files:
-        if f.endswith('-confounds_regressors.tsv'): # note: newer versions of fmriprep end with -confounds_timeseries.tsv
-            cons.append(os.path.join(root, f))
+	for f in files:
+		if f.endswith('-confounds_timeseries.tsv'): # note: newer versions of fmriprep end with -confounds_timeseries.tsv
+			cons.append(os.path.join(root, f))
+			print("check 2")
 
 # loop through files
 for f in cons:
