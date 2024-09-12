@@ -7,15 +7,15 @@ import argparse
 from scipy.stats import zscore
 
 
-mriqc_dir = "/data/projects/srndna-all/derivatives/mriqc/"
+mriqc_dir = "/ZPOOL/data/projects/srndna-ug/derivatives/mriqc/"
 path_derivative=mriqc_dir[:-5]
-bids_der="/data/projects/srndna-all/bids"
+bids_der="/ZPOOL/data/projects/srndna-ug/bids"
 all_subs=[s for s in os.listdir(bids_der) if s.startswith('sub')]
 
 j_files=[os.path.join(root, f) for root,dirs,files in os.walk(mriqc_dir)
          for f in files if f.endswith('bold.json')]
 
-shared_exclude=['sub-111','sub-118','sub-129','sub-135','sub-138','sub-149']
+#shared_exclude=['sub-111','sub-118','sub-129','sub-135','sub-138','sub-149']
 
 keys=['tsnr','fd_mean'] # the IQM's we might care about
 sr=['Sub','task','run']
@@ -35,7 +35,7 @@ df_full=pd.DataFrame(row,columns=sr+keys) # imaybe later try to do multi-indexin
 
 
 for task in df_full.task.unique():
-    print task
+    print(task)
     df=df_full[df_full['task']==task]
     mriqc_subs = np.setdiff1d(all_subs,df.Sub.unique())
     # yields the elements in `list_2` that are NOT in `list_1`
