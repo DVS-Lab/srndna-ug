@@ -15,11 +15,13 @@ sub=$1
 nruns=$2
 
 for run in `seq $nruns`; do
-  input=${maindir}/bids/sub-${sub}/func/sub-${sub}_task-ultimatum_run-0${run}_events.tsv
-  output=${baseout}/sub-${sub}/ultimatum
+ input=${maindir}/bids/sub-${sub}/func/sub-${sub}_task-ultimatum_run-0${run}_events.tsv
   mkdir -p $output
-  if [ -e $input ]; then
-    bash /ZPOOL/data/tools/BIDSto3col.sh $input ${output}/run-0${run}
+  if [ -e $input ]; then 	
+  	output=${baseout}/sub-${sub}/ultimatum-pmod
+   bash /ZPOOL/data/tools/BIDSto3col.sh -h Offer $input ${output}/run-0${run}
+   output=${baseout}/sub-${sub}/ultimatum-rt
+   bash /ZPOOL/data/tools/BIDSto3col.sh -h response_time $input ${output}/run-0${run}
   else
     echo "PATH ERROR: cannot locate ${input}."
     exit

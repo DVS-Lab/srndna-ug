@@ -31,7 +31,7 @@ if [ ! -e $CONFOUNDEVS ]; then
 	echo "missing: $CONFOUNDEVS " >> ${maindir}/re-runL1.log
 	exit # exiting to ensure nothing gets run without confounds
 fi
-EVDIR=${srndnadatadir}/derivatives/fsl/EVfiles/sub-${sub}/${TASK}/run-0${run}
+EVDIR=${srndnadatadir}/derivatives/fsl/EVfiles/sub-${sub}/${TASK}-pmod/run-0${run}
 RTEVS=${srndnadatadir}/derivatives/fsl/EVfiles/sub-${sub}/ultimatum-rt/run-0${run}
 
 # check for empty EVs (extendable to other studies)
