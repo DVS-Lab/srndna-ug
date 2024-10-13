@@ -4,7 +4,7 @@
 scriptdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 basedir="$(dirname "$scriptdir")"
 
-for ppi in 0; do #ecn dmn; do # putting 0 first will indicate "activation"
+for ppi in "ecn" "dmn"; do #ecn dmn; do # putting 0 first will indicate "activation"
 	#for sub in 104; do	
 	for sub in 104 105 106 107 108 109 110 111 112 113 115 116 117 118 120 121 122 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 140 141 142 143 144 145 147 149 150 151 152 153 154 155 156 157 158 159; do
 	  nruns=2
