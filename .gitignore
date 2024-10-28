@@ -144,6 +144,7 @@ derivatives
 fmapless_subs
 sub-*.html
 *.asv
+masks/*.nii.gz
 
 # tmp files
 .~*#
