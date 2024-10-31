@@ -35,8 +35,8 @@ df_full=pd.DataFrame(row,columns=sr+keys)
 
 task_list = ['ultimatum']
 
-#for task in df_full.task.unique():
-for task in task_list: 
+# for task in df_full.task.unique():
+for task in task_list:
     print(task)
     df = df_full[df_full['task']==task]
     mriqc_subs_missing = np.setdiff1d(all_subs,df.Sub.unique())
@@ -71,20 +71,21 @@ for task in task_list:
     df.to_csv('Task-%s_Level-Run_Outlier-info.tsv'%(task),sep='\t',index=False)
 
     GS=df[df['outlier_run_Custom1']==False]
-    GS=list(GS.Sub.value_counts().reset_index(name="count").query("count > 1")['index'])
-    #GS=GS.Sub.value_counts().reset_index(name="count").query("count > 1").index.tolist()    
+    #GS=list(GS.Sub.value_counts().reset_index(name="count").query("count > 1")['index'])
+    # GS = GS.Sub.value_counts().reset_index(name="count").query("count > 1").index.tolist()
+    GS = df[df['outlier_run_Custom1'] == False].groupby('Sub').filter(lambda x: len(x) > 1)['Sub'].unique().tolist()
     BS=df[~df.Sub.isin(GS)]['Sub']
 
     df_cov=df[df.Sub.isin(GS)]
     df_cov=df_cov[df_cov['outlier_run_Custom1']==False]
-    df_cov=df_cov.groupby(by='Sub').mean().reset_index().rename(columns={'index':'Sub'})
+    df_cov=df_cov.groupby(by='Sub').mean(numeric_only=True).reset_index().rename(columns={'index':'Sub'})
     df_cov=df_cov[['Sub']+keys]
     df_cov[['tsnr','fd_mean']]=df_cov[['tsnr','fd_mean']].apply(zscore)
     df_cov.to_csv('Task-%s_Level-Group_Covariates.tsv'%(task),sep='\t',index=False)
 
     df_out=df[df.Sub.isin(BS)]
-    df_out=df_out.Sub.value_counts().reset_index().rename(columns={'index':'Sub_num'})
-    df_out=df_out.sort_values(by='Sub_num')
+    df_out=df_out.Sub.value_counts().reset_index().rename(columns={'index':'Sub'})
+    df_out=df_out.sort_values(by='Sub')
     df_out.to_csv('Task-%s_CustomSubOutlier.tsv'%(task),sep='\t',index=False)
     print("df_out")
     display(df_out)
