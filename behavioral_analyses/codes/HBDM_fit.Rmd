@@ -1,0 +1,131 @@
+---
+title: "HBDM_fit_srndnaUGR"
+author: "Jen Yang"
+date: "2024-11-1, last modified 2024-11-1"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    hightlight: zenburn
+    toc_depth: 6
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+# Load libraries
+```{r libraries, message=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(interactions)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+# library(raincloudplots)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(ggpubr)
+library(lubridate)
+library(readxl)
+library(gridExtra)
+library(scales)
+library(rstudioapi)
+library(jsonlite)
+library(rjson)
+library(readr)
+library(hBayesDM)
+library(brms)
+```
+
+# set dir and load cleaned data
+```{r}
+gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
+
+data_dir = paste(gitrepo_path,"data", sep = "/")
+codes_dir = paste(gitrepo_path, "codes", sep = "/")
+fit_dir = paste(gitrepo_path,"fits", sep = "/")
+figure_dir = paste(gitrepo_path,"figures", sep = "/")
+
+all_df = read.csv(paste(data_dir, "all_trials.csv", sep = "/"), header = TRUE)
+```
+
+
+```{r}
+# Get the path to the example data file
+dataPath <- system.file("extdata/gng_exampleData.txt", package="hBayesDM")
+
+# Read the data into R
+example_data <- read.table(dataPath, header = TRUE)
+
+# View the first few rows of the data
+head(example_data)
+
+# Get information about the data structure
+str(example_data)
+```
+
+# HBDM
+```{r}
+sub_name = c("sub-104", "sub-106", "sub-109")
+human_type = 0
+test_df = all_df[all_df$human == 0 & all_df$subjID %in% sub_name, ]
+
+start.time = Sys.time()
+
+test_fit = ug_delta(data = test_df,
+  niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
+  inits = "random",
+  indPars = "mean",
+  vb = FALSE,
+  inc_postpred = FALSE,
+  adapt_delta = 0.95,
+  stepsize = 1,
+  max_treedepth = 15,
+)
+
+end.time <- Sys.time()
+time.taken_pp_check <- round(end.time - start.time,2)
+print(time.taken_pp_check)
+```
+
+
+# save cleaned data
+```{r}
+write.csv(all_clean_df, paste(data_dir, "all_trials.csv", sep = "/"), row.names = FALSE)
+write.csv(block_long_df, paste(data_dir, "block_check", sep = "/"), row.names = FALSE)
+write.csv(participants_df, paste(data_dir, "participant_check", sep = "/"), row.names = FALSE)
+```
+
+
+
+

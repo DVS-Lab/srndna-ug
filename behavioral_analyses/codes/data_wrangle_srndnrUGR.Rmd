@@ -1,7 +1,7 @@
 ---
-title: "data_wrangle_istart_ugr"
+title: "data_wrangle_srndnaUGR"
 author: "Jen Yang"
-date: "2024-03-15, last modified 2024-10-24"
+date: "2024-11-1, last modified 2024-11-1"
 output: 
   html_document:
     code_folding: hide
@@ -224,7 +224,6 @@ block_long_df = block_long_df %>%
   select(subID, run, block_type, BlockNum, BlockTrial, BlockInclude)
 ```
 
-
 # save cleaned data
 ```{r}
 write.csv(all_clean_df, paste(data_dir, "all_trials.csv", sep = "/"), row.names = FALSE)
@@ -232,6 +231,24 @@ write.csv(block_long_df, paste(data_dir, "block_check", sep = "/"), row.names = 
 write.csv(participants_df, paste(data_dir, "participant_check", sep = "/"), row.names = FALSE)
 ```
 
+# create separate txt for each condition
+```{r}
+computer_df = all_clean_df[all_clean_df$human == 0,]
+human_df = all_clean_df[all_clean_df$human == 1,]
+ingroup_df = human_df[human_df$ingroup == 1,]
+outgroup_df = human_df[human_df$ingroup == 0,]
+```
+
+```{r}
+write.table(computer_df, file = paste(data_dir, "computer.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(human_df, file = paste(data_dir, "human.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(ingroup_df, file = paste(data_dir, "ingroup.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(outgroup_df, file = paste(data_dir, "outgroup.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+```
 
 
 
