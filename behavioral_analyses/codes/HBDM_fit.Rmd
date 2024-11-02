@@ -76,33 +76,18 @@ codes_dir = paste(gitrepo_path, "codes", sep = "/")
 fit_dir = paste(gitrepo_path,"fits", sep = "/")
 figure_dir = paste(gitrepo_path,"figures", sep = "/")
 
-all_df = read.csv(paste(data_dir, "all_trials.csv", sep = "/"), header = TRUE)
-```
-
-
-```{r}
-# Get the path to the example data file
-dataPath <- system.file("extdata/gng_exampleData.txt", package="hBayesDM")
-
-# Read the data into R
-example_data <- read.table(dataPath, header = TRUE)
-
-# View the first few rows of the data
-head(example_data)
-
-# Get information about the data structure
-str(example_data)
+computer_txt_path = paste(data_dir, "computer.txt", sep = "/")
+human_txt_path = paste(data_dir, "human.txt", sep = "/")
+ingroup_txt_path = paste(data_dir, "ingroup.txt", sep = "/")
+outgroup_txt_path = paste(data_dir, "outgroup.txt", sep = "/")
 ```
 
 # HBDM
+## computer
 ```{r}
-sub_name = c("sub-104", "sub-106", "sub-109")
-human_type = 0
-test_df = all_df[all_df$human == 0 & all_df$subjID %in% sub_name, ]
-
 start.time = Sys.time()
 
-test_fit = ug_delta(data = test_df,
+computer_fit = ug_delta(data = computer_txt_path,
   niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
   inits = "random",
   indPars = "mean",
@@ -116,14 +101,80 @@ test_fit = ug_delta(data = test_df,
 end.time <- Sys.time()
 time.taken_pp_check <- round(end.time - start.time,2)
 print(time.taken_pp_check)
+
+save(computer_fit, 
+     file = paste(fit_dir, "computer_fit.rda", sep = "/"))
 ```
 
-
-# save cleaned data
+## human
 ```{r}
-write.csv(all_clean_df, paste(data_dir, "all_trials.csv", sep = "/"), row.names = FALSE)
-write.csv(block_long_df, paste(data_dir, "block_check", sep = "/"), row.names = FALSE)
-write.csv(participants_df, paste(data_dir, "participant_check", sep = "/"), row.names = FALSE)
+start.time = Sys.time()
+
+human_fit = ug_delta(data = human_txt_path,
+                        niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
+                        inits = "random",
+                        indPars = "mean",
+                        vb = FALSE,
+                        inc_postpred = FALSE,
+                        adapt_delta = 0.95,
+                        stepsize = 1,
+                        max_treedepth = 15,
+)
+
+end.time <- Sys.time()
+time.taken_pp_check <- round(end.time - start.time,2)
+print(time.taken_pp_check)
+
+save(human_fit, 
+     file = paste(fit_dir, "human_fit.rda", sep = "/"))
+```
+
+## ingroup
+```{r}
+start.time = Sys.time()
+
+ingroup_fit = ug_delta(data = ingroup_txt_path,
+                        niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
+                        inits = "random",
+                        indPars = "mean",
+                        vb = FALSE,
+                        inc_postpred = FALSE,
+                        adapt_delta = 0.95,
+                        stepsize = 1,
+                        max_treedepth = 15,
+)
+
+end.time <- Sys.time()
+time.taken_pp_check <- round(end.time - start.time,2)
+print(time.taken_pp_check)
+
+save(ingroup_fit, 
+     file = paste(fit_dir, "ingroup_fit.rda", sep = "/"))
+
+```
+
+## outgroup
+```{r}
+start.time = Sys.time()
+
+outgroup_fit = ug_delta(data = outgroup_txt_path,
+                        niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
+                        inits = "random",
+                        indPars = "mean",
+                        vb = FALSE,
+                        inc_postpred = FALSE,
+                        adapt_delta = 0.95,
+                        stepsize = 1,
+                        max_treedepth = 15,
+)
+
+end.time <- Sys.time()
+time.taken_pp_check <- round(end.time - start.time,2)
+print(time.taken_pp_check)
+
+save(outgroup_fit, 
+     file = paste(fit_dir, "outgroup_fit.rda", sep = "/"))
+
 ```
 
 
