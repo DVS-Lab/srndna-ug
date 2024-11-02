@@ -1,5 +1,5 @@
 ---
-title: "data_wrangle_srndnaUGR"
+title: "behavior_hypotheses_tests_srndnaUGR"
 author: "Jen Yang"
 date: "2024-11-1, last modified 2024-11-1"
 output: 
@@ -75,17 +75,18 @@ data_dir = paste(gitrepo_path,"data", sep = "/")
 codes_dir = paste(gitrepo_path, "codes", sep = "/")
 fit_dir = paste(gitrepo_path,"fits", sep = "/")
 figure_dir = paste(gitrepo_path,"figures", sep = "/")
-
-bids_dir = "/Users/momocco/Documents/GitHub/srndna-datapaper/bids"
 ```
 
-# participant list
+# load data
 ```{r}
-# load sub list
+# load subs
 participants_tsv = "participants.tsv"
 participants_df = read.table(file = paste(bids_dir, participants_tsv, sep = "/"), sep = '\t', header = TRUE)
 participants_df$trial_total = 0
 sublist = participants_df$participant_id
+
+# load
+
 ```
 
 # create empty df to contain all decisions
@@ -231,7 +232,7 @@ block_long_df = block_long_df %>%
 ```{r}
 write.csv(all_clean_df, paste(data_dir, "all_trials.csv", sep = "/"), row.names = FALSE)
 write.csv(block_long_df, paste(data_dir, "block_check", sep = "/"), row.names = FALSE)
-write.csv(participants_df, paste(data_dir, "participant_check.csv", sep = "/"), row.names = FALSE)
+write.csv(participants_df, paste(data_dir, "participant_check", sep = "/"), row.names = FALSE)
 ```
 
 # create separate txt for each condition

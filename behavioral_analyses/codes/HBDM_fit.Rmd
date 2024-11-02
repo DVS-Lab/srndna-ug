@@ -67,7 +67,17 @@ library(hBayesDM)
 library(brms)
 ```
 
-# set dir and load cleaned data
+# load functions
+```{r}
+source("diagnostics_plot_HBDM_fun.R")
+source("diagnostics_rhat_neff_HBDM_fun.R")
+
+w = 8
+h = 3
+```
+
+
+# set dir and load data
 ```{r}
 gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
 
@@ -80,6 +90,8 @@ computer_txt_path = paste(data_dir, "computer.txt", sep = "/")
 human_txt_path = paste(data_dir, "human.txt", sep = "/")
 ingroup_txt_path = paste(data_dir, "ingroup.txt", sep = "/")
 outgroup_txt_path = paste(data_dir, "outgroup.txt", sep = "/")
+
+participant_check_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = TRUE)
 ```
 
 # HBDM
@@ -92,7 +104,7 @@ computer_fit = ug_delta(data = computer_txt_path,
   inits = "random",
   indPars = "mean",
   vb = FALSE,
-  inc_postpred = FALSE,
+  inc_postpred = TRUE,
   adapt_delta = 0.95,
   stepsize = 1,
   max_treedepth = 15,
@@ -106,16 +118,27 @@ save(computer_fit,
      file = paste(fit_dir, "computer_fit.rda", sep = "/"))
 ```
 
+### diagnostics
+```{r}
+model_name = "computer_fit"
+diagnostics_rhat_neff_HBDM_fun(computer_fit)
+diagnostics_plot_HBDM_fun(model_name, computer_fit)
+fit_metrics = extract_ic(computer_fit, ic = "both")
+save(fit_metrics, 
+     file = paste(fit_dir, "computer_loo_waic.rda", sep = "/"))
+
+fit_metrics$LOOIC$diagnostics$pareto_k
+```
+
 ## human
 ```{r}
 start.time = Sys.time()
-
 human_fit = ug_delta(data = human_txt_path,
                         niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
                         inits = "random",
                         indPars = "mean",
                         vb = FALSE,
-                        inc_postpred = FALSE,
+                        inc_postpred = TRUE,
                         adapt_delta = 0.95,
                         stepsize = 1,
                         max_treedepth = 15,
@@ -129,6 +152,18 @@ save(human_fit,
      file = paste(fit_dir, "human_fit.rda", sep = "/"))
 ```
 
+### diagnostics
+```{r}
+model_name = "human_fit"
+diagnostics_rhat_neff_HBDM_fun(human_fit)
+diagnostics_plot_HBDM_fun(model_name, human_fit)
+fit_metrics = extract_ic(human_fit, ic = "both")
+save(fit_metrics, 
+     file = paste(fit_dir, "human_loo_waic.rda", sep = "/"))
+
+fit_metrics$LOOIC$diagnostics$pareto_k
+```
+
 ## ingroup
 ```{r}
 start.time = Sys.time()
@@ -138,7 +173,7 @@ ingroup_fit = ug_delta(data = ingroup_txt_path,
                         inits = "random",
                         indPars = "mean",
                         vb = FALSE,
-                        inc_postpred = FALSE,
+                        inc_postpred = TRUE,
                         adapt_delta = 0.95,
                         stepsize = 1,
                         max_treedepth = 15,
@@ -153,6 +188,19 @@ save(ingroup_fit,
 
 ```
 
+### diagnostics
+```{r}
+model_name = "ingroup_fit"
+diagnostics_rhat_neff_HBDM_fun(ingroup_fit)
+diagnostics_plot_HBDM_fun(model_name, ingroup_fit)
+fit_metrics = extract_ic(ingroup_fit, ic = "both")
+save(fit_metrics, 
+     file = paste(fit_dir, "ingroup_loo_waic.rda", sep = "/"))
+
+fit_metrics$LOOIC$diagnostics$pareto_k
+```
+
+
 ## outgroup
 ```{r}
 start.time = Sys.time()
@@ -162,7 +210,7 @@ outgroup_fit = ug_delta(data = outgroup_txt_path,
                         inits = "random",
                         indPars = "mean",
                         vb = FALSE,
-                        inc_postpred = FALSE,
+                        inc_postpred = TRUE,
                         adapt_delta = 0.95,
                         stepsize = 1,
                         max_treedepth = 15,
@@ -177,6 +225,29 @@ save(outgroup_fit,
 
 ```
 
+### diagnostics
+```{r}
+model_name = "outgroup_fit"
+diagnostics_rhat_neff_HBDM_fun(outgroup_fit)
+diagnostics_plot_HBDM_fun(model_name, outgroup_fit)
+fit_metrics = extract_ic(outgroup_fit, ic = "both")
+save(fit_metrics, 
+     file = paste(fit_dir, "outgroup_loo_waic.rda", sep = "/"))
 
+fit_metrics$LOOIC$diagnostics$pareto_k
+```
 
+# extract random effects and save
+```{r}
+participant_wide_df = participant_check_df %>% 
+  mutate(computer_alpha = computer_fit$allIndPars$alpha, 
+         computer_epsilon = computer_fit$allIndPars$ep,
+         human_alpha = human_fit$allIndPars$alpha,
+         human_epsilon = human_fit$allIndPars$ep,
+         outgroup_alpha = outgroup_fit$allIndPars$alpha,
+         outgroup_epsilon = outgroup_fit$allIndPars$ep,
+         ingroup_alpha = ingroup_fit$allIndPars$alpha,
+         ingroup_epsilon = ingroup_fit$allIndPars$ep)
 
+write.csv(participant_wide_df, paste(data_dir, "participant_wide.csv", sep = "/"), row.names = FALSE)
+```
