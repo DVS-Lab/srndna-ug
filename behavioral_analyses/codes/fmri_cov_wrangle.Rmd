@@ -110,9 +110,9 @@ all_df = merge(L3_plain_df, participants_wide_df, by.x = "participant_id")
 ## IN_OUT_alpha_AGE
 ```{r}
 IN_OUT_alpha_AGE_df = all_df %>% 
-  mutate(IN_OUT_alpha_AGE = IN_OUT_alpha_mean*age_mean) %>% 
+  mutate(IN_OUT_alpha_AGE = IN_OUT_alpha_mean*age_norm) %>% 
   select(participant_id, ismale, tsnr, fd_mean, RT, 
-         age_mean, IN_OUT_alpha_mean, IN_OUT_alpha_AGE)
+         age_norm, IN_OUT_alpha_mean, IN_OUT_alpha_AGE)
 write.csv(IN_OUT_alpha_AGE_df, paste(data_dir, "IN_OUT_alpha_AGE.csv", sep = "/"),
           row.names = FALSE)
 ```
@@ -120,9 +120,9 @@ write.csv(IN_OUT_alpha_AGE_df, paste(data_dir, "IN_OUT_alpha_AGE.csv", sep = "/"
 ## IN_OUT_epsilon_AGE
 ```{r}
 IN_OUT_epsilon_AGE_df = all_df %>% 
-  mutate(IN_OUT_epsilon_AGE = IN_OUT_epsilon_mean*age_mean) %>% 
+  mutate(IN_OUT_epsilon_AGE = IN_OUT_epsilon_mean*age_norm) %>% 
   select(participant_id, ismale, tsnr, fd_mean, RT, 
-         age_mean, IN_OUT_epsilon_mean, IN_OUT_epsilon_AGE)
+         age_norm, IN_OUT_epsilon_mean, IN_OUT_epsilon_AGE)
 write.csv(IN_OUT_epsilon_AGE_df, paste(data_dir, "IN_OUT_epsilon_AGE.csv", sep = "/"),
           row.names = FALSE)
 ```
@@ -130,9 +130,9 @@ write.csv(IN_OUT_epsilon_AGE_df, paste(data_dir, "IN_OUT_epsilon_AGE.csv", sep =
 ## Hum_Com_alpha_AGE
 ```{r}
 Hum_Com_alpha_AGE_df = all_df %>% 
-  mutate(Hum_Com_alpha_AGE = Hum_Com_alpha_mean*age_mean) %>% 
+  mutate(Hum_Com_alpha_AGE = Hum_Com_alpha_mean*age_norm) %>% 
   select(participant_id, ismale, tsnr, fd_mean, RT, 
-         age_mean, Hum_Com_alpha_mean, Hum_Com_alpha_AGE)
+         age_norm, Hum_Com_alpha_mean, Hum_Com_alpha_AGE)
 write.csv(Hum_Com_alpha_AGE_df, paste(data_dir, "Hum_Com_alpha_AGE.csv", sep = "/"),
           row.names = FALSE)
 ```
@@ -140,9 +140,9 @@ write.csv(Hum_Com_alpha_AGE_df, paste(data_dir, "Hum_Com_alpha_AGE.csv", sep = "
 ## Hum_Com_epsilon_AGE
 ```{r}
 Hum_Com_epsilon_AGE_df = all_df %>% 
-  mutate(Hum_Com_epsilon_AGE = Hum_Com_epsilon_mean*age_mean) %>% 
+  mutate(Hum_Com_epsilon_AGE = Hum_Com_epsilon_mean*age_norm) %>% 
   select(participant_id, ismale, tsnr, fd_mean, RT, 
-         age_mean, Hum_Com_epsilon_mean, Hum_Com_epsilon_AGE)
+         age_norm, Hum_Com_epsilon_mean, Hum_Com_epsilon_AGE)
 write.csv(Hum_Com_epsilon_AGE_df, paste(data_dir, "Hum_Com_epsilon_AGE.csv", sep = "/"),
           row.names = FALSE)
 ```
