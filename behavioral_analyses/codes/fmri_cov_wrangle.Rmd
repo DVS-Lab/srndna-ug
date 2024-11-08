@@ -1,0 +1,120 @@
+---
+title: "behavior_hypotheses_tests_srndnaUGR"
+author: "Jen Yang"
+date: "2024-11-1, last modified 2024-11-1"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    hightlight: zenburn
+    toc_depth: 6
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+# Load libraries
+```{r libraries, message=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(interactions)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+# library(raincloudplots)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(ggpubr)
+library(lubridate)
+library(readxl)
+library(gridExtra)
+library(scales)
+library(rstudioapi)
+library(jsonlite)
+library(rjson)
+library(readr)
+library(hBayesDM)
+library(brms)
+```
+
+# load tsv and prolific raw data
+```{r}
+gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
+
+data_dir = paste(gitrepo_path,"data", sep = "/")
+```
+
+# load data
+```{r}
+# load subs
+participants_fmri = "participant_wide_fmri.csv"
+participants_fmri_df = read.csv(file = paste(data_dir, participants_fmri, sep = "/"), header = TRUE)
+L3_plain = "L3_plain.csv"
+L3_plain_df = read.csv(file = paste(data_dir, L3_plain, sep = "/"), header = TRUE)
+```
+
+# demean columns
+```{r}
+participants_fmri_df = participants_fmri_df %>% 
+  mutate(age_mean = age - mean(age),
+         Hum_Com_alpha = human_alpha-computer_alpha,
+         Hum_Com_epsilon = human_epsilon-computer_epsilon,
+         IN_OUT_alpha = ingroup_alpha-outgroup_alpha,
+         IN_OUT_epsilon = ingroup_epsilon-outgroup_epsilon,
+         Hum_Com_alpha_mean = Hum_Com_alpha-mean(Hum_Com_alpha),
+         Hum_Com_epsilon_mean = Hum_Com_epsilon-mean(Hum_Com_epsilon),
+         IN_OUT_alpha_mean = IN_OUT_alpha-mean(IN_OUT_alpha),
+         IN_OUT_epsilon_mean = IN_OUT_epsilon-mean(IN_OUT_epsilon)
+  ) 
+```
+
+# construct different L3 cov and save
+## IN_OUT_alpha_AGE
+```{r}
+
+```
+
+
+```{r}
+write.table(computer_df, file = paste(data_dir, "computer.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(human_df, file = paste(data_dir, "human.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(ingroup_df, file = paste(data_dir, "ingroup.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(outgroup_df, file = paste(data_dir, "outgroup.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+```
+
+
+

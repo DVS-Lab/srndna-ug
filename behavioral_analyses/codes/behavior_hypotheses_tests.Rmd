@@ -84,9 +84,6 @@ participants_tsv = "participants.tsv"
 participants_df = read.table(file = paste(bids_dir, participants_tsv, sep = "/"), sep = '\t', header = TRUE)
 participants_df$trial_total = 0
 sublist = participants_df$participant_id
-
-# load
-
 ```
 
 # create empty df to contain all decisions
