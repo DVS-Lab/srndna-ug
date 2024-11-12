@@ -268,7 +268,8 @@ summary(model_fit)
 fit_df = indiv_df %>% 
   select(participant_id, age, age_bi, computer_epsilon, human_epsilon) %>% 
   melt(., id.vars = c("participant_id","age_bi","age"), variable.name = "epsilon_group") %>% 
-  mutate(epsilon = as.factor(epsilon_group))
+  mutate(epsilon = as.factor(epsilon_group)) %>% 
+  within(epsilon_group <- relevel(epsilon_group, ref = "computer_epsilon"))
 
 model_fit <- lmer(value ~ epsilon * age + (1 | participant_id),
                   data = fit_df)
@@ -286,11 +287,12 @@ summary(model_1_fit)
 # epsilon ~ age * ingroup/outgroup, group main sig
 ```{r}
 fit_df = indiv_df %>% 
-  select(participant_id, age_bi, ingroup_epsilon, outgroup_epsilon) %>% 
-  melt(., id.vars = c("participant_id","age"), variable.name = "epsilon_group") %>% 
-  mutate(epsilon = as.factor(epsilon_group))
+  select(participant_id, age, age_bi, ingroup_epsilon, outgroup_epsilon) %>% 
+  melt(., id.vars = c("participant_id","age", "age_bi"), variable.name = "epsilon_group") %>% 
+  mutate(epsilon = as.factor(epsilon_group)) %>% 
+  within(epsilon_group <- relevel(epsilon_group, ref = "outgroup_epsilon"))
 
-model_fit <- lmer(value ~ epsilon_group * age_bi + (1 | participant_id),
+model_fit <- lmer(value ~ epsilon_group * age + (1 | participant_id),
                   data = fit_df)
 summary(model_fit)
 
