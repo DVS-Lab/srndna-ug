@@ -94,7 +94,9 @@ figure_dir = paste(gitrepo_path,"figures", sep = "/")
 all_trials_df = read.csv(paste(data_dir, "all_trials.csv", sep = "/"), header = TRUE)
 colnames(all_trials_df)[colnames(all_trials_df) == "subjID"] <- "participant_id"
 indiv_df = read.csv(paste(data_dir, "participant_wide.csv", sep = "/"), header = TRUE)  %>%
-  mutate(age = scale(.$age, center = TRUE, scale = TRUE)[,1])
+  mutate(age = scale(.$age, center = TRUE, scale = TRUE)[,1],
+         age_bi = case_when(age <= 0 ~ "younger",
+                            age > 0 ~ "older"))
 
 fit_df = all_trials_df %>% mutate(age = NA, sex = NA)
 
@@ -105,8 +107,8 @@ for (i in 1:nrow(indiv_df)) {
   fit_df$sex[fit_df$participant_id == sub_i] = indiv_df$sex[i]
 }
 
-fit_df = fit_df %>% mutate(age_bi = as.factor(case_when(age >=0 ~ "1",
-                                              age < 0 ~ "0")))
+fit_df = fit_df %>% mutate(age_bi = as.factor(case_when(age >=0 ~ "older",
+                                              age < 0 ~ "younger")))
 
 ```
 
@@ -261,30 +263,34 @@ model_fit <- lmer(value ~ alpha_group * age + (1 | participant_id),
 summary(model_fit)
 ```
 
-# epsilon ~ age * human/computer, not sig
+# epsilon ~ age * human/computer, group main sig
 ```{r}
 fit_df = indiv_df %>% 
-  select(participant_id, age, computer_epsilon, human_epsilon) %>% 
-  melt(., id.vars = c("participant_id","age"), variable.name = "epsilon_group") %>% 
+  select(participant_id, age, age_bi, computer_epsilon, human_epsilon) %>% 
+  melt(., id.vars = c("participant_id","age_bi","age"), variable.name = "epsilon_group") %>% 
   mutate(epsilon = as.factor(epsilon_group))
 
 model_fit <- lmer(value ~ epsilon * age + (1 | participant_id),
                   data = fit_df)
 summary(model_fit)
 
-model_1_fit <- lmer(value ~ epsilon + age + (1 | participant_id),
+model_fit <- lmer(value ~ epsilon * age_bi + (1 | participant_id),
+                  data = fit_df)
+summary(model_fit)
+
+model_1_fit <- lmer(value ~ epsilon + age_bi + (1 | participant_id),
                   data = fit_df)
 summary(model_1_fit)
 ```
 
-# epsilon ~ age * ingroup/outgroup, not sig
+# epsilon ~ age * ingroup/outgroup, group main sig
 ```{r}
 fit_df = indiv_df %>% 
-  select(participant_id, age, ingroup_epsilon, outgroup_epsilon) %>% 
+  select(participant_id, age_bi, ingroup_epsilon, outgroup_epsilon) %>% 
   melt(., id.vars = c("participant_id","age"), variable.name = "epsilon_group") %>% 
   mutate(epsilon = as.factor(epsilon_group))
 
-model_fit <- lmer(value ~ epsilon_group * age + (1 | participant_id),
+model_fit <- lmer(value ~ epsilon_group * age_bi + (1 | participant_id),
                   data = fit_df)
 summary(model_fit)
 
