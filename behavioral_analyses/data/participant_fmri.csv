@@ -1,11 +1,11 @@
 participant_id,age,sex,trial_total,Include
-sub-106,20,F,144,yes
-sub-109,28,F,126,yes
 sub-104,20,M,144,yes
-sub-110,20,M,144,yes
 sub-105,21,F,143,yes
-sub-108,21,F,144,yes
+sub-106,20,F,144,yes
 sub-107,23,M,142,yes
+sub-108,21,F,144,yes
+sub-109,28,F,126,yes
+sub-110,20,M,144,yes
 sub-111,80,M,143,yes
 sub-112,23,F,143,yes
 sub-113,34,F,144,yes
@@ -41,8 +41,8 @@ sub-151,65,F,144,yes
 sub-152,66,M,128,yes
 sub-153,29,M,143,yes
 sub-154,67,F,138,yes
-sub-156,30,F,144,yes
 sub-155,30,M,144,yes
+sub-156,30,F,144,yes
 sub-157,25,M,142,yes
 sub-158,26,M,143,yes
 sub-159,24,F,144,yes

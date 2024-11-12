@@ -86,7 +86,8 @@ ROI_mean_name = "imaging_plots_SJDM"
 data_dir = paste(gitrepo_path, ROI_mean_name, sep = "/")
 figure_dir = paste(gitrepo_path,"behavioral_analyses/figures/SANS", sep = "/")
 
-participant_df = read.csv
+participant_df = read.csv(paste(gitrepo_path, "behavioral_analyses/data", "participant_fmri.csv", sep = "/"),
+                          header = T)
 ```
 
 ## plot font setup
@@ -115,16 +116,21 @@ in_name = "in-out_epsilon_age_dmn_5_type-nppi-dmn_cope-04.txt"
 out_name = "in-out_epsilon_age_dmn_5_type-nppi-dmn_cope-06.txt"
 
 computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F) %>% 
-  mutate(computer = V1) %>% select(computer)
+  mutate(participant_id = participant_df$participant_id,
+         type = "computer") %>% 
+  select(participant_id, V1, type)
+
 in_df = read.table(paste(data_dir,in_name,sep = '/'),sep=" ",header=F) %>% 
-  mutate(ingroup = V1) %>% select(ingroup)
+  mutate(participant_id = participant_df$participant_id,
+         type = "ingroup") %>% 
+  select(participant_id, V1, type)
+
 out_df = read.table(paste(data_dir,out_name,sep = '/'),sep=" ",header=F) %>% 
-  mutate(outgroup = V1) %>% select(outgroup)
+  mutate(participant_id = participant_df$participant_id,
+         type = "outgroup")  %>% 
+  select(participant_id, V1, type)
 
-
-plot_df = data.frame(IOS_FvS = clean_df$IOS_FvS,
-                     brain = brain_mean_df$V1,
-                     sub_id = clean_df$sub_id)
+data_plot_df = rbind(computer_df, in_df, out_df) 
 
 ggplot(data = plot_df, aes(x = IOS_FvS, y = brain)) + 
   geom_point(alpha = alpha_level, 
