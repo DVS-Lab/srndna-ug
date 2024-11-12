@@ -1,7 +1,7 @@
 ---
 title: "behavior_hypotheses_tests_srndnaUGR"
 author: "Jen Yang"
-date: "2024-11-1, last modified 2024-11-1"
+date: "2024-11-11, last modified 2024-11-11"
 output: 
   html_document:
     code_folding: hide
@@ -65,6 +65,17 @@ library(rjson)
 library(readr)
 library(hBayesDM)
 library(brms)
+library(emmeans)
+library(mediation)
+library(here)
+library(lme4)
+library(broom.mixed)
+library(easyRT)
+library(parameters)
+library(effectsize)
+library(effects)
+library(lmerTest)
+library(ez)
 ```
 
 # load tsv and prolific raw data
@@ -77,179 +88,207 @@ fit_dir = paste(gitrepo_path,"fits", sep = "/")
 figure_dir = paste(gitrepo_path,"figures", sep = "/")
 ```
 
-# load data
+# load and prepare data
 ```{r}
 # load subs
-participants_tsv = "participants.tsv"
-participants_df = read.table(file = paste(bids_dir, participants_tsv, sep = "/"), sep = '\t', header = TRUE)
-participants_df$trial_total = 0
-sublist = participants_df$participant_id
-```
+all_trials_df = read.csv(paste(data_dir, "all_trials.csv", sep = "/"), header = TRUE)
+colnames(all_trials_df)[colnames(all_trials_df) == "subjID"] <- "participant_id"
+indiv_df = read.csv(paste(data_dir, "participant_wide.csv", sep = "/"), header = TRUE)  %>%
+  mutate(age = scale(.$age, center = TRUE, scale = TRUE)[,1])
 
-# create empty df to contain all decisions
-```{r}
-col_unify_names = c("onset", "duration", "trial_type", 
-                  "response_time", "Offer")
+fit_df = all_trials_df %>% mutate(age = NA, sex = NA)
 
-all_col_names = c("onset", "duration", "trial_type", 
-                  "response_time", "Offer", 
-                  "block_type", "subjID", "run")
-
-all_long_df = data.frame(matrix(ncol = length(all_col_names), nrow = 0))
-colnames(all_long_df) = all_col_names
-
-
-block_col_names = c("onset", "block_type", "BlockNum", "BlockTrial", "BlockInclude", "run", "subID")
-
-block_long_df = data.frame(matrix(ncol = length(block_col_names), nrow = 0))
-colnames(block_long_df) = block_col_names
-
-withinsub_col_names = c("onset", "duration", "block_type", 
-                  "response_time", "Offer", 
-                  "subjID")
-```
-
-# prepare trial and block info
-```{r}
-decision_partner_types = c("event_accept_outgroup", "event_reject_outgroup",
-                "event_accept_ingroup", "event_reject_ingroup",
-                "event_accept_computer", "event_reject_computer",
-                "event_accept_outgroup_fair", "event_reject_outgroup_fair",
-                "event_accept_ingroup_fair", "event_reject_ingroup_fair",
-                "event_accept_computer_fair", "event_reject_computer_fair",
-                "event_accept_outgroup_unfair", "event_reject_outgroup_unfair",
-                "event_accept_ingroup_unfair", "event_reject_ingroup_unfair",
-                "event_accept_computer_unfair", "event_reject_computer_unfair")
-
-block_types = c("block_outgroup_fair", "block_outgroup_unfair",
-                "block_ingroup_fair", "block_ingroup_unfair",
-                "block_computer_fair", "block_computer_unfair")
-```
-
-# extract behavior
-```{r}
-for (i in 1:nrow(participants_df)) {
-  # i = 36 # for testing, to comment out
-  print(i)
-  sub_name = sublist[i]
-  print(sub_name)
-  # find all ultimatum tsv files
-  ug_tsv <- list.files(path = paste(bids_dir, sub_name, "func", sep = "/"), 
-                       pattern = ".*ultimatum.*events.*\\.tsv$",
-                       full.names = FALSE)
-  
-  # clean behavior data per run
-  for (j in 1:length(ug_tsv)) {
-    # j = 1
-    # print(j)
-    event_run_ij = paste(sub_name,sprintf("_task-ultimatum_run-0%d_events.tsv", j), sep = "")
-    event_run_ij_df = read.table(file = paste(bids_dir, 
-                                              sublist[i], "func", event_run_ij, sep = '/'), header = TRUE) %>% 
-      select(all_of(col_unify_names))
-    
-    # extract trial type info per sub
-    decision_partner_types_rows = event_run_ij_df$trial_type %in% decision_partner_types
-    decision_partner_df = event_run_ij_df[decision_partner_types_rows,]
-    decision_partner_df$block_type = NA
-    decision_partner_df$run = j
-    participants_df$trial_total[i] = participants_df$trial_total[i] + sum(decision_partner_types_rows)
-    
-    # extract block info per sub
-    block_types_rows = event_run_ij_df$trial_type %in% block_types
-    block_df = event_run_ij_df[block_types_rows,]
-    block_df$BlockNum = 1:nrow(block_df)
-    block_df$BlockTrial = NA
-    block_df$BlockInclude = NA # default set to a block not included
-    block_df$subID = NA
-    
-    # create empty df to compile trials from all blocks
-    block_long_df_j = data.frame(matrix(ncol = length(withinsub_col_names), nrow = 0))
-    colnames(block_long_df_j) = withinsub_col_names
-    
-    # check trial number per block
-    for (k in 1:nrow(block_df)) {
-      # k = 9
-      # print(k)
-      block_type_k = block_df$trial_type[k] # extract block type
-      if (k < nrow(block_df)) {
-      # find trial using block type
-      n_trials_k =  sum(decision_partner_df$onset >= block_df$onset[k] & 
-                          decision_partner_df$onset < block_df$onset[k+1])
-      # marking block type for each trial
-      decision_partner_df$block_type[decision_partner_df$onset >= block_df$onset[k] & 
-                          decision_partner_df$onset < block_df$onset[k+1]] = block_type_k
-      } else {
-        n_trials_k = sum(decision_partner_df$onset >= block_df$onset[k])
-        decision_partner_df$block_type[decision_partner_df$onset >= block_df$onset[k]] = block_type_k
-      }
-      block_df$BlockTrial[k] = n_trials_k
-      if (n_trials_k >= 4) {
-        block_df$BlockInclude[k] = "yes"
-      }
-      # cleanup and renome
-      block_df_clean = block_df %>% 
-        # rename columns
-        mutate(block_type = trial_type) %>% 
-        select(onset, block_type, BlockNum, BlockTrial, BlockInclude)
-      
-      block_df_clean$run = j
-      block_df_clean$subID = sub_name
-    }
-    block_long_df = rbind(block_long_df, block_df_clean)
-    decision_partner_df$subjID = sub_name
-    all_long_df = rbind(all_long_df, decision_partner_df)
-  }
+for (i in 1:nrow(indiv_df)) {
+  # i = 1
+  sub_i = indiv_df$participant_id[i]
+  fit_df$age[fit_df$participant_id == sub_i] = indiv_df$age[i]
+  fit_df$sex[fit_df$participant_id == sub_i] = indiv_df$sex[i]
 }
+
+fit_df = fit_df %>% mutate(age_bi = as.factor(case_when(age >=0 ~ "1",
+                                              age < 0 ~ "0")))
+
 ```
 
-# recode and reorder
+
+# decision ~ fairness * human/computer * age, only sig offer
 ```{r}
-all_clean_df = all_long_df %>% 
-  mutate(offer = Offer,
-         accept = as.numeric(grepl("accept", .$trial_type, fixed = TRUE)),
-         human = as.numeric(grepl("ingroup", .$trial_type, fixed = TRUE) | 
-                              grepl("outgroup", .$trial_type, fixed = TRUE)),
-         ingroup = as.numeric(grepl("ingroup", .$trial_type, fixed = TRUE)),
-         block_fair = as.numeric(grepl("_fair", .$block_type, fixed = TRUE))) %>% 
-  select(subjID, offer, accept, response_time, human, ingroup, block_fair) %>% 
-  mutate(response_time = as.numeric(response_time)-1)
+# # full model, failed to converge
+# model_fit <- glmer(accept ~ offer * human * age + sex + 
+#                      (1 + offer * human | participant_id),
+#                             data = fit_df,
+#                             family = binomial)
 
-sum(all_clean_df$response_time <0.2)
+# # failed to converge
+# model_fit <- glmer(accept ~ offer * human * age + sex + 
+#                      (1 + offer + human || participant_id),
+#                             data = fit_df,
+#                             family = binomial)
 
-participants_df = participants_df %>% 
-  mutate(Include = case_when(trial_total >= 115 ~ "yes",
-                             trial_total < 115 ~ "no")) %>% 
-  select(-group)
+# failed to converge
+# model_fit <- glmer(accept ~ offer * human * age +
+#                      (1 + offer * human | participant_id),
+#                             data = fit_df,
+#                             family = binomial)
 
-block_long_df = block_long_df %>% 
-  select(subID, run, block_type, BlockNum, BlockTrial, BlockInclude)
+
+# # failed to converge
+# model_fit <- glmer(accept ~ offer * human * age + sex + 
+#                      (1 + offer  | participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+# 
+# # failed to converge
+# model_fit <- glmer(accept ~ offer * human * age + sex + 
+#                      (1 + human  | participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+
+# # failed to converge
+# model_fit <- glmer(accept ~ offer * human * age +
+#                      (1 + offer + human || participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+
+# # singularity issue
+# model_fit <- glmer(accept ~ offer * human * age +
+#                      (1 + human | participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+
+# # three-way not sig
+# model_fit <- glmer(accept ~ offer * human * age +
+#                      (1 + offer | participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+
+## full converging model, interaction not sig
+model_fit <- glmer(accept ~ offer * human +
+                     offer * age +
+                     human * age +
+                     (1 + offer * human || participant_id),
+                            data = fit_df,
+                            family = binomial)
+summary(model_fit)
+
+## simplified converging model
+model_fit <- glmer(accept ~ offer + human + age +
+                     (1 + offer + human || participant_id),
+                            data = fit_df,
+                            family = binomial)
+summary(model_fit)
+
+
 ```
 
-# save cleaned data
+# decision ~ fairness * age * partner age
 ```{r}
-write.csv(all_clean_df, paste(data_dir, "all_trials.csv", sep = "/"), row.names = FALSE)
-write.csv(block_long_df, paste(data_dir, "block_check", sep = "/"), row.names = FALSE)
-write.csv(participants_df, paste(data_dir, "participant_check", sep = "/"), row.names = FALSE)
+# # full model, won't converge, and singular
+# model2_fit <- glmer(accept ~ offer * ingroup * age + 
+#                      (1 | participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+
+# # converge, three-way not sit
+# model2_fit <- glmer(accept ~ offer * ingroup * age + 
+#                      (1 + offer + ingroup || participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+
+# # singular
+# model2_fit <- glmer(accept ~ offer * ingroup +
+#                      offer * age +
+#                      ingroup * age +
+#                      (1 + offer * ingroup || participant_id),
+#                    data = fit_df,
+#                    family = binomial)
+
+# # non-converge
+# model2_fit <- glmer(accept ~ offer * ingroup +
+#                      offer * age +
+#                      ingroup * age +
+#                      (1 + offer + ingroup || participant_id),
+#                    data = fit_df,
+#                    family = binomial)
+
+model2_fit <- glmer(accept ~ offer * ingroup +
+                     offer * age +
+                     ingroup * age +
+                     (1 | participant_id),
+                   data = fit_df,
+                   family = binomial)
+summary(model2_fit)
+
+model2_1_fit <- glmer(accept ~ 
+                     offer * age +
+                     ingroup * age +
+                     (1 | participant_id),
+                   data = fit_df,
+                   family = binomial)
+summary(model2_1_fit)
+
+model2_2_fit <- glmer(accept ~ 
+                     offer * age +
+                     (1 | participant_id),
+                   data = fit_df,
+                   family = binomial)
+summary(model2_2_fit)
+
+anova(model2_fit, model2_1_fit, model2_2_fit)
 ```
 
-# create separate txt for each condition
+# alpha ~ age * human/computer, not sig
 ```{r}
-computer_df = all_clean_df[all_clean_df$human == 0,]
-human_df = all_clean_df[all_clean_df$human == 1,]
-ingroup_df = human_df[human_df$ingroup == 1,]
-outgroup_df = human_df[human_df$ingroup == 0,]
+fit_df = indiv_df %>% 
+  select(participant_id, age, computer_alpha, human_alpha) %>% 
+  melt(., id.vars = c("participant_id","age"), variable.name = "alpha_group") %>% 
+  mutate(alpha = as.factor(alpha_group))
+
+model_fit <- lmer(value ~ alpha * age + (1 | participant_id),
+                      data = fit_df)
+summary(model_fit)
 ```
 
+# alpha ~ age * ingroup/outgroup, not sig
 ```{r}
-write.table(computer_df, file = paste(data_dir, "computer.txt", sep = "/"), 
-            sep = "\t", row.names = FALSE, quote = FALSE)
-write.table(human_df, file = paste(data_dir, "human.txt", sep = "/"), 
-            sep = "\t", row.names = FALSE, quote = FALSE)
-write.table(ingroup_df, file = paste(data_dir, "ingroup.txt", sep = "/"), 
-            sep = "\t", row.names = FALSE, quote = FALSE)
-write.table(outgroup_df, file = paste(data_dir, "outgroup.txt", sep = "/"), 
-            sep = "\t", row.names = FALSE, quote = FALSE)
+fit_df = indiv_df %>% 
+  select(participant_id, age, ingroup_alpha, outgroup_alpha) %>% 
+  melt(., id.vars = c("participant_id","age"), variable.name = "alpha_group") %>% 
+  mutate(alpha = as.factor(alpha_group))
+
+model_fit <- lmer(value ~ alpha_group * age + (1 | participant_id),
+                      data = fit_df)
+summary(model_fit)
 ```
 
+# epsilon ~ age * human/computer, not sig
+```{r}
+fit_df = indiv_df %>% 
+  select(participant_id, age, computer_epsilon, human_epsilon) %>% 
+  melt(., id.vars = c("participant_id","age"), variable.name = "epsilon_group") %>% 
+  mutate(epsilon = as.factor(epsilon_group))
 
+model_fit <- lmer(value ~ epsilon * age + (1 | participant_id),
+                  data = fit_df)
+summary(model_fit)
 
+model_1_fit <- lmer(value ~ epsilon + age + (1 | participant_id),
+                  data = fit_df)
+summary(model_1_fit)
+```
+
+# epsilon ~ age * ingroup/outgroup, not sig
+```{r}
+fit_df = indiv_df %>% 
+  select(participant_id, age, ingroup_epsilon, outgroup_epsilon) %>% 
+  melt(., id.vars = c("participant_id","age"), variable.name = "epsilon_group") %>% 
+  mutate(epsilon = as.factor(epsilon_group))
+
+model_fit <- lmer(value ~ epsilon_group * age + (1 | participant_id),
+                  data = fit_df)
+summary(model_fit)
+
+model_1_fit <- lmer(value ~ epsilon_group + age + (1 | participant_id),
+                  data = fit_df)
+summary(model_1_fit)
+```
