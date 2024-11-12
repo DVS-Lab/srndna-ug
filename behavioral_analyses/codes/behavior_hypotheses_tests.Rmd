@@ -19,7 +19,7 @@ rm(list = ls())
 ```
 
 # Load libraries
-```{r libraries, message=FALSE, warning=TRUE, include=FALSE}
+```{r libraries, message_bi=FALSE, warning=TRUE, include=FALSE}
 library(car)
 library(plyr)
 library(foreign)
@@ -94,184 +94,200 @@ figure_dir = paste(gitrepo_path,"figures", sep = "/")
 all_trials_df = read.csv(paste(data_dir, "all_trials.csv", sep = "/"), header = TRUE)
 colnames(all_trials_df)[colnames(all_trials_df) == "subjID"] <- "participant_id"
 indiv_df = read.csv(paste(data_dir, "participant_wide.csv", sep = "/"), header = TRUE)  %>%
-  mutate(age = scale(.$age, center = TRUE, scale = TRUE)[,1],
-         age_bi = case_when(age <= 0 ~ "younger",
-                            age > 0 ~ "older"))
+  mutate(age_bi = case_when(age <= 36 ~ "younger",
+                            age > 36 ~ "older"))
 
-fit_df = all_trials_df %>% mutate(age = NA, sex = NA)
+
+
+
+fit_df = all_trials_df %>% mutate(age_bi = "to code", sex = "to code")
 
 for (i in 1:nrow(indiv_df)) {
   # i = 1
   sub_i = indiv_df$participant_id[i]
-  fit_df$age[fit_df$participant_id == sub_i] = indiv_df$age[i]
+  fit_df$age_bi[fit_df$participant_id == sub_i] = indiv_df$age_bi[i]
   fit_df$sex[fit_df$participant_id == sub_i] = indiv_df$sex[i]
 }
 
-fit_df = fit_df %>% mutate(age_bi = as.factor(case_when(age >=0 ~ "older",
-                                              age < 0 ~ "younger")))
+fit_df = fit_df %>% mutate(age_bi = relevel(as.factor(age_bi), ref = "younger"),
+                           sex = relevel(as.factor(sex), ref = "M"))
 
 ```
 
-
-# decision ~ fairness * human/computer * age, only sig offer
+# decision ~ fairness * human/computer * age_bi, only sig offer
 ```{r}
 # # full model, failed to converge
-# model_fit <- glmer(accept ~ offer * human * age + sex + 
+# model_fit <- glmer(accept ~ offer * human * age_bi + sex + 
 #                      (1 + offer * human | participant_id),
 #                             data = fit_df,
 #                             family = binomial)
 
 # # failed to converge
-# model_fit <- glmer(accept ~ offer * human * age + sex + 
+# model_fit <- glmer(accept ~ offer * human * age_bi + sex + 
 #                      (1 + offer + human || participant_id),
 #                             data = fit_df,
 #                             family = binomial)
 
 # failed to converge
-# model_fit <- glmer(accept ~ offer * human * age +
+# model_fit <- glmer(accept ~ offer * human * age_bi +
 #                      (1 + offer * human | participant_id),
 #                             data = fit_df,
 #                             family = binomial)
 
 
 # # failed to converge
-# model_fit <- glmer(accept ~ offer * human * age + sex + 
+# model_fit <- glmer(accept ~ offer * human * age_bi + sex + 
 #                      (1 + offer  | participant_id),
 #                             data = fit_df,
 #                             family = binomial)
 # 
 # # failed to converge
-# model_fit <- glmer(accept ~ offer * human * age + sex + 
+# model_fit <- glmer(accept ~ offer * human * age_bi + sex + 
 #                      (1 + human  | participant_id),
 #                             data = fit_df,
 #                             family = binomial)
 
 # # failed to converge
-# model_fit <- glmer(accept ~ offer * human * age +
+# model_fit <- glmer(accept ~ offer * human * age_bi +
 #                      (1 + offer + human || participant_id),
 #                             data = fit_df,
 #                             family = binomial)
 
 # # singularity issue
-# model_fit <- glmer(accept ~ offer * human * age +
+# model_fit <- glmer(accept ~ offer * human * age_bi +
 #                      (1 + human | participant_id),
 #                             data = fit_df,
 #                             family = binomial)
 
 # # three-way not sig
-# model_fit <- glmer(accept ~ offer * human * age +
+# model_fit <- glmer(accept ~ offer * human * age_bi +
 #                      (1 + offer | participant_id),
 #                             data = fit_df,
 #                             family = binomial)
 
-## full converging model, interaction not sig
+## non-converge
 model_fit <- glmer(accept ~ offer * human +
-                     offer * age +
-                     human * age +
+                     offer * age_bi +
+                     human * age_bi +
                      (1 + offer * human || participant_id),
                             data = fit_df,
                             family = binomial)
 summary(model_fit)
 
-## simplified converging model
-model_fit <- glmer(accept ~ offer + human + age +
+## converge, fair sig
+model_fit <- glmer(accept ~ offer + human + age_bi +
                      (1 + offer + human || participant_id),
                             data = fit_df,
                             family = binomial)
 summary(model_fit)
-
-
 ```
 
-# decision ~ fairness * age * partner age
+# decision ~ fairness * age_bi * partner age_bi, offer*age sig
 ```{r}
 # # full model, won't converge, and singular
-# model2_fit <- glmer(accept ~ offer * ingroup * age + 
+# model2_fit <- glmer(accept ~ offer * ingroup * age_bi + 
 #                      (1 | participant_id),
 #                             data = fit_df,
 #                             family = binomial)
 
 # # converge, three-way not sit
-# model2_fit <- glmer(accept ~ offer * ingroup * age + 
+# model2_fit <- glmer(accept ~ offer * ingroup * age_bi + 
 #                      (1 + offer + ingroup || participant_id),
 #                             data = fit_df,
 #                             family = binomial)
 
 # # singular
 # model2_fit <- glmer(accept ~ offer * ingroup +
-#                      offer * age +
-#                      ingroup * age +
+#                      offer * age_bi +
+#                      ingroup * age_bi +
 #                      (1 + offer * ingroup || participant_id),
 #                    data = fit_df,
 #                    family = binomial)
 
 # # non-converge
 # model2_fit <- glmer(accept ~ offer * ingroup +
-#                      offer * age +
-#                      ingroup * age +
+#                      offer * age_bi +
+#                      ingroup * age_bi +
 #                      (1 + offer + ingroup || participant_id),
 #                    data = fit_df,
 #                    family = binomial)
 
-model2_fit <- glmer(accept ~ offer * ingroup +
-                     offer * age +
-                     ingroup * age +
-                     (1 | participant_id),
-                   data = fit_df,
-                   family = binomial)
-summary(model2_fit)
-
-model2_1_fit <- glmer(accept ~ 
-                     offer * age +
-                     ingroup * age +
-                     (1 | participant_id),
+model2_1_fit <- glmer(accept ~ offer * ingroup +
+                     offer * age_bi +
+                     ingroup * age_bi +
+                     (1 + ingroup || participant_id),
                    data = fit_df,
                    family = binomial)
 summary(model2_1_fit)
 
-model2_2_fit <- glmer(accept ~ 
-                     offer * age +
-                     (1 | participant_id),
+model2_2_fit <- glmer(accept ~ offer * ingroup +
+                     offer * age_bi +
+                     ingroup * age_bi +
+                     (1 + offer || participant_id),
                    data = fit_df,
                    family = binomial)
 summary(model2_2_fit)
 
-anova(model2_fit, model2_1_fit, model2_2_fit)
+
+model3_fit <- glmer(accept ~ offer * ingroup +
+                     offer * age_bi +
+                     ingroup * age_bi +
+                     (1 | participant_id),
+                   data = fit_df,
+                   family = binomial)
+summary(model3_fit)
+
+model3_1_fit <- glmer(accept ~ 
+                     offer * age_bi +
+                     ingroup * age_bi +
+                     (1 | participant_id),
+                   data = fit_df,
+                   family = binomial)
+summary(model3_1_fit)
+
+model3_2_fit <- glmer(accept ~ 
+                     offer * age_bi +
+                     (1 | participant_id),
+                   data = fit_df,
+                   family = binomial)
+summary(model3_2_fit)
+
+anova(model3_2_fit, model3_1_fit, model3_fit, model2_1_fit, model2_2_fit)
 ```
 
-# alpha ~ age * human/computer, not sig
+# alpha ~ age_bi * human/computer, not sig
 ```{r}
 fit_df = indiv_df %>% 
-  select(participant_id, age, computer_alpha, human_alpha) %>% 
-  melt(., id.vars = c("participant_id","age"), variable.name = "alpha_group") %>% 
+  select(participant_id, age_bi, computer_alpha, human_alpha) %>% 
+  melt(., id.vars = c("participant_id","age_bi"), variable.name = "alpha_group") %>% 
   mutate(alpha = as.factor(alpha_group))
 
-model_fit <- lmer(value ~ alpha * age + (1 | participant_id),
+model_fit <- lmer(value ~ alpha * age_bi + (1 | participant_id),
                       data = fit_df)
 summary(model_fit)
 ```
 
-# alpha ~ age * ingroup/outgroup, not sig
+# alpha ~ age_bi * ingroup/outgroup, not sig
 ```{r}
 fit_df = indiv_df %>% 
-  select(participant_id, age, ingroup_alpha, outgroup_alpha) %>% 
-  melt(., id.vars = c("participant_id","age"), variable.name = "alpha_group") %>% 
+  select(participant_id, age_bi, ingroup_alpha, outgroup_alpha) %>% 
+  melt(., id.vars = c("participant_id","age_bi"), variable.name = "alpha_group") %>% 
   mutate(alpha = as.factor(alpha_group))
 
-model_fit <- lmer(value ~ alpha_group * age + (1 | participant_id),
+model_fit <- lmer(value ~ alpha_group * age_bi + (1 | participant_id),
                       data = fit_df)
 summary(model_fit)
 ```
 
-# epsilon ~ age * human/computer, group main sig
+# epsilon ~ age_bi * human/computer, not sig
 ```{r}
 fit_df = indiv_df %>% 
-  select(participant_id, age, age_bi, computer_epsilon, human_epsilon) %>% 
-  melt(., id.vars = c("participant_id","age_bi","age"), variable.name = "epsilon_group") %>% 
+  select(participant_id, age_bi, age_bi, computer_epsilon, human_epsilon) %>% 
+  melt(., id.vars = c("participant_id","age_bi"), variable.name = "epsilon_group") %>% 
   mutate(epsilon = as.factor(epsilon_group)) %>% 
   within(epsilon_group <- relevel(epsilon_group, ref = "computer_epsilon"))
 
-model_fit <- lmer(value ~ epsilon * age + (1 | participant_id),
+model_fit <- lmer(value ~ epsilon * age_bi + (1 | participant_id),
                   data = fit_df)
 summary(model_fit)
 
@@ -284,19 +300,19 @@ model_1_fit <- lmer(value ~ epsilon + age_bi + (1 | participant_id),
 summary(model_1_fit)
 ```
 
-# epsilon ~ age * ingroup/outgroup, group main sig
+# epsilon ~ age_bi * ingroup/outgroup, group main sig
 ```{r}
 fit_df = indiv_df %>% 
-  select(participant_id, age, age_bi, ingroup_epsilon, outgroup_epsilon) %>% 
-  melt(., id.vars = c("participant_id","age", "age_bi"), variable.name = "epsilon_group") %>% 
+  select(participant_id, age_bi, age_bi, ingroup_epsilon, outgroup_epsilon) %>% 
+  melt(., id.vars = c("participant_id", "age_bi"), variable.name = "epsilon_group") %>% 
   mutate(epsilon = as.factor(epsilon_group)) %>% 
   within(epsilon_group <- relevel(epsilon_group, ref = "outgroup_epsilon"))
 
-model_fit <- lmer(value ~ epsilon_group * age + (1 | participant_id),
+model_fit <- lmer(value ~ epsilon_group * age_bi + (1 | participant_id),
                   data = fit_df)
 summary(model_fit)
 
-model_1_fit <- lmer(value ~ epsilon_group + age + (1 | participant_id),
+model_1_fit <- lmer(value ~ epsilon_group + age_bi + (1 | participant_id),
                   data = fit_df)
 summary(model_1_fit)
 ```

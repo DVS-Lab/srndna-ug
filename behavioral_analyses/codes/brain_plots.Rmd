@@ -99,15 +99,16 @@ axis_text = 12
 axis_label = 14
 legend_all = 12
 alpha_level = 0.8
+fig_color = "#117733"
 
 w = 4.3
 h = 4
 ```
 
+# in-out_epsilon_age_dmn_5
 ```{r}
 ### setup
-fig_color = "#117733"
-x_label = "Social Closeness"
+x_label = "Partner Identity"
 y_label = "DMN seed, in > out, fairness para"
 brain_name = "in-out_epsilon_age_dmn_5"
 ###
@@ -130,8 +131,59 @@ out_df = read.table(paste(data_dir,out_name,sep = '/'),sep=" ",header=F) %>%
          type = "outgroup")  %>% 
   select(participant_id, V1, type)
 
-data_plot_df = rbind(computer_df, in_df, out_df) 
+data_plot_df = rbind(computer_df, in_df, out_df)
 
+group_summary <- data_plot_df %>%
+  group_by(type) %>%
+  summarise(mean = mean(V1), se = sd(V1)/sqrt(nrow(participant_df)))
+
+
+ggplot(group_summary, 
+  aes(x = type, y = mean, ymin = mean-se, ymax = mean+se, fill = type)) +
+  geom_col(color = NA) +
+  geom_errorbar(width = 0.2)
+```
+# in-out_epsilon_age_dmn_1
+```{r}
+### setup
+x_label = "Partner Identity"
+y_label = "DMN seed, in > out, fairness para"
+brain_name = "in-out_epsilon_age_dmn_1"
+###
+computer_name = "in-out_epsilon_age_dmn_1_type-nppi-dmn_cope-02.txt"
+in_name = "in-out_epsilon_age_dmn_1_type-nppi-dmn_cope-04.txt"
+out_name = "in-out_epsilon_age_dmn_1_type-nppi-dmn_cope-06.txt"
+
+computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = participant_df$participant_id,
+         type = "computer") %>% 
+  select(participant_id, V1, type)
+
+in_df = read.table(paste(data_dir,in_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = participant_df$participant_id,
+         type = "ingroup") %>% 
+  select(participant_id, V1, type)
+
+out_df = read.table(paste(data_dir,out_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = participant_df$participant_id,
+         type = "outgroup")  %>% 
+  select(participant_id, V1, type)
+
+data_plot_df = rbind(in_df, out_df)
+
+group_summary <- data_plot_df %>%
+  group_by(type) %>%
+  summarise(mean = mean(V1), se = sd(V1)/sqrt(nrow(participant_df)))
+
+
+ggplot(group_summary, 
+       aes(x = type, y = mean, ymin = mean-se, ymax = mean+se, fill = type)) +
+  geom_col(color = NA) +
+  geom_errorbar(width = 0.2)
+```
+
+
+```{r}
 ggplot(data = plot_df, aes(x = IOS_FvS, y = brain)) + 
   geom_point(alpha = alpha_level, 
              color = fig_color,
