@@ -159,7 +159,7 @@ set fmri(evs_vox) 0
 
 # Number of contrasts
 set fmri(ncon_orig) 1
-set fmri(ncon_real) 4
+set fmri(ncon_real) 6
 
 # Number of F-tests
 set fmri(nftests_orig) 0
@@ -264,9 +264,6 @@ set fmri(regstandard_nonlinear_warpres) 10
 
 # High pass filter cutoff
 set fmri(paradigm_hp) 100
-
-set fmri(fnirt_config) "T1_2_MNI152_2mm"
-
 
 # Number of lower-level copes feeding into higher-level analysis
 set fmri(ncopeinputs) 0
@@ -1634,7 +1631,7 @@ set fmri(evg46.6) 1.02E+00
 set fmri(evg47.6) -4.94E-01
 
 # EV 7 title
-set fmri(evtitle7) ""
+set fmri(evtitle7) "y_hum-com_eps"
 
 # Basic waveform shape (EV 7)
 # 0 : Square
@@ -1696,61 +1693,61 @@ set fmri(ortho7.7) 0
 set fmri(ortho7.8) 0
 
 # Higher-level EV value for EV 7 and input 1
-set fmri(evg1.7) 0
+set fmri(evg1.7) -0.008241678
 
 # Higher-level EV value for EV 7 and input 2
-set fmri(evg2.7) 0
+set fmri(evg2.7) -0.022974653
 
 # Higher-level EV value for EV 7 and input 3
-set fmri(evg3.7) 0
+set fmri(evg3.7) -0.001117471
 
 # Higher-level EV value for EV 7 and input 4
-set fmri(evg4.7) 0
+set fmri(evg4.7) 0.080952973
 
 # Higher-level EV value for EV 7 and input 5
-set fmri(evg5.7) 0
+set fmri(evg5.7) -0.021629464
 
 # Higher-level EV value for EV 7 and input 6
-set fmri(evg6.7) 0
+set fmri(evg6.7) -0.010683477
 
 # Higher-level EV value for EV 7 and input 7
-set fmri(evg7.7) 0
+set fmri(evg7.7) -0.003183136
 
 # Higher-level EV value for EV 7 and input 8
 set fmri(evg8.7) 0
 
 # Higher-level EV value for EV 7 and input 9
-set fmri(evg9.7) 0
+set fmri(evg9.7) -0.007274471
 
 # Higher-level EV value for EV 7 and input 10
-set fmri(evg10.7) 0
+set fmri(evg10.7) -0.066049303
 
 # Higher-level EV value for EV 7 and input 11
-set fmri(evg11.7) 0
+set fmri(evg11.7) -0.006076813
 
 # Higher-level EV value for EV 7 and input 12
-set fmri(evg12.7) 0
+set fmri(evg12.7) -0.001785321
 
 # Higher-level EV value for EV 7 and input 13
-set fmri(evg13.7) 0
+set fmri(evg13.7) -0.006523294
 
 # Higher-level EV value for EV 7 and input 14
-set fmri(evg14.7) 0
+set fmri(evg14.7) -0.004665772
 
 # Higher-level EV value for EV 7 and input 15
-set fmri(evg15.7) 0
+set fmri(evg15.7) -0.044090685
 
 # Higher-level EV value for EV 7 and input 16
-set fmri(evg16.7) 0
+set fmri(evg16.7) -0.007696026
 
 # Higher-level EV value for EV 7 and input 17
-set fmri(evg17.7) 0
+set fmri(evg17.7) -0.010080849
 
 # Higher-level EV value for EV 7 and input 18
-set fmri(evg18.7) 0
+set fmri(evg18.7) -0.002822096
 
 # Higher-level EV value for EV 7 and input 19
-set fmri(evg19.7) 0
+set fmri(evg19.7) -0.009708564
 
 # Higher-level EV value for EV 7 and input 20
 set fmri(evg20.7) 0
@@ -1807,7 +1804,7 @@ set fmri(evg36.7) 0
 set fmri(evg37.7) 0
 
 # Higher-level EV value for EV 7 and input 38
-set fmri(evg38.7) 0
+set fmri(evg38.7) -0.045941385
 
 # Higher-level EV value for EV 7 and input 39
 set fmri(evg39.7) 0
@@ -1816,28 +1813,28 @@ set fmri(evg39.7) 0
 set fmri(evg40.7) 0
 
 # Higher-level EV value for EV 7 and input 41
-set fmri(evg41.7) 0
+set fmri(evg41.7) -0.008947687
 
 # Higher-level EV value for EV 7 and input 42
 set fmri(evg42.7) 0
 
 # Higher-level EV value for EV 7 and input 43
-set fmri(evg43.7) 0
+set fmri(evg43.7) -0.000376441
 
 # Higher-level EV value for EV 7 and input 44
-set fmri(evg44.7) 0
+set fmri(evg44.7) -0.00843499
 
 # Higher-level EV value for EV 7 and input 45
-set fmri(evg45.7) 0
+set fmri(evg45.7) -0.008071141
 
 # Higher-level EV value for EV 7 and input 46
-set fmri(evg46.7) 0
+set fmri(evg46.7) -0.005466178
 
 # Higher-level EV value for EV 7 and input 47
-set fmri(evg47.7) 0
+set fmri(evg47.7) -0.002495771
 
 # EV 8 title
-set fmri(evtitle8) ""
+set fmri(evtitle8) "o_hum-com-eps"
 
 # Basic waveform shape (EV 8)
 # 0 : Square
@@ -1920,7 +1917,7 @@ set fmri(evg6.8) 0
 set fmri(evg7.8) 0
 
 # Higher-level EV value for EV 8 and input 8
-set fmri(evg8.8) 0
+set fmri(evg8.8) -0.008834927
 
 # Higher-level EV value for EV 8 and input 9
 set fmri(evg9.8) 0
@@ -1956,73 +1953,73 @@ set fmri(evg18.8) 0
 set fmri(evg19.8) 0
 
 # Higher-level EV value for EV 8 and input 20
-set fmri(evg20.8) 0
+set fmri(evg20.8) -0.002304349
 
 # Higher-level EV value for EV 8 and input 21
-set fmri(evg21.8) 0
+set fmri(evg21.8) -0.000475572
 
 # Higher-level EV value for EV 8 and input 22
-set fmri(evg22.8) 0
+set fmri(evg22.8) -0.010447347
 
 # Higher-level EV value for EV 8 and input 23
-set fmri(evg23.8) 0
+set fmri(evg23.8) -0.010704779
 
 # Higher-level EV value for EV 8 and input 24
-set fmri(evg24.8) 0
+set fmri(evg24.8) -0.010913852
 
 # Higher-level EV value for EV 8 and input 25
-set fmri(evg25.8) 0
+set fmri(evg25.8) -0.004387713
 
 # Higher-level EV value for EV 8 and input 26
-set fmri(evg26.8) 0
+set fmri(evg26.8) -0.010255311
 
 # Higher-level EV value for EV 8 and input 27
-set fmri(evg27.8) 0
+set fmri(evg27.8) -0.001349893
 
 # Higher-level EV value for EV 8 and input 28
-set fmri(evg28.8) 0
+set fmri(evg28.8) -0.006386239
 
 # Higher-level EV value for EV 8 and input 29
-set fmri(evg29.8) 0
+set fmri(evg29.8) -0.004802338
 
 # Higher-level EV value for EV 8 and input 30
-set fmri(evg30.8) 0
+set fmri(evg30.8) 0.006446872
 
 # Higher-level EV value for EV 8 and input 31
-set fmri(evg31.8) 0
+set fmri(evg31.8) -0.011034876
 
 # Higher-level EV value for EV 8 and input 32
-set fmri(evg32.8) 0
+set fmri(evg32.8) -0.011045946
 
 # Higher-level EV value for EV 8 and input 33
-set fmri(evg33.8) 0
+set fmri(evg33.8) -0.001850693
 
 # Higher-level EV value for EV 8 and input 34
-set fmri(evg34.8) 0
+set fmri(evg34.8) -0.005203524
 
 # Higher-level EV value for EV 8 and input 35
-set fmri(evg35.8) 0
+set fmri(evg35.8) -0.005379981
 
 # Higher-level EV value for EV 8 and input 36
-set fmri(evg36.8) 0
+set fmri(evg36.8) -0.010140996
 
 # Higher-level EV value for EV 8 and input 37
-set fmri(evg37.8) 0
+set fmri(evg37.8) -0.006994181
 
 # Higher-level EV value for EV 8 and input 38
 set fmri(evg38.8) 0
 
 # Higher-level EV value for EV 8 and input 39
-set fmri(evg39.8) 0
+set fmri(evg39.8) -0.001686066
 
 # Higher-level EV value for EV 8 and input 40
-set fmri(evg40.8) 0
+set fmri(evg40.8) -0.010286928
 
 # Higher-level EV value for EV 8 and input 41
 set fmri(evg41.8) 0
 
 # Higher-level EV value for EV 8 and input 42
-set fmri(evg42.8) 0
+set fmri(evg42.8) -0.001315291
 
 # Higher-level EV value for EV 8 and input 43
 set fmri(evg43.8) 0
@@ -2309,6 +2306,66 @@ set fmri(con_real4.7) 0
 # Real contrast_real vector 4 element 8
 set fmri(con_real4.8) 0
 
+# Display images for contrast_real 5
+set fmri(conpic_real.5) 1
+
+# Title for contrast_real 5
+set fmri(conname_real.5) "y-o_hum-com_eps"
+
+# Real contrast_real vector 5 element 1
+set fmri(con_real5.1) 0
+
+# Real contrast_real vector 5 element 2
+set fmri(con_real5.2) 0
+
+# Real contrast_real vector 5 element 3
+set fmri(con_real5.3) 0
+
+# Real contrast_real vector 5 element 4
+set fmri(con_real5.4) 0
+
+# Real contrast_real vector 5 element 5
+set fmri(con_real5.5) 0
+
+# Real contrast_real vector 5 element 6
+set fmri(con_real5.6) 0
+
+# Real contrast_real vector 5 element 7
+set fmri(con_real5.7) 1.0
+
+# Real contrast_real vector 5 element 8
+set fmri(con_real5.8) -1.0
+
+# Display images for contrast_real 6
+set fmri(conpic_real.6) 1
+
+# Title for contrast_real 6
+set fmri(conname_real.6) "o-y_hum-com_eps"
+
+# Real contrast_real vector 6 element 1
+set fmri(con_real6.1) 0
+
+# Real contrast_real vector 6 element 2
+set fmri(con_real6.2) 0
+
+# Real contrast_real vector 6 element 3
+set fmri(con_real6.3) 0
+
+# Real contrast_real vector 6 element 4
+set fmri(con_real6.4) 0
+
+# Real contrast_real vector 6 element 5
+set fmri(con_real6.5) 0
+
+# Real contrast_real vector 6 element 6
+set fmri(con_real6.6) 0
+
+# Real contrast_real vector 6 element 7
+set fmri(con_real6.7) -1.0
+
+# Real contrast_real vector 6 element 8
+set fmri(con_real6.8) 1.0
+
 # Contrast masking - use >0 instead of thresholding?
 set fmri(conmask_zerothresh_yn) 0
 
@@ -2321,6 +2378,12 @@ set fmri(conmask1_3) 0
 # Mask real contrast/F-test 1 with real contrast/F-test 4?
 set fmri(conmask1_4) 0
 
+# Mask real contrast/F-test 1 with real contrast/F-test 5?
+set fmri(conmask1_5) 0
+
+# Mask real contrast/F-test 1 with real contrast/F-test 6?
+set fmri(conmask1_6) 0
+
 # Mask real contrast/F-test 2 with real contrast/F-test 1?
 set fmri(conmask2_1) 0
 
@@ -2329,6 +2392,12 @@ set fmri(conmask2_3) 0
 
 # Mask real contrast/F-test 2 with real contrast/F-test 4?
 set fmri(conmask2_4) 0
+
+# Mask real contrast/F-test 2 with real contrast/F-test 5?
+set fmri(conmask2_5) 0
+
+# Mask real contrast/F-test 2 with real contrast/F-test 6?
+set fmri(conmask2_6) 0
 
 # Mask real contrast/F-test 3 with real contrast/F-test 1?
 set fmri(conmask3_1) 0
@@ -2339,6 +2408,12 @@ set fmri(conmask3_2) 0
 # Mask real contrast/F-test 3 with real contrast/F-test 4?
 set fmri(conmask3_4) 0
 
+# Mask real contrast/F-test 3 with real contrast/F-test 5?
+set fmri(conmask3_5) 0
+
+# Mask real contrast/F-test 3 with real contrast/F-test 6?
+set fmri(conmask3_6) 0
+
 # Mask real contrast/F-test 4 with real contrast/F-test 1?
 set fmri(conmask4_1) 0
 
@@ -2347,6 +2422,42 @@ set fmri(conmask4_2) 0
 
 # Mask real contrast/F-test 4 with real contrast/F-test 3?
 set fmri(conmask4_3) 0
+
+# Mask real contrast/F-test 4 with real contrast/F-test 5?
+set fmri(conmask4_5) 0
+
+# Mask real contrast/F-test 4 with real contrast/F-test 6?
+set fmri(conmask4_6) 0
+
+# Mask real contrast/F-test 5 with real contrast/F-test 1?
+set fmri(conmask5_1) 0
+
+# Mask real contrast/F-test 5 with real contrast/F-test 2?
+set fmri(conmask5_2) 0
+
+# Mask real contrast/F-test 5 with real contrast/F-test 3?
+set fmri(conmask5_3) 0
+
+# Mask real contrast/F-test 5 with real contrast/F-test 4?
+set fmri(conmask5_4) 0
+
+# Mask real contrast/F-test 5 with real contrast/F-test 6?
+set fmri(conmask5_6) 0
+
+# Mask real contrast/F-test 6 with real contrast/F-test 1?
+set fmri(conmask6_1) 0
+
+# Mask real contrast/F-test 6 with real contrast/F-test 2?
+set fmri(conmask6_2) 0
+
+# Mask real contrast/F-test 6 with real contrast/F-test 3?
+set fmri(conmask6_3) 0
+
+# Mask real contrast/F-test 6 with real contrast/F-test 4?
+set fmri(conmask6_4) 0
+
+# Mask real contrast/F-test 6 with real contrast/F-test 5?
+set fmri(conmask6_5) 0
 
 # Do contrast masking at all?
 set fmri(conmask1_1) 0
