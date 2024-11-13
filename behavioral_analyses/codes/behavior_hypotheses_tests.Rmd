@@ -165,14 +165,68 @@ fit_df = fit_df %>% mutate(age_bi = relevel(as.factor(age_bi), ref = "younger"),
 #                             data = fit_df,
 #                             family = binomial)
 
-## non-converge
-model_fit <- glmer(accept ~ offer * human +
-                     offer * age_bi +
-                     human * age_bi +
-                     (1 + offer * human || participant_id),
-                            data = fit_df,
-                            family = binomial)
-summary(model_fit)
+# # non-converge
+# model_fit <- glmer(accept ~ offer * human +
+#                      offer * age_bi +
+#                      human * age_bi +
+#                      (1 + offer * human || participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+# summary(model_fit)
+
+# ## singular
+# model_fit <- glmer(accept ~ offer + human +
+#                      offer * age_bi +
+#                      human * age_bi +
+#                      (1 + offer * human || participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+# summary(model_fit)
+
+# # non-converge
+# model_fit <- glmer(accept ~ offer * human +
+#                      offer * age_bi +
+#                      human * age_bi +
+#                      (1 + offer + human || participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+
+# # singular
+# model_fit <- glmer(accept ~ offer * human +
+#                      offer * age_bi +
+#                      human * age_bi +
+#                      (1 + human || participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+
+# # conv, interaction not sig
+# model_fit <- glmer(accept ~ offer * human +
+#                      offer * age_bi +
+#                      human * age_bi +
+#                      (1 + offer || participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+# summary(model_fit)
+
+# # conv, interaction not sig
+# model_fit <- glmer(accept ~ 
+#                      offer * age_bi +
+#                      human * age_bi +
+#                      (1 + offer || participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+# summary(model_fit)
+
+# # conv, interaction not sig
+# model_fit <- glmer(accept ~ 
+#                      offer * age_bi +
+#                      human + age_bi +
+#                      (1 + offer || participant_id),
+#                             data = fit_df,
+#                             family = binomial)
+# summary(model_fit)
+
+
 
 ## converge, fair sig
 model_fit <- glmer(accept ~ offer + human + age_bi +
