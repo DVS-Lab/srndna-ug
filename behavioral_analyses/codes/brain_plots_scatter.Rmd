@@ -112,12 +112,165 @@ h = 4
 ```
 
 # alpha (envy)
-## hum-com_alpha_ageBI_act
+## in-out_alpha_ageBI_act
 ### prepare data
 ```{r}
-computer_name = "hum-com_alpha_ageBI_act_type-act_cope-02.txt"
-in_name = "hum-com_alpha_ageBI_act_type-act_cope-04.txt"
-out_name = "hum-com_alpha_ageBI_act_type-act_cope-06.txt"
+computer_name = "in-out_alpha_age_act_z2_c1_type-act_cope-02.txt"
+in_name = "in-out_alpha_age_act_z2_c1_type-act_cope-04.txt"
+out_name = "in-out_alpha_age_act_z2_c1_type-act_cope-06.txt"
+
+computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = list_fmri_df$participant_id,
+         type = "computer",
+         age_bi = list_fmri_df$age_bi,
+         V1_computer = V1) %>% 
+  select(participant_id, age_bi, V1_computer)
+
+in_df = read.table(paste(data_dir,in_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = list_fmri_df$participant_id,
+         type = "ingroup",
+         V1_ingroup = V1) %>% 
+  select(V1_ingroup)
+
+out_df = read.table(paste(data_dir,out_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = list_fmri_df$participant_id,
+         type = "outgroup",
+         V1_outgroup = V1) %>% 
+  select(V1_outgroup)
+
+all_brain_df = cbind(computer_df,
+                     in_df, out_df)
+
+data_plot_df = all_brain_df %>% 
+  merge(., participant_wide_df, by.x = "participant_id") %>% 
+  mutate(brain_contrast = V1_ingroup - V1_outgroup,
+         alpha_contrast = ingroup_alpha - outgroup_alpha,
+         age_bi = as.factor(age_bi)) %>% 
+  select(participant_id, age_bi, brain_contrast, alpha_contrast)
+
+data_plot_df$age_bi = relevel(data_plot_df$age_bi, ref = "younger")
+```
+
+### plot
+```{r}
+### setup
+x_label = "Inequality Senstivity, ingroup > outgroup"
+y_label = "Activation, ingroup > outgroup\n(fairness modulated)"
+brain_name = "in-out_alpha_age_act_z2_c1_type-act"
+
+# group_summary <- data_plot_df %>%
+#   group_by(type, age_bi) %>%
+#   summarise(mean = mean(V1), se = sd(V1)/sqrt(nrow(list_fmri_df)),
+#             .groups = "keep")
+
+p_scatter =
+  ggplot(data_plot_df, aes(alpha_contrast, brain_contrast, 
+                                     color = age_bi)) + 
+  geom_point(alpha = 0.6, size = 1.5) +
+  geom_smooth(formula = "y~x", method = "lm", 
+              se = TRUE,
+              linetype = "solid",
+              linewidth = 2, 
+              alpha = 0.2) +
+  labs(x = x_label, y = y_label, color = "Age Group") +
+  coord_cartesian(xlim=c(-1, 2)) +
+  # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
+  # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+        # legend.position="bottom left", legend.box = "horizontal")
+        # legend.position="none")
+
+ggsave(paste(figure_dir, paste(brain_name, "scatter.png", sep = "_"), 
+             sep = "/"), p_scatter, width = w, height = h)
+```
+
+## in-out_alpha_age_ecn_z1_c1_type-nppi-ecn
+### prepare data
+```{r}
+computer_name = "in-out_alpha_age_ecn_z1_c1_type-nppi-ecn_cope-02.txt"
+in_name = "in-out_alpha_age_ecn_z1_c1_type-nppi-ecn_cope-04.txt"
+out_name = "in-out_alpha_age_ecn_z1_c1_type-nppi-ecn_cope-06.txt"
+
+computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = list_fmri_df$participant_id,
+         type = "computer",
+         age_bi = list_fmri_df$age_bi,
+         V1_computer = V1) %>% 
+  select(participant_id, age_bi, V1_computer)
+
+in_df = read.table(paste(data_dir,in_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = list_fmri_df$participant_id,
+         type = "ingroup",
+         V1_ingroup = V1) %>% 
+  select(V1_ingroup)
+
+out_df = read.table(paste(data_dir,out_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = list_fmri_df$participant_id,
+         type = "outgroup",
+         V1_outgroup = V1) %>% 
+  select(V1_outgroup)
+
+all_brain_df = cbind(computer_df,
+                     in_df, out_df)
+
+data_plot_df = all_brain_df %>% 
+  merge(., participant_wide_df, by.x = "participant_id") %>% 
+  mutate(brain_contrast = V1_ingroup - V1_outgroup,
+         alpha_contrast = ingroup_alpha - outgroup_alpha,
+         age_bi = as.factor(age_bi)) %>% 
+  select(participant_id, age_bi, brain_contrast, alpha_contrast)
+
+data_plot_df$age_bi = relevel(data_plot_df$age_bi, ref = "younger")
+```
+
+### plot
+```{r}
+### setup
+x_label = "Inequality Senstivity, ingroup > outgroup"
+y_label = "ECN-Precuneus, ingroup > outgroup\n(fairness modulated)"
+brain_name = "in-out_alpha_age_ecn_z1_c1_type-nppi-ecn"
+
+# group_summary <- data_plot_df %>%
+#   group_by(type, age_bi) %>%
+#   summarise(mean = mean(V1), se = sd(V1)/sqrt(nrow(list_fmri_df)),
+#             .groups = "keep")
+
+p_scatter =
+  ggplot(data_plot_df, aes(alpha_contrast, brain_contrast, 
+                           color = age_bi)) + 
+  geom_point(alpha = 0.6, size = 1.5) +
+  geom_smooth(formula = "y~x", method = "lm", 
+              se = TRUE,
+              linetype = "solid",
+              linewidth = 2, 
+              alpha = 0.2) +
+  labs(x = x_label, y = y_label, color = "Age Group") +
+  coord_cartesian(xlim=c(-1, 2)) +
+  # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
+  # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+# legend.position="bottom left", legend.box = "horizontal")
+# legend.position="none")
+
+ggsave(paste(figure_dir, paste(brain_name, "scatter.png", sep = "_"), 
+             sep = "/"), p_scatter, width = w, height = h)
+```
+
+# Epsilon (Norm Adaptation)
+## hum-com_epsilon_age_ecn_z2_c3_type-nppi-ecn
+### prepare data
+```{r}
+computer_name = "hum-com_epsilon_age_ecn_z2_c3_type-nppi-ecn_cope-02.txt"
+in_name = "hum-com_epsilon_age_ecn_z2_c3_type-nppi-ecn_cope-04.txt"
+out_name = "hum-com_epsilon_age_ecn_z2_c3_type-nppi-ecn_cope-06.txt"
 
 computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F) %>% 
   mutate(participant_id = list_fmri_df$participant_id,
@@ -144,234 +297,19 @@ all_brain_df = cbind(computer_df,
 data_plot_df = all_brain_df %>% 
   merge(., participant_wide_df, by.x = "participant_id") %>% 
   mutate(brain_contrast = V1_ingroup + V1_outgroup - 2*V1_computer,
-         alpha_contrast = human_alpha - computer_alpha) %>% 
-  select(participant_id, age_bi, brain_contrast, alpha_contrast)
-```
-
-### plot
-```{r}
-### setup
-x_label = "Inequality Senstivity, human > computer"
-y_label = "Activation, human > computer\n(fairness modulated)"
-brain_name = "hum-com_alpha_ageBI_act"
-
-# group_summary <- data_plot_df %>%
-#   group_by(type, age_bi) %>%
-#   summarise(mean = mean(V1), se = sd(V1)/sqrt(nrow(list_fmri_df)),
-#             .groups = "keep")
-
-p_scatter =
-  ggplot(data_plot_df, aes(alpha_contrast, brain_contrast, 
-                                     color = age_bi)) + 
-  geom_point(alpha = 0.6, size = 1.5) +
-  geom_smooth(formula = "y~x", method = "lm", 
-              se = FALSE,
-              linetype = "solid",
-              linewidth = 2, 
-              alpha = 0.2) +
-  labs(x = x_label, y = y_label, color = "Age Group") +
-    xlim(-2,2) +
-  # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
-  # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
-  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
-        axis.text.x = element_text(size = axis_text), 
-        axis.text.y = element_text(size = axis_text), 
-        axis.title.x = element_text(size = axis_title, face="bold"), 
-        axis.title.y = element_text(size = axis_title, face="bold"))
-        # legend.position="bottom left", legend.box = "horizontal")
-        # legend.position="none")
-
-ggsave(paste(figure_dir, paste(brain_name, "scatter.png", sep = "_"), 
-             sep = "/"), p_scatter, width = w, height = h)
-```
-## in-out_alpha_ageBI_act
-### prepare data
-```{r}
-computer_name = "in-out_alpha_ageBI_act_type-act_cope-02.txt"
-in_name = "in-out_alpha_ageBI_act_type-act_cope-04.txt"
-out_name = "in-out_alpha_ageBI_act_type-act_cope-06.txt"
-
-computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F) %>% 
-  mutate(participant_id = list_fmri_df$participant_id,
-         type = "computer",
-         age_bi = list_fmri_df$age_bi,
-         V1_computer = V1) %>% 
-  select(participant_id, age_bi, V1_computer)
-
-in_df = read.table(paste(data_dir,in_name,sep = '/'),sep=" ",header=F) %>% 
-  mutate(participant_id = list_fmri_df$participant_id,
-         type = "ingroup",
-         V1_ingroup = V1) %>% 
-  select(V1_ingroup)
-
-out_df = read.table(paste(data_dir,out_name,sep = '/'),sep=" ",header=F) %>% 
-  mutate(participant_id = list_fmri_df$participant_id,
-         type = "outgroup",
-         V1_outgroup = V1) %>% 
-  select(V1_outgroup)
-
-all_brain_df = cbind(computer_df,
-                     in_df, out_df)
-
-data_plot_df = all_brain_df %>% 
-  merge(., participant_wide_df, by.x = "participant_id") %>% 
-  mutate(brain_contrast = V1_ingroup - V1_outgroup,
-         alpha_contrast = ingroup_alpha - outgroup_alpha) %>% 
-  select(participant_id, age_bi, brain_contrast, alpha_contrast)
-```
-
-### plot
-```{r}
-### setup
-x_label = "Inequality Senstivity, ingroup > outgroup"
-y_label = "Activation, ingroup > outgroup\n(fairness modulated)"
-brain_name = "in-out_alpha_ageBI_act"
-
-# group_summary <- data_plot_df %>%
-#   group_by(type, age_bi) %>%
-#   summarise(mean = mean(V1), se = sd(V1)/sqrt(nrow(list_fmri_df)),
-#             .groups = "keep")
-
-p_scatter =
-  ggplot(data_plot_df, aes(alpha_contrast, brain_contrast, 
-                           color = age_bi)) + 
-  geom_point(alpha = 0.6, size = 1.5) +
-  geom_smooth(formula = "y~x", method = "lm", 
-              se = FALSE,
-              linetype = "solid",
-              linewidth = 2, 
-              alpha = 0.2) +
-  labs(x = x_label, y = y_label, color = "Age Group") +
-  xlim(-1,2) +
-  # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
-  # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
-  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
-        axis.text.x = element_text(size = axis_text), 
-        axis.text.y = element_text(size = axis_text), 
-        axis.title.x = element_text(size = axis_title, face="bold"), 
-        axis.title.y = element_text(size = axis_title, face="bold"))
-# legend.position="bottom left", legend.box = "horizontal")
-# legend.position="none")
-
-ggsave(paste(figure_dir, paste(brain_name, "scatter.png", sep = "_"), 
-             sep = "/"), p_scatter, width = w, height = h)
-```
-
-## in-out_alpha_ageBI_ecn
-### prepare data
-```{r}
-computer_name = "in-out_alpha_ageBI_ecn_type-nppi-ecn_cope-02.txt"
-in_name = "in-out_alpha_ageBI_ecn_type-nppi-ecn_cope-04.txt"
-out_name = "in-out_alpha_ageBI_ecn_type-nppi-ecn_cope-06.txt"
-
-computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F) %>% 
-  mutate(participant_id = list_fmri_df$participant_id,
-         type = "computer",
-         age_bi = list_fmri_df$age_bi,
-         V1_computer = V1) %>% 
-  select(participant_id, age_bi, V1_computer)
-
-in_df = read.table(paste(data_dir,in_name,sep = '/'),sep=" ",header=F) %>% 
-  mutate(participant_id = list_fmri_df$participant_id,
-         type = "ingroup",
-         V1_ingroup = V1) %>% 
-  select(V1_ingroup)
-
-out_df = read.table(paste(data_dir,out_name,sep = '/'),sep=" ",header=F) %>% 
-  mutate(participant_id = list_fmri_df$participant_id,
-         type = "outgroup",
-         V1_outgroup = V1) %>% 
-  select(V1_outgroup)
-
-all_brain_df = cbind(computer_df,
-                     in_df, out_df)
-
-data_plot_df = all_brain_df %>% 
-  merge(., participant_wide_df, by.x = "participant_id") %>% 
-  mutate(brain_contrast = V1_ingroup - V1_outgroup,
-         alpha_contrast = ingroup_alpha - outgroup_alpha) %>% 
-  select(participant_id, age_bi, brain_contrast, alpha_contrast)
-```
-
-### plot
-```{r}
-### setup
-x_label = "Inequality Senstivity, ingroup > outgroup"
-y_label = "ecnivation, ingroup > outgroup\n(fairness modulated)"
-brain_name = "in-out_alpha_ageBI_ecn"
-
-# group_summary <- data_plot_df %>%
-#   group_by(type, age_bi) %>%
-#   summarise(mean = mean(V1), se = sd(V1)/sqrt(nrow(list_fmri_df)),
-#             .groups = "keep")
-
-p_scatter =
-  ggplot(data_plot_df, aes(alpha_contrast, brain_contrast, 
-                           color = age_bi)) + 
-  geom_point(alpha = 0.6, size = 1.5) +
-  geom_smooth(formula = "y~x", method = "lm", 
-              se = FALSE,
-              linetype = "solid",
-              linewidth = 2, 
-              alpha = 0.2) +
-  labs(x = x_label, y = y_label, color = "Age Group") +
-  # xlim(-2,2) +
-  # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
-  # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
-  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
-        axis.text.x = element_text(size = axis_text), 
-        axis.text.y = element_text(size = axis_text), 
-        axis.title.x = element_text(size = axis_title, face="bold"), 
-        axis.title.y = element_text(size = axis_title, face="bold"))
-# legend.position="bottom left", legend.box = "horizontal")
-# legend.position="none")
-
-ggsave(paste(figure_dir, paste(brain_name, "scatter.png", sep = "_"), 
-             sep = "/"), p_scatter, width = w, height = h)
-```
-
-## in-out_epsilon_ageBI_dmn
-### prepare data
-```{r}
-computer_name = "in-out_epsilon_ageBI_dmn_type-nppi-dmn_cope-02.txt"
-in_name = "in-out_epsilon_ageBI_dmn_type-nppi-dmn_cope-04.txt"
-out_name = "in-out_epsilon_ageBI_dmn_type-nppi-dmn_cope-06.txt"
-
-computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F) %>% 
-  mutate(participant_id = list_fmri_df$participant_id,
-         type = "computer",
-         age_bi = list_fmri_df$age_bi,
-         V1_computer = V1) %>% 
-  select(participant_id, age_bi, V1_computer)
-
-in_df = read.table(paste(data_dir,in_name,sep = '/'),sep=" ",header=F) %>% 
-  mutate(participant_id = list_fmri_df$participant_id,
-         type = "ingroup",
-         V1_ingroup = V1) %>% 
-  select(V1_ingroup)
-
-out_df = read.table(paste(data_dir,out_name,sep = '/'),sep=" ",header=F) %>% 
-  mutate(participant_id = list_fmri_df$participant_id,
-         type = "outgroup",
-         V1_outgroup = V1) %>% 
-  select(V1_outgroup)
-
-all_brain_df = cbind(computer_df,
-                     in_df, out_df)
-
-data_plot_df = all_brain_df %>% 
-  merge(., participant_wide_df, by.x = "participant_id") %>% 
-  mutate(brain_contrast = V1_ingroup - V1_outgroup,
-         epsilon_contrast = ingroup_epsilon - outgroup_epsilon) %>% 
+         epsilon_contrast = human_epsilon - computer_epsilon,
+         age_bi = as.factor(age_bi)) %>% 
   select(participant_id, age_bi, brain_contrast, epsilon_contrast)
+
+data_plot_df$age_bi = relevel(data_plot_df$age_bi, ref = "younger")
 ```
 
 ### plot
 ```{r}
 ### setup
-x_label = "Norm Adaptation Rate, ingroup > outgroup"
-y_label = "dmnivation, ingroup > outgroup\n(fairness modulated)"
-brain_name = "in-out_epsilon_ageBI_dmn"
+x_label = "Norm Adaptation, human > computer"
+y_label = "ECN-dlPFC, human > computer\n(fairness modulated)"
+brain_name = "hum-com_epsilon_age_ecn_z2_c3_type-nppi-ecn"
 
 # group_summary <- data_plot_df %>%
 #   group_by(type, age_bi) %>%
@@ -383,12 +321,164 @@ p_scatter =
                            color = age_bi)) + 
   geom_point(epsilon = 0.6, size = 1.5) +
   geom_smooth(formula = "y~x", method = "lm", 
-              se = FALSE,
+              se = TRUE,
               linetype = "solid",
               linewidth = 2, 
               epsilon = 0.2) +
   labs(x = x_label, y = y_label, color = "Age Group") +
-  # xlim(-2,2) +
+  # coord_cartesian(xlim=c(-2, 2)) +
+  # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
+  # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+# legend.position="bottom left", legend.box = "horizontal")
+# legend.position="none")
+
+ggsave(paste(figure_dir, paste(brain_name, "scatter.png", sep = "_"),
+             sep = "/"), p_scatter, width = w, height = h)
+```
+
+## hum-com_epsilon_age_dmn_z2_c1_type-nppi-dmn
+### prepare data
+```{r}
+computer_name = "hum-com_epsilon_age_dmn_z2_c1_type-nppi-dmn_cope-02.txt"
+in_name = "hum-com_epsilon_age_dmn_z2_c1_type-nppi-dmn_cope-04.txt"
+out_name = "hum-com_epsilon_age_dmn_z2_c1_type-nppi-dmn_cope-06.txt"
+
+computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = list_fmri_df$participant_id,
+         type = "computer",
+         age_bi = list_fmri_df$age_bi,
+         V1_computer = V1) %>% 
+  select(participant_id, age_bi, V1_computer)
+
+in_df = read.table(paste(data_dir,in_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = list_fmri_df$participant_id,
+         type = "ingroup",
+         V1_ingroup = V1) %>% 
+  select(V1_ingroup)
+
+out_df = read.table(paste(data_dir,out_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = list_fmri_df$participant_id,
+         type = "outgroup",
+         V1_outgroup = V1) %>% 
+  select(V1_outgroup)
+
+all_brain_df = cbind(computer_df,
+                     in_df, out_df)
+
+data_plot_df = all_brain_df %>% 
+  merge(., participant_wide_df, by.x = "participant_id") %>% 
+  mutate(brain_contrast = V1_ingroup + V1_outgroup - 2*V1_computer,
+         epsilon_contrast = human_epsilon - computer_epsilon,
+         age_bi = as.factor(age_bi)) %>% 
+  select(participant_id, age_bi, brain_contrast, epsilon_contrast)
+
+data_plot_df$age_bi = relevel(data_plot_df$age_bi, ref = "younger")
+```
+
+### plot
+```{r}
+### setup
+x_label = "Norm Adaptation, human > computer"
+y_label = "DMN-dlPFC, human > computer\n(fairness modulated)"
+brain_name = "hum-com_epsilon_age_dmn_z2_c1_type-nppi-dmn"
+
+# group_summary <- data_plot_df %>%
+#   group_by(type, age_bi) %>%
+#   summarise(mean = mean(V1), se = sd(V1)/sqrt(nrow(list_fmri_df)),
+#             .groups = "keep")
+
+p_scatter =
+  ggplot(data_plot_df, aes(epsilon_contrast, brain_contrast, 
+                           color = age_bi)) + 
+  geom_point(epsilon = 0.6, size = 1.5) +
+  geom_smooth(formula = "y~x", method = "lm", 
+              se = TRUE,
+              linetype = "solid",
+              linewidth = 2, 
+              epsilon = 0.2) +
+  labs(x = x_label, y = y_label, color = "Age Group") +
+  # coord_cartesian(xlim=c(-2, 2)) +
+  # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
+  # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+# legend.position="bottom left", legend.box = "horizontal")
+# legend.position="none")
+
+ggsave(paste(figure_dir, paste(brain_name, "scatter.png", sep = "_"),
+             sep = "/"), p_scatter, width = w, height = h)
+```
+
+## in-out_epsilon_age_dmn_z1_c2_type-nppi-dmn
+### prepare data
+```{r}
+computer_name = "in-out_epsilon_age_dmn_z1_c2_type-nppi-dmn_cope-02.txt"
+in_name = "in-out_epsilon_age_dmn_z1_c2_type-nppi-dmn_cope-04.txt"
+out_name = "in-out_epsilon_age_dmn_z1_c2_type-nppi-dmn_cope-06.txt"
+
+computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = list_fmri_df$participant_id,
+         type = "computer",
+         age_bi = list_fmri_df$age_bi,
+         V1_computer = V1) %>% 
+  select(participant_id, age_bi, V1_computer)
+
+in_df = read.table(paste(data_dir,in_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = list_fmri_df$participant_id,
+         type = "ingroup",
+         V1_ingroup = V1) %>% 
+  select(V1_ingroup)
+
+out_df = read.table(paste(data_dir,out_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(participant_id = list_fmri_df$participant_id,
+         type = "outgroup",
+         V1_outgroup = V1) %>% 
+  select(V1_outgroup)
+
+all_brain_df = cbind(computer_df,
+                     in_df, out_df)
+
+data_plot_df = all_brain_df %>% 
+  merge(., participant_wide_df, by.x = "participant_id") %>% 
+  mutate(brain_contrast = V1_ingroup - V1_outgroup,
+         epsilon_contrast = ingroup_epsilon - outgroup_epsilon,
+         age_bi = as.factor(age_bi)) %>% 
+  select(participant_id, age_bi, brain_contrast, epsilon_contrast)
+
+data_plot_df$age_bi = relevel(data_plot_df$age_bi, ref = "younger")
+```
+
+### plot
+```{r}
+### setup
+x_label = "Norm Adaptation, ingroup > outgroup"
+y_label = "DMN-OFC, ingroup > outgroup\n(fairness modulated)"
+brain_name = "in-out_epsilon_age_dmn_z1_c2_type-nppi-dmn"
+
+# group_summary <- data_plot_df %>%
+#   group_by(type, age_bi) %>%
+#   summarise(mean = mean(V1), se = sd(V1)/sqrt(nrow(list_fmri_df)),
+#             .groups = "keep")
+
+p_scatter =
+  ggplot(data_plot_df, aes(epsilon_contrast, brain_contrast, 
+                           color = age_bi)) + 
+  geom_point(epsilon = 0.6, size = 1.5) +
+  geom_smooth(formula = "y~x", method = "lm", 
+              se = TRUE,
+              linetype = "solid",
+              linewidth = 2, 
+              epsilon = 0.2) +
+  labs(x = x_label, y = y_label, color = "Age Group") +
+  # coord_cartesian(xlim=c(-1, 2)) +
   # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
   # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
@@ -402,3 +492,4 @@ p_scatter =
 ggsave(paste(figure_dir, paste(brain_name, "scatter.png", sep = "_"), 
              sep = "/"), p_scatter, width = w, height = h)
 ```
+

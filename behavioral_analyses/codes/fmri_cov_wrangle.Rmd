@@ -83,7 +83,7 @@ participants_wide_df = read.csv(file = paste(data_dir, participants_wide, sep = 
 sub_remove = c("sub-120","sub-131","sub-145")
 participants_wide_df = participants_wide_df[!participants_wide_df$participant_id %in% sub_remove,]
 
-L3_plain = "L3_plain.csv"
+L3_plain = "participant_twogroup_wCov.csv"
 L3_plain_df = read.csv(file = paste(data_dir, L3_plain, sep = "/"), header = TRUE)
 ```
 
