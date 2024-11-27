@@ -493,3 +493,15 @@ ggsave(paste(figure_dir, paste(brain_name, "scatter.png", sep = "_"),
              sep = "/"), p_scatter, width = w, height = h)
 ```
 
+# inits test
+```{r}
+
+ug_delta
+parameters_test = list(
+    "alpha" = c(0, 1, 20),
+    "tau" = c(0, 1, 10),
+    "ep" = c(0, 0.5, 1))
+
+inits_test = unlist(lapply(parameters_test, "[", 2))
+```
+

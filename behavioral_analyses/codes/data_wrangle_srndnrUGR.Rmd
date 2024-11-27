@@ -131,7 +131,7 @@ block_types = c("block_outgroup_fair", "block_outgroup_unfair",
 # extract behavior
 ```{r}
 for (i in 1:nrow(participants_df)) {
-  # i = 36 # for testing, to comment out
+  i = 36 # for testing, to comment out
   print(i)
   sub_name = sublist[i]
   print(sub_name)
@@ -142,7 +142,7 @@ for (i in 1:nrow(participants_df)) {
   
   # clean behavior data per run
   for (j in 1:length(ug_tsv)) {
-    # j = 1
+    j = 1
     # print(j)
     event_run_ij = paste(sub_name,sprintf("_task-ultimatum_run-0%d_events.tsv", j), sep = "")
     event_run_ij_df = read.table(file = paste(bids_dir, 

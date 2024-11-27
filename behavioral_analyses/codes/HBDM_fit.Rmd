@@ -95,15 +95,29 @@ participant_check_df = read.csv(paste(data_dir, "participant_check.csv", sep = "
 ```
 
 # HBDM
+## set my own initials
+```{r}
+# init_fun <- function() {
+#   list(
+#     alpha = runif(1, 0, 1),  # Random value between 0 and 1 for alpha
+#     ep = runif(1, 0, 1), # Random value between 0 and 1 for epsilon
+#     tau = runif(1, 0, 10)   # Random value between 0 and 10 for tau
+#   )
+# }
+
+init_custom = runif(3, min = 0, max = 1)
+```
+
 ## computer
 ```{r}
 start.time = Sys.time()
 
 computer_fit = ug_delta(data = computer_txt_path,
   niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
-  inits = "random",
+  inits = init_custom,
+  # inits = "random",
   indPars = "mode",
-  vb = FALSE,
+  vb = TRUE,
   inc_postpred = TRUE,
   adapt_delta = 0.95,
   stepsize = 1,
@@ -115,7 +129,7 @@ time.taken_pp_check <- round(end.time - start.time,2)
 print(time.taken_pp_check)
 
 save(computer_fit, 
-     file = paste(fit_dir, "computer_fit_mode.rda", sep = "/"))
+     file = paste(fit_dir, "computer_fit_mode_runif.rda", sep = "/"))
 ```
 
 ### diagnostics
@@ -125,7 +139,7 @@ diagnostics_rhat_neff_HBDM_fun(computer_fit)
 diagnostics_plot_HBDM_fun(model_name, computer_fit)
 fit_metrics = extract_ic(computer_fit, ic = "both")
 save(fit_metrics, 
-     file = paste(fit_dir, "computer_loo_waic_mode.rda", sep = "/"))
+     file = paste(fit_dir, "computer_loo_waic_mode_runif.rda", sep = "/"))
 
 fit_metrics$LOOIC$diagnostics$pareto_k
 ```
@@ -135,7 +149,7 @@ fit_metrics$LOOIC$diagnostics$pareto_k
 start.time = Sys.time()
 human_fit = ug_delta(data = human_txt_path,
                         niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
-                        inits = "random",
+                        inits = init_custom,
                         indPars = "mode",
                         vb = FALSE,
                         inc_postpred = TRUE,
@@ -149,7 +163,7 @@ time.taken_pp_check <- round(end.time - start.time,2)
 print(time.taken_pp_check)
 
 save(human_fit, 
-     file = paste(fit_dir, "human_fit_mode.rda", sep = "/"))
+     file = paste(fit_dir, "human_fit_mode_runif.rda", sep = "/"))
 ```
 
 ### diagnostics
@@ -159,7 +173,7 @@ diagnostics_rhat_neff_HBDM_fun(human_fit)
 diagnostics_plot_HBDM_fun(model_name, human_fit)
 fit_metrics = extract_ic(human_fit, ic = "both")
 save(fit_metrics, 
-     file = paste(fit_dir, "human_loo_waic_mode.rda", sep = "/"))
+     file = paste(fit_dir, "human_loo_waic_mode_runif.rda", sep = "/"))
 
 fit_metrics$LOOIC$diagnostics$pareto_k
 ```
@@ -170,7 +184,7 @@ start.time = Sys.time()
 
 ingroup_fit = ug_delta(data = ingroup_txt_path,
                         niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
-                        inits = "random",
+                        inits = init_custom,
                         indPars = "mode",
                         vb = FALSE,
                         inc_postpred = TRUE,
@@ -184,7 +198,7 @@ time.taken_pp_check <- round(end.time - start.time,2)
 print(time.taken_pp_check)
 
 save(ingroup_fit, 
-     file = paste(fit_dir, "ingroup_fit_mode.rda", sep = "/"))
+     file = paste(fit_dir, "ingroup_fit_mode_runif.rda", sep = "/"))
 
 ```
 
@@ -195,7 +209,7 @@ diagnostics_rhat_neff_HBDM_fun(ingroup_fit)
 diagnostics_plot_HBDM_fun(model_name, ingroup_fit)
 fit_metrics = extract_ic(ingroup_fit, ic = "both")
 save(fit_metrics, 
-     file = paste(fit_dir, "ingroup_loo_waic_mode.rda", sep = "/"))
+     file = paste(fit_dir, "ingroup_loo_waic_mode_runif.rda", sep = "/"))
 
 fit_metrics$LOOIC$diagnostics$pareto_k
 ```
@@ -207,7 +221,7 @@ start.time = Sys.time()
 
 outgroup_fit = ug_delta(data = outgroup_txt_path,
                         niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
-                        inits = "random",
+                        inits = init_custom,
                         indPars = "mode",
                         vb = FALSE,
                         inc_postpred = TRUE,
@@ -221,7 +235,7 @@ time.taken_pp_check <- round(end.time - start.time,2)
 print(time.taken_pp_check)
 
 save(outgroup_fit, 
-     file = paste(fit_dir, "outgroup_fit_mode.rda", sep = "/"))
+     file = paste(fit_dir, "outgroup_fit_mode_runif.rda", sep = "/"))
 
 ```
 
@@ -232,7 +246,7 @@ diagnostics_rhat_neff_HBDM_fun(outgroup_fit)
 diagnostics_plot_HBDM_fun(model_name, outgroup_fit)
 fit_metrics = extract_ic(outgroup_fit, ic = "both")
 save(fit_metrics, 
-     file = paste(fit_dir, "outgroup_loo_waic_mode.rda", sep = "/"))
+     file = paste(fit_dir, "outgroup_loo_waic_mode_runif.rda", sep = "/"))
 
 fit_metrics$LOOIC$diagnostics$pareto_k
 ```
@@ -249,15 +263,15 @@ participant_wide_df = participant_check_df %>%
          ingroup_alpha = ingroup_fit$allIndPars$alpha,
          ingroup_epsilon = ingroup_fit$allIndPars$ep)
 
-write.csv(participant_wide_df, paste(data_dir, "participant_wide_mode.csv", sep = "/"), row.names = FALSE)
+write.csv(participant_wide_df, paste(data_dir, "participant_wide_mode_vb.csv", sep = "/"), row.names = FALSE)
 ```
 
 # free para boundary check
 ```{r}
-# load(paste(gitrepo_path, "fits", "computer_fit_mode.rda", sep = "/"))
-# load(paste(gitrepo_path, "fits", "human_fit_mode.rda", sep = "/"))
-# load(paste(gitrepo_path, "fits", "ingroup_fit_mode.rda", sep = "/"))
-# load(paste(gitrepo_path, "fits", "outgroup_fit_mode.rda", sep = "/"))
+# load(paste(gitrepo_path, "fits", "computer_fit_mode_runif.rda", sep = "/"))
+# load(paste(gitrepo_path, "fits", "human_fit_mode_runif.rda", sep = "/"))
+# load(paste(gitrepo_path, "fits", "ingroup_fit_mode_runif.rda", sep = "/"))
+# load(paste(gitrepo_path, "fits", "outgroup_fit_mode_runif.rda", sep = "/"))
 
 print(c(max(participant_wide_df$computer_alpha), min(participant_wide_df$computer_alpha)))
 print(c(max(participant_wide_df$computer_epsilon), min(participant_wide_df$computer_epsilon)))
@@ -268,5 +282,10 @@ print(c(max(participant_wide_df$outgroup_alpha), min(participant_wide_df$outgrou
 print(c(max(participant_wide_df$outgroup_epsilon), min(participant_wide_df$outgroup_epsilon)))
 print(c(max(participant_wide_df$ingroup_alpha), min(participant_wide_df$ingroup_alpha)))
 print(c(max(participant_wide_df$ingroup_epsilon), min(participant_wide_df$ingroup_epsilon)))
+```
+
+```{r}
+printFit(computer_fit, human_fit, ingroup_fit, outgroup_fit, ic="both")
+computer_fit
 ```
 
