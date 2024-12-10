@@ -1,7 +1,7 @@
 ---
 title: "HBDM_fit_srndnaUGR"
 author: "Jen Yang"
-date: "2024-11-1, last modified 2024-11-1"
+date: "2024-11-1, last modified 2024-11-26"
 output: 
   html_document:
     code_folding: hide
@@ -117,7 +117,7 @@ computer_fit = ug_delta(data = computer_txt_path,
   inits = init_custom,
   # inits = "random",
   indPars = "mode",
-  vb = TRUE,
+  vb = FALSE,
   inc_postpred = TRUE,
   adapt_delta = 0.95,
   stepsize = 1,
