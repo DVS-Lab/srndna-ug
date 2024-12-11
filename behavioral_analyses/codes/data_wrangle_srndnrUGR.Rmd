@@ -228,29 +228,6 @@ participants_df = participants_df %>%
 block_long_df = block_long_df %>% 
   select(subID, run, block_type, BlockNum, BlockTrial, BlockInclude)
 ```
-# plot behaviors of each participant
-```{r}
-col_names_accept_check = c("subjID", "total", "accept", "diff")
-accept_check = data.frame(matrix(ncol = length(col_names_accept_check), nrow = nrow(participants_df)))
-colnames(accept_check) = col_names_accept_check
-for (i in 1:nrow(participants_df)) {
-  sub_name = sublist[i]
-  row_total = nrow(all_clean_df[all_clean_df$subjID == sub_name, ])
-  row_accept <- nrow(all_clean_df[all_clean_df$subjID == sub_name & all_clean_df$accept == 1, ])
-  accept_check$subjID[i] = sub_name
-  accept_check$total[i] = row_total
-  accept_check$accept[i] = row_accept
-}
-
-accept_check$diff = accept_check$total - accept_check$accept
-sub_exclude = accept_check$subjID[accept_check$diff <=10]
-
-```
-
-# exclude subjects that choose reject fewer than 11 times (0-10)
-```{r}
-all_clean_exlude_df = all_clean_df[!(all_clean_df$subjID %in% sub_exclude),]
-```
 
 # save cleaned data
 ```{r}
@@ -267,14 +244,98 @@ ingroup_df = human_df[human_df$ingroup == 1,]
 outgroup_df = human_df[human_df$ingroup == 0,]
 ```
 
+# check behaviors of each participant
 ```{r}
-write.table(computer_df, file = paste(data_dir, "computer.txt", sep = "/"), 
+col_names_choice_check = c("subjID", 
+                           "computer_total", "computer_accept", "computer_reject",
+                           "human_total", "human_accept", "human_reject",
+                           "ingroup_total", "ingroup_accept", "ingroup_reject",
+                           "outgroup_total", "outgroup_accept", "outgroup_reject")
+choice_check = data.frame(matrix(ncol = length(col_names_choice_check), nrow = nrow(participants_df)))
+colnames(choice_check) = col_names_choice_check
+for (i in 1:nrow(participants_df)) {
+  sub_name = sublist[i]
+  computer_total = nrow(computer_df[computer_df$subjID == sub_name, ])
+  computer_accept <- nrow(computer_df[computer_df$subjID == sub_name & computer_df$accept == 1, ])
+  computer_reject <- nrow(computer_df[computer_df$subjID == sub_name & computer_df$accept == 0, ])
+  
+  human_total = nrow(human_df[human_df$subjID == sub_name, ])
+  human_accept <- nrow(human_df[human_df$subjID == sub_name & human_df$accept == 1, ])
+  human_reject <- nrow(human_df[human_df$subjID == sub_name & human_df$accept == 0, ])
+  
+  ingroup_total = nrow(ingroup_df[ingroup_df$subjID == sub_name, ])
+  ingroup_accept <- nrow(ingroup_df[ingroup_df$subjID == sub_name & ingroup_df$accept == 1, ])
+  ingroup_reject <- nrow(ingroup_df[ingroup_df$subjID == sub_name & ingroup_df$accept == 0, ])
+  
+  outgroup_total = nrow(outgroup_df[outgroup_df$subjID == sub_name, ])
+  outgroup_accept <- nrow(outgroup_df[outgroup_df$subjID == sub_name & outgroup_df$accept == 1, ])
+  outgroup_reject <- nrow(outgroup_df[outgroup_df$subjID == sub_name & outgroup_df$accept == 0, ])
+  
+  choice_check$subjID[i] = sub_name
+  
+  choice_check$computer_reject[i] = computer_reject
+  choice_check$human_reject[i] = human_reject
+  choice_check$ingroup_reject[i] = ingroup_reject
+  choice_check$outgroup_reject[i] = outgroup_reject
+  
+  choice_check$computer_accept[i] = computer_accept
+  choice_check$human_accept[i] = human_accept
+  choice_check$ingroup_accept[i] = ingroup_accept
+  choice_check$outgroup_accept[i] = outgroup_accept
+  
+  choice_check$computer_total[i] = computer_total
+  choice_check$human_total[i] = human_total
+  choice_check$ingroup_total[i] = ingroup_total
+  choice_check$outgroup_total[i] = outgroup_total
+}
+
+choice_check = choice_check %>% 
+  mutate(computer_accept_diff = computer_total - computer_accept,
+         computer_reject_diff = computer_total - computer_reject,
+         ingroup_accept_diff = ingroup_total - ingroup_accept,
+         ingroup_reject_diff = ingroup_total - ingroup_reject,
+         outgroup_accept_diff = outgroup_total - outgroup_accept,
+         outgroup_reject_diff = outgroup_total - outgroup_reject)
+  
+  
+sub_exclude = choice_check$subjID[choice_check$computer_accept_diff <= 2 |
+                                    choice_check$ingroup_accept_diff <= 2 |
+                                    choice_check$outgroup_accept_diff <= 2 |
+                                    choice_check$computer_reject_diff <= 2 |
+                                    choice_check$ingroup_reject_diff <= 2 |
+                                    choice_check$outgroup_reject_diff <= 2]
+length(sub_exclude)
+
+```
+
+# exclude subjects that choose reject fewer than 11 times (0-10)
+```{r}
+all_clean_filtered_df = all_clean_df[!(all_clean_df$subjID %in% sub_exclude),]
+sub_include = unique(all_clean_filtered_df$subjID)
+sub_include = data.frame(subjID = sub_include[])
+```
+
+# create separate txt for each condition
+```{r}
+computer_filtered_df = all_clean_filtered_df[all_clean_filtered_df$human == 0,]
+human_filtered_df = all_clean_filtered_df[all_clean_filtered_df$human == 1,]
+ingroup_filtered_df = human_filtered_df[human_filtered_df$ingroup == 1,]
+outgroup_filtered_df = human_filtered_df[human_filtered_df$ingroup == 0,]
+```
+
+# save filtered data
+```{r}
+write.csv(all_clean_filtered_df, file = paste(data_dir, "all_clean_filtered_df.csv", sep = "/"), 
+            row.names = FALSE)
+write.csv(sub_include, file = paste(data_dir, "sub_include.csv", sep = "/"), 
+            row.names = FALSE)
+write.table(computer_filtered_df, file = paste(data_dir, "computer_filtered.txt", sep = "/"), 
             sep = "\t", row.names = FALSE, quote = FALSE)
-write.table(human_df, file = paste(data_dir, "human.txt", sep = "/"), 
+write.table(human_filtered_df, file = paste(data_dir, "human_filtered.txt", sep = "/"), 
             sep = "\t", row.names = FALSE, quote = FALSE)
-write.table(ingroup_df, file = paste(data_dir, "ingroup.txt", sep = "/"), 
+write.table(ingroup_filtered_df, file = paste(data_dir, "ingroup_filtered.txt", sep = "/"), 
             sep = "\t", row.names = FALSE, quote = FALSE)
-write.table(outgroup_df, file = paste(data_dir, "outgroup.txt", sep = "/"), 
+write.table(outgroup_filtered_df, file = paste(data_dir, "outgroup_filtered.txt", sep = "/"), 
             sep = "\t", row.names = FALSE, quote = FALSE)
 ```
 
