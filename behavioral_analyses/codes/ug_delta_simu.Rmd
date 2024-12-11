@@ -65,13 +65,13 @@ T_max <- 48    # Number of trials per subject
 # set true parameters
 ## True group-level parameters
 ```{r}
-mu_alpha <- 0.6    # Mean envy parameter
-mu_tau <- 0.7     # Mean inverse temperature
+mu_alpha <- 0.2    # Mean envy parameter
+mu_tau <- 0.3     # Mean inverse temperature
 mu_ep <- 0.4      # Mean adaptation rate
 
 # Separate sigmas for each parameter
 sigma_alpha <- 0.1
-sigma_tau <- 0.08
+sigma_tau <- 0.1
 sigma_epsilon <- 0.1
 ```
 
@@ -86,9 +86,9 @@ generate_param <- function(mu, sigma, n) {
 }
 
 # Generate parameters for each subject
-alpha <- generate_param(mu_alpha, sigma_alpha, N)
-tau <- generate_param(mu_tau, sigma_tau, N)
-epsilon <- generate_param(mu_ep, sigma_epsilon, N)
+alpha_sub <- generate_param(mu_alpha, sigma_alpha, N)
+tau_sub <- generate_param(mu_tau, sigma_tau, N)
+epsilon_sub <- generate_param(mu_ep, sigma_epsilon, N)
 
 # Initialize data frame
 sim_data <- data.frame()
@@ -101,12 +101,12 @@ for (i in 1:N) {
     offer <- sample(1:10, 1) # Generate a random offer between 1-10
     PE <- offer - f # Calculate prediction error
     
-    util <- offer - alpha[i] * max(f - offer, 0) # Calculate utility
-    p_accept <- 1/(1 + exp(-util * tau[i])) # Calculate acceptance probability
+    util <- offer - alpha_sub[i] * max(f - offer, 0) # Calculate utility
+    p_accept <- 1/(1 + exp(-util * tau_sub[i])) # Calculate acceptance probability
     
     decision <- rbinom(1, 1, p_accept)  # Generate decision
     
-    f <- f + epsilon[i] * PE # Update norm based on RL
+    f <- f + epsilon_sub[i] * PE # Update norm based on RL
     
     sim_data <- rbind(sim_data, 
                       data.frame(subject = sprintf("sub-%d", i),

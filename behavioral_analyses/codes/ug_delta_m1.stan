@@ -13,42 +13,37 @@ transformed data {
 
 parameters {
 // Declare all parameters as vectors for vectorizing
-  vector<lower=0, upper=1>[3] mu; // group-level means of alpha, tau, epsilon
-  vector<lower=0>[3] sigma; // group-level sd of alpha, tau, epsilon
+  vector[3] mu_hyper; // group-level means of alpha, tau, epsilon
+  vector<lower=0>[3] sigma_hyper; // group-level sd of alpha, tau, epsilon
 
   // Subject-level parameters, to scale sig and add to group mean
-  vector[N] alpha_pr;  // alpha: Envy (sensitivity to norm prediction error), N of sd
-  vector[N] tau_pr;    // tau: Inverse temperature, N of sd
-  vector[N] ep_pr;     // ep: Norm adaptation rate, N of sd
+  vector[N] alpha_hyper;  // alpha: Envy (sensitivity to norm prediction error), N of sd
+  vector[N] tau_hyper;    // tau: Inverse temperature, N of sd
+  vector[N] ep_hyper;     // ep: Norm adaptation rate, N of sd
+  
+  // vector<lower=-2, upper=2>[N] alpha_hyper;  // alpha: Envy (sensitivity to norm prediction error), N of sd
+  // vector<lower=-2, upper=2>[N] tau_hyper;    // tau: Inverse temperature, N of sd
+  // vector<lower=-2, upper=2>[N] ep_hyper;     // ep: Norm adaptation rate, N of sd
 }
 
 transformed parameters {
   // total subject-level parameters
-//   vector[N] alpha;
-//   vector[N] tau;
-//   vector[N] ep;
+  vector[N] alpha;
+  vector[N] tau;
+  vector[N] ep;
 
-  vector<lower=0, upper=1>[N] alpha;
-  vector<lower=0>[N] tau;
-  // vector<lower=0, upper=1>[N] tau;
-  vector<lower=0, upper=1>[N] ep;
-
-  // alpha = Phi_approx(mu[1] + sigma[1] * alpha_pr); //Phi_approx naturally bounds param to 0-1
-  // tau = Phi_approx(mu[2] + sigma[2] * tau_pr);
-  // ep = Phi_approx(mu[3] + sigma[3] * ep_pr);
- 
-  alpha = mu[1] + sigma[1] * alpha_pr; //Phi_approx naturally bounds param to 0-1
-  tau = mu[2] + sigma[2] * tau_pr;
-  ep = mu[3] + sigma[3] * ep_pr;
+  alpha = Phi_approx(mu_hyper[1] + sigma_hyper[1] * alpha_hyper); //Phi_approx naturally bounds param to 0-1
+  tau = Phi_approx(mu_hyper[2] + sigma_hyper[2] * tau_hyper);
+  ep = Phi_approx(mu_hyper[3] + sigma_hyper[3] * ep_hyper);
 }
 
 model {
   // define priors for parameters
-  mu  ~ uniform(0, 1);
-  sigma ~ normal(0, 0.3); // sigma for uniform 0-1 distribution is about 0.3
-  alpha_pr ~ normal(0, 2.5);
-  tau_pr ~ normal(0, 2.5);
-  ep_pr ~ normal(0, 2.5);
+  mu_hyper  ~ normal(0, 1);
+  sigma_hyper ~ normal(0, 0.3); // sigma for uniform 0-1 distribution is about 0.3
+  alpha_hyper ~ normal(0, 1);
+  tau_hyper ~ normal(0, 1);
+  ep_hyper ~ normal(0, 1);
 
   for (i in 1:N) {
 
@@ -77,6 +72,11 @@ generated quantities {
   real<lower=0, upper=1> mu_alpha;
   real<lower=0, upper=1> mu_tau;
   real<lower=0, upper=1> mu_ep;
+  
+  // subject level parameters
+  vector<lower=0, upper=1>[N] alpha_sub;
+  vector<lower=0, upper=1>[N] tau_sub;
+  vector<lower=0, upper=1>[N] ep_sub;
 
   // For log likelihood calculation
   vector[N] log_lik;
@@ -85,9 +85,13 @@ generated quantities {
   array[N, T_max] int y_pred;
   y_pred = rep_array(0, N, T_max); // Set all posterior predictions to reject
 
-  mu_alpha = mu[1];
-  mu_tau   = mu[2];
-  mu_ep    = mu[3];
+  mu_alpha = Phi_approx(mu_hyper[1]);
+  mu_tau   = Phi_approx(mu_hyper[2]);
+  mu_ep    = Phi_approx(mu_hyper[3]);
+  
+  alpha_sub = alpha;
+  tau_sub = tau;
+  ep_sub = ep;
 
   { // local section, this saves time and space
     for (i in 1:N) {
