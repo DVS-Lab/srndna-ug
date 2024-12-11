@@ -131,7 +131,7 @@ block_types = c("block_outgroup_fair", "block_outgroup_unfair",
 # extract behavior
 ```{r}
 for (i in 1:nrow(participants_df)) {
-  i = 36 # for testing, to comment out
+  # i = 36 # for testing, to comment out
   print(i)
   sub_name = sublist[i]
   print(sub_name)
@@ -142,7 +142,7 @@ for (i in 1:nrow(participants_df)) {
   
   # clean behavior data per run
   for (j in 1:length(ug_tsv)) {
-    j = 1
+    # j = 1
     # print(j)
     event_run_ij = paste(sub_name,sprintf("_task-ultimatum_run-0%d_events.tsv", j), sep = "")
     event_run_ij_df = read.table(file = paste(bids_dir, 
@@ -199,7 +199,9 @@ for (i in 1:nrow(participants_df)) {
     }
     block_long_df = rbind(block_long_df, block_df_clean)
     decision_partner_df$subjID = sub_name
+    
     all_long_df = rbind(all_long_df, decision_partner_df)
+    
   }
 }
 ```
@@ -225,6 +227,29 @@ participants_df = participants_df %>%
 
 block_long_df = block_long_df %>% 
   select(subID, run, block_type, BlockNum, BlockTrial, BlockInclude)
+```
+# plot behaviors of each participant
+```{r}
+col_names_accept_check = c("subjID", "total", "accept", "diff")
+accept_check = data.frame(matrix(ncol = length(col_names_accept_check), nrow = nrow(participants_df)))
+colnames(accept_check) = col_names_accept_check
+for (i in 1:nrow(participants_df)) {
+  sub_name = sublist[i]
+  row_total = nrow(all_clean_df[all_clean_df$subjID == sub_name, ])
+  row_accept <- nrow(all_clean_df[all_clean_df$subjID == sub_name & all_clean_df$accept == 1, ])
+  accept_check$subjID[i] = sub_name
+  accept_check$total[i] = row_total
+  accept_check$accept[i] = row_accept
+}
+
+accept_check$diff = accept_check$total - accept_check$accept
+sub_exclude = accept_check$subjID[accept_check$diff <=10]
+
+```
+
+# exclude subjects that choose reject fewer than 11 times (0-10)
+```{r}
+all_clean_exlude_df = all_clean_df[!(all_clean_df$subjID %in% sub_exclude),]
 ```
 
 # save cleaned data
