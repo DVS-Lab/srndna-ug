@@ -17,9 +17,9 @@ parameters {
   vector<lower=0>[3] sigma; // group-level sd of alpha, tau, epsilon
 
   // Subject-level parameters, to scale sig and add to group mean
-  vector[N] alpha_pr;  // alpha: Envy (sensitivity to norm prediction error), N of sd
-  vector[N] tau_pr;    // tau: Inverse temperature, N of sd
-  vector[N] ep_pr;     // ep: Norm adaptation rate, N of sd
+  vector<lower=-2, upper=2>[N] alpha_pr;  // alpha: Envy (sensitivity to norm prediction error), N of sd
+  vector<lower=-2, upper=2>[N] tau_pr;    // tau: Inverse temperature, N of sd
+  vector<lower=-2, upper=2>[N] ep_pr;     // ep: Norm adaptation rate, N of sd
 }
 
 transformed parameters {
@@ -46,9 +46,9 @@ model {
   // define priors for parameters
   mu  ~ uniform(0, 1);
   sigma ~ normal(0, 0.3); // sigma for uniform 0-1 distribution is about 0.3
-  alpha_pr ~ normal(0, 2.5);
-  tau_pr ~ normal(0, 2.5);
-  ep_pr ~ normal(0, 2.5);
+  alpha_pr ~ normal(0, 1);
+  tau_pr ~ normal(0, 1);
+  ep_pr ~ normal(0, 1);
 
   for (i in 1:N) {
 
