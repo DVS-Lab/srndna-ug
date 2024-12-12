@@ -25,8 +25,14 @@ N_iter = 10000;
 
 full_tbl = cell(N_sub,2);
 
+%%%%%%% for testing. to delete.
+sub_list_test = [10, 13, 16, 22, 28, 29, 30, 32, 37];
+full_tbl_test = cell(N_sub, 2);
+%%%%%%% for testing. to delete.
+
 for s = 1:N_sub
-    % s = 3; %%% for testing purpose. to delete.
+% for s = 13
+% for s = 1:2 %%% for testing purpose. to delete.
     sub_name = sub_list{s,1};
     computer_sub_mat = computer_mat(...
         strcmp(computer_mat.subjID, sub_name) == 1,:);
@@ -40,63 +46,103 @@ for s = 1:N_sub
     % set initial norm based on choice information
     accept_sub = computer_sub_mat.accept;
     offer_sub = computer_sub_mat.offer;
-
-    accept_min = min(computer_sub_mat.offer(computer_sub_mat.accept == 1)); % min offer accepted,
-    reject_max = max(computer_sub_mat.offer(computer_sub_mat.accept == 0)); % max offer rejected
     
+    % sub might press the wrong button
+    accept_ascend = ...
+        sort(unique(computer_sub_mat.offer(computer_sub_mat.accept == 1))...
+        ,1 , "ascend"); % min offer accepted,
+
+    if isscalar(accept_ascend) == 1
+        accept_min = accept_ascend;
+    else
+        if accept_ascend(1) == 1 | accept_ascend(2) - accept_ascend(1)>1 % to prevend wrong button press affect norm0
+            accept_min = accept_ascend(2);
+        else
+            accept_min = accept_ascend(1);
+        end
+    end
+    
+    reject_descend = ...
+        sort(unique(computer_sub_mat.offer(computer_sub_mat.accept == 0)),...
+        1, "descend"); % max offer rejected
+
+    % sub might press the wrong button
+    if isscalar(reject_descend) == 1
+        reject_max = reject_descend;
+    else
+        if reject_descend(1) == 10 | reject_descend(1) - reject_descend(2) > 1
+            reject_max = reject_descend(2);
+        else
+            reject_max = reject_descend(1);
+        end
+    end
+    
+
     norm0_mu = (accept_min + reject_max)/2;
     norm0_sigma = max(abs(accept_min - reject_max)/3,1);
     norm0_lb = 1;
     norm0_ub = 20;
 
-    sub_name{1}
+    sub_name{1} + sprintf(", s=%d", s)
+end
+    tic
 
     for iter = 1:N_iter
-    % for iter = 1:2
-        % iter = 1; %%% for testing purpose. to delete.
-        % sprintf("sub %d iter %d", s, iter) %%% for testing purpose. to delete.
-
+    % for iter = 1:2 %%% for testing purpose. to delete.
+       
         % re-initialize optimization for each iteration
-        lb_sub = [0, 0, 0];      % Lower bounds
+        lb_sub = [9, 9, 0];      % Lower bounds
         ub_sub = [10, 10, 1];     % Upper bounds
-        x0_sub = [unifrnd(lb_sub(1),ub_sub(1)), ...
-            unifrnd(lb_sub(2),ub_sub(2)), ...
-            unifrnd(0,1)];  % Initial values [alpha, tau, epsilon]
-        
 
-        %%%%% fixed norm0 = 10 or rand norm0
+        % %%%%%%% for testing. to delete.
+        x0_sub = [9.9511, 9.9034, 0.4370];
+        % %%%%%%% for testing. to delete.
+
+        % x0_sub = [unifrnd(lb_sub(1),ub_sub(1)), ...
+        %     unifrnd(lb_sub(2),ub_sub(2)), ...
+        %     unifrnd(0,1)];  % Initial values [alpha, tau, epsilon]
+
+        %%%%% fixed norm0 for testing purpose. to delete.
         % norm0_sub = 7.5;
+        %%%%%
+
         while true % Generate random numbers until one falls within bounds
             norm0_sub = normrnd(norm0_mu, norm0_sigma);
             if norm0_sub >= norm0_lb && norm0_sub <= norm0_ub
                 break;
             end
         end
-        %%%%% fixed norm0 = 10 or rand norm0
-        
+
+        %%%%% fixed x0 for testing purpose. to delete.
+        % x0_sub = [9.6673, 9, 0.8016];
+        %%%%%
+
+        % record initials
+        init_tbl_sub(iter, 'alpha0') = {x0_sub(1)};
+        init_tbl_sub(iter, 'tau0')= {x0_sub(2)};
+        init_tbl_sub(iter, 'epsilon0') = {x0_sub(3)};
+        init_tbl_sub(iter, 'norm0') = {norm0_sub};
+
         % fit model
         [params, negLL, exitflag] = ...
             ugrRL_fun(accept_sub, offer_sub, ...
             norm0_sub, x0_sub, ...
             lb_sub, ub_sub);
 
-        % Extract parameters
-        %%% initials
-        init_tbl_sub(iter, 'alpha0') = {x0_sub(1)};
-        init_tbl_sub(iter, 'tau0')= {x0_sub(2)};
-        init_tbl_sub(iter, 'epsilon0') = {x0_sub(3)};
-        init_tbl_sub(iter, 'norm0') = {norm0_sub};
-
+        % record estimates
         init_tbl_sub(iter, 'exitflag') = {exitflag};
         init_tbl_sub(iter, 'negLL') = {negLL};
         
         init_tbl_sub(iter, 'alpha_i') = {params(1)};  % envy parameter
         init_tbl_sub(iter, 'tau_i') = {params(2)};   % inverse temperature
         init_tbl_sub(iter, 'epsilon_i') = {params(3)}; % learning rate
+        full_tbl_test{s,2} = init_tbl_sub;
     end
     writetable(init_tbl_sub, ...
-        fullfile(data_dir, append(sub_name{1}, "_ugrRL.csv")))
+        fullfile(data_dir, append(sub_name{1}, "_ugrRL_test.csv")))
     full_tbl{s,2} = init_tbl_sub;
-end
-save(fullfile(fits_dir, append("subs_include", "_ugrRL.mat")), "full_tbl")
-
+    toc
+% end
+tic
+save(fullfile(fits_dir, append("subs_include", "_ugrRL_test.mat")), "full_tbl")
+toc

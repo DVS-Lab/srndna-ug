@@ -12,7 +12,7 @@ lb = lb_sub;
 ub = ub_sub;
 
 
-options = optimset('Display', 'off');
+options = optimset('Display', 'off', 'MaxIter', 1000);
 [params, nLL, exitflag] = ...
     fmincon(@(x) ugrRL_neg_LL_fun(x, choices, rewards, norm0), ...
     x0, [], [], [], [], lb, ub, [], options);
