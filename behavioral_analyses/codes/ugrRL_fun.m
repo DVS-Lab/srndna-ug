@@ -1,4 +1,4 @@
-function [params, exitflag] = ...
+function [params, negLL, exitflag] = ...
     ugrRL_fun(accept_sub, offer_sub, ...
     norm0_sub, x0_sub, ...
     lb_sub, ub_sub)
@@ -12,18 +12,21 @@ lb = lb_sub;
 ub = ub_sub;
 
 
-options = optimset('Display', 'on');
-[params, LL, exitflag] = ...
+options = optimset('Display', 'off');
+[params, nLL, exitflag] = ...
     fmincon(@(x) ugrRL_neg_LL_fun(x, choices, rewards, norm0), ...
     x0, [], [], [], [], lb, ub, [], options);
 
-    function nLL = ugrRL_neg_LL_fun(params, choices, rewards, norm)
+negLL = nLL;
+end
+
+function nLL = ugrRL_neg_LL_fun(params, choices, rewards, norm0)
         alpha = params(1);
         tau = params(2);
         epsilon = params(3);
 
         % Initialize values
-        % norm = 10.0;        % Initial norm value
+        norm = norm0;        % Initial norm value
 
         % Calculate likelihood
         LL = 0; % initial likelihood
@@ -47,7 +50,7 @@ options = optimset('Display', 'on');
             if choices(t) == 1
                 LL = LL + log(p);
             else
-                LL = LL + log(1-p);
+                LL = LL + log(max(1-p, 0.000000001));
             end
             %%%%%%%
 
@@ -66,5 +69,10 @@ options = optimset('Display', 'on');
         end
 
         nLL = -LL;  % Return negative log-likelihood
+
+        % if isnan(LL) || isinf(LL)
+        %     nLL = 1e10;  % Return large finite number
+        % else
+        %     nLL = -LL;
+        % end
     end
-end
