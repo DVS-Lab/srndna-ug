@@ -3,7 +3,6 @@
 % code to fit ug_delta per subject
 
 clear
-clc
 
 %% set up directory and load data
 data_dir = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses/data";
@@ -86,18 +85,21 @@ for s = 1:N_sub
        
         % re-initialize optimization for each iteration
         lb_sub = [0, 0, 0];      % Lower bounds
-        ub_sub = [20, 10, 1];     % Upper bounds
+        ub_sub = [1, 1, 1];     % Upper bounds
 
         x0_sub = [unifrnd(lb_sub(1),ub_sub(1)), ...
             unifrnd(lb_sub(2),ub_sub(2)), ...
             unifrnd(0,1)];  % Initial values [alpha, tau, epsilon]
+        
+        % informed variable norm initial
+        % while true % Generate random numbers until one falls within bounds
+        %     norm0_sub = normrnd(norm0_mu, norm0_sigma);
+        %     if norm0_sub >= norm0_lb && norm0_sub <= norm0_ub
+        %         break;
+        %     end
 
-        while true % Generate random numbers until one falls within bounds
-            norm0_sub = normrnd(norm0_mu, norm0_sigma);
-            if norm0_sub >= norm0_lb && norm0_sub <= norm0_ub
-                break;
-            end
-        end
+        % random norm initial
+        norm0_sub = unifrnd(0,20);
 
         % record initials
         init_tbl_sub(iter, 'alpha0') = {x0_sub(1)};
@@ -120,11 +122,18 @@ for s = 1:N_sub
         init_tbl_sub(iter, 'epsilon_i') = {params(3)}; % learning rate
         % full_tbl{s,2} = init_tbl_sub; % for testing. to delete.
     end
+    % writetable(init_tbl_sub, ...
+    %     fullfile(data_dir, append(sub_name{1}, "_alpha0_", string(ub_sub(1)), ...
+    %     "_ugrRL.csv")))
     writetable(init_tbl_sub, ...
-        fullfile(data_dir, append(sub_name{1}, "_ugrRL.csv")))
+        fullfile(data_dir, append(sub_name{1}, "_GUpaper", ...
+        "_ugrRL.csv")))
     full_tbl{s,2} = init_tbl_sub;
     toc
 end
 tic
-save(fullfile(fits_dir, append("subs_include", "_ugrRL.mat")), "full_tbl")
+% save(fullfile(fits_dir, append("subs_include", "_alpha0_", string(ub_sub(1)), ...
+%     "_ugrRL.mat")), "full_tbl")
+save(fullfile(fits_dir, append("subs_include", "_GUpaper", ...
+    "_ugrRL.mat")), "full_tbl")
 toc
