@@ -94,7 +94,7 @@ for s = 1:N_sub
         x0_sub = [unifrnd(lb_sub(1),ub_sub(1)), ...
             unifrnd(lb_sub(2),ub_sub(2)), ...
             unifrnd(0,1)];  % Initial values [alpha, tau, epsilon]
-        params_scaling = [50, 20, 1]; % scaling factors
+        params_scaling = [100, 20, 1]; % scaling factors
 
         %%% informed variable norm initial
         while true % Generate random numbers until one falls within bounds
