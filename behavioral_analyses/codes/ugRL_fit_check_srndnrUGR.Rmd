@@ -74,7 +74,7 @@ gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
 data_dir = paste(gitrepo_path,"data", sep = "/")
 codes_dir = paste(gitrepo_path, "codes", sep = "/")
 fits_dir = paste(gitrepo_path,"fits", sep = "/")
-figure_dir = paste(gitrepo_path,"figures", sep = "/")
+figures_dir = paste(gitrepo_path,"figures", sep = "/")
 
 bids_dir = "/Users/momocco/Documents/GitHub/srndna-datapaper/bids"
 ```
@@ -82,6 +82,8 @@ bids_dir = "/Users/momocco/Documents/GitHub/srndna-datapaper/bids"
 # load functions
 ```{r}
 source(paste(codes_dir, "posterior_histo_plot_fun.R", sep = "/"))
+source(paste(codes_dir, "corrMatrix_upper_fun.R", sep = "/"))
+source(paste(codes_dir, "corrMatrix_plot_fun.R", sep = "/"))
 ```
 
 # data prep
@@ -94,15 +96,34 @@ posterior_names = c('alpha_i', 'tau_i', 'epsilon_i')
 prior_names = c('alpha0', 'tau0', 'epsilon0', 'norm0')
 ```
 
-# plot all posterior distribution
+# plot corr matrix and distribution
+## figure parameters
+```{r}
+w_corr = 8
+h_corr = 8
+
+h_histo = 10
+w_histo = 15
+bin_N = 50
+```
+
 ## alpha 0-20, tau 0-10, norm0 customized based on choice
 ```{r}
 cvs_suff = "_ugrRL.csv"
 fig_folder = "ugRL_alpha20tau10"
+plot_title = "alpha 0-20, tau 0-10"
 
 for (i in 1:nrow(participants_df)) {
-  participants_df[i]
-  posterior_histo_plot_fun(i, cvs_suff, fig_folder)
+  participants_df$subjID[i]
+  sub_i_name = participants_df$subjID[i]
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  
+  print(sub_i_csv)
+  sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
+    select(negLL, prior_names, posterior_names)
+  
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
 ```
 
@@ -110,10 +131,19 @@ for (i in 1:nrow(participants_df)) {
 ```{r}
 cvs_suff = "_alpha0_30_ugrRL.csv"
 fig_folder = "ugRL_alpha30tau10"
+plot_title = "alpha 0-30, tau 0-10"
 
 for (i in 1:nrow(participants_df)) {
-  print(participants_df$subjID[i])
-  posterior_histo_plot_fun(i, cvs_suff, fig_folder)
+  participants_df$subjID[i]
+  sub_i_name = participants_df$subjID[i]
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  
+  print(sub_i_csv)
+  sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
+    select(negLL, prior_names, posterior_names)
+  
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
 ```
 
@@ -121,65 +151,62 @@ for (i in 1:nrow(participants_df)) {
 ```{r}
 cvs_suff = "_GUpaper_ugrRL.csv"
 fig_folder = "ugRL_GUpaper"
+plot_title = "alpha 0-1, tau 0-1, norm0 0-20"
 
 for (i in 1:nrow(participants_df)) {
-  print(participants_df$subjID[i])
-  posterior_histo_plot_fun(i, cvs_suff, fig_folder)
+  participants_df$subjID[i]
+  sub_i_name = participants_df$subjID[i]
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  
+  print(sub_i_csv)
+  sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
+    select(negLL, prior_names, posterior_names)
+  
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
 ```
+
 ## alpha 0-1, tau 0-1, norm0 customized based on choice
 ```{r}
 cvs_suff = "_alpha0_1_ugrRL.csv"
 fig_folder = "ugRL_alpha1tau1"
+plot_title = "alpha 0-1, tau 0-1, norm0 choice informed"
 
 for (i in 1:nrow(participants_df)) {
-  print(participants_df$subjID[i])
-  posterior_histo_plot_fun(i, cvs_suff, fig_folder)
+  participants_df$subjID[i]
+  sub_i_name = participants_df$subjID[i]
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  
+  print(sub_i_csv)
+  sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
+    select(negLL, prior_names, posterior_names)
+  
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
 ```
 
-
-# stats test of corr
+## alpha 0-100, tau 0-20, norm0 customized based on choice
 ```{r}
-# prior_posterior_lm_fun = function(prior_name, sub_df) {
-  sub_df = sub_i_fit
-prior_check = lm(sub_df[,'norm0'] ~ alpha_i + epsilon_i + tau_i, data = sub_df)
+cvs_suff = "_alpha100tau20_ugrRL.csv"
+fig_folder = "ugRL_alpha100tau20"
+dir.create(file.path(figures_dir, fig_folder))
+plot_title = "alpha 0-100, tau 0-20, norm0 choice informed"
 
-prior_p_values <- summary(prior_check)$coefficients[2:4, "Pr(>|t|)"]
-prior_p_values_df <- as.data.frame(t(prior_p_values))
-prior_p_values_df$subjID[1] = "a"
-prior_p_values_df = prior_p_values_df %>% select(c('subjID', posterior_names))
-
-summary(lm(alpha_i ~ epsilon_i, data = sub_df))
-summary(lm(alpha_i ~ tau_i, data = sub_df))
-summary(lm(tau_i ~ epsilon_i, data = sub_df))
-# return()
-# }
-```
-
-# plot function
-```{r}
-prior_posteriors_plots_fun <- function(df, prior_name) {
-df = sub_i_fit # for testing
-# df = sub_i_fit
-prior_name = "alpha0"
-df_current = df[, c(prior_name, posterior_names)]
-plots <- list()
-for (col_posterior in names(df_current)) {
-  if (col_posterior != prior_name) {
-    # col_posterior = "alpha_i"
-    p = ggplot(df, aes_string(x = col_posterior, y = prior_name)) +
-      geom_point() +
-      geom_smooth(method = 'lm', se = FALSE, color = 'blue') +
-      theme_minimal()
-    plots[[col_posterior]] <- p
-  }
-}
-plots
-  return(plots)
+for (i in 1:nrow(participants_df)) {
+  participants_df$subjID[i]
+  sub_i_name = participants_df$subjID[i]
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  
+  print(sub_i_csv)
+  sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
+    select(negLL, prior_names, posterior_names)
+  
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
 ```
-
 
 
 

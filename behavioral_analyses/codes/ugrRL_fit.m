@@ -144,9 +144,11 @@ for s = 1:N_sub
     full_tbl{s,2} = init_tbl_sub;
     toc
 end
-tic
+
 save(fullfile(fits_dir, append("subs_include", ...
     "_alpha", string(params_scaling(1)), ...
     "tau", string(params_scaling(2)), ...
     "_ugrRL.mat")), "full_tbl")
-toc
+
+format shortG
+clock
