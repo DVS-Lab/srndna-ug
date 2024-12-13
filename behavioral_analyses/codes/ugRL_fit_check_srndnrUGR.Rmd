@@ -1,0 +1,343 @@
+---
+title: "matlab ugRL fit check"
+author: "Jen Yang"
+date: "2024-12-12, last modified 2024-12-12"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    hightlight: zenburn
+    toc_depth: 6
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+# Load libraries
+```{r libraries, message=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(interactions)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+# library(raincloudplots)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(ggpubr)
+library(lubridate)
+library(readxl)
+library(gridExtra)
+library(scales)
+library(rstudioapi)
+library(jsonlite)
+library(rjson)
+library(readr)
+library(hBayesDM)
+library(brms)
+```
+
+# load tsv and prolific raw data
+```{r}
+gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
+
+data_dir = paste(gitrepo_path,"data", sep = "/")
+codes_dir = paste(gitrepo_path, "codes", sep = "/")
+fit_dir = paste(gitrepo_path,"fits", sep = "/")
+figure_dir = paste(gitrepo_path,"figures", sep = "/")
+
+bids_dir = "/Users/momocco/Documents/GitHub/srndna-datapaper/bids"
+```
+
+# participant list
+```{r}
+# load sub list
+participants_tsv = "participants.tsv"
+participants_df = read.table(file = paste(bids_dir, participants_tsv, sep = "/"), sep = '\t', header = TRUE)
+participants_df$trial_total = 0
+sublist = participants_df$participant_id
+```
+
+# create empty df to contain all decisions
+```{r}
+col_unify_names = c("onset", "duration", "trial_type", 
+                  "response_time", "Offer")
+
+all_col_names = c("onset", "duration", "trial_type", 
+                  "response_time", "Offer", 
+                  "block_type", "subjID", "run")
+
+all_long_df = data.frame(matrix(ncol = length(all_col_names), nrow = 0))
+colnames(all_long_df) = all_col_names
+
+
+block_col_names = c("onset", "block_type", "BlockNum", "BlockTrial", "BlockInclude", "run", "subID")
+
+block_long_df = data.frame(matrix(ncol = length(block_col_names), nrow = 0))
+colnames(block_long_df) = block_col_names
+
+withinsub_col_names = c("onset", "duration", "block_type", 
+                  "response_time", "Offer", 
+                  "subjID")
+```
+
+# prepare trial and block info
+```{r}
+decision_partner_types = c("event_accept_outgroup", "event_reject_outgroup",
+                "event_accept_ingroup", "event_reject_ingroup",
+                "event_accept_computer", "event_reject_computer",
+                "event_accept_outgroup_fair", "event_reject_outgroup_fair",
+                "event_accept_ingroup_fair", "event_reject_ingroup_fair",
+                "event_accept_computer_fair", "event_reject_computer_fair",
+                "event_accept_outgroup_unfair", "event_reject_outgroup_unfair",
+                "event_accept_ingroup_unfair", "event_reject_ingroup_unfair",
+                "event_accept_computer_unfair", "event_reject_computer_unfair")
+
+block_types = c("block_outgroup_fair", "block_outgroup_unfair",
+                "block_ingroup_fair", "block_ingroup_unfair",
+                "block_computer_fair", "block_computer_unfair")
+```
+
+# extract behavior
+```{r}
+for (i in 1:nrow(participants_df)) {
+  # i = 36 # for testing, to comment out
+  print(i)
+  sub_name = sublist[i]
+  print(sub_name)
+  # find all ultimatum tsv files
+  ug_tsv <- list.files(path = paste(bids_dir, sub_name, "func", sep = "/"), 
+                       pattern = ".*ultimatum.*events.*\\.tsv$",
+                       full.names = FALSE)
+  
+  # clean behavior data per run
+  for (j in 1:length(ug_tsv)) {
+    # j = 1
+    # print(j)
+    event_run_ij = paste(sub_name,sprintf("_task-ultimatum_run-0%d_events.tsv", j), sep = "")
+    event_run_ij_df = read.table(file = paste(bids_dir, 
+                                              sublist[i], "func", event_run_ij, sep = '/'), header = TRUE) %>% 
+      select(all_of(col_unify_names))
+    
+    # extract trial type info per sub
+    decision_partner_types_rows = event_run_ij_df$trial_type %in% decision_partner_types
+    decision_partner_df = event_run_ij_df[decision_partner_types_rows,]
+    decision_partner_df$block_type = NA
+    decision_partner_df$run = j
+    participants_df$trial_total[i] = participants_df$trial_total[i] + sum(decision_partner_types_rows)
+    
+    # extract block info per sub
+    block_types_rows = event_run_ij_df$trial_type %in% block_types
+    block_df = event_run_ij_df[block_types_rows,]
+    block_df$BlockNum = 1:nrow(block_df)
+    block_df$BlockTrial = NA
+    block_df$BlockInclude = NA # default set to a block not included
+    block_df$subID = NA
+    
+    # create empty df to compile trials from all blocks
+    block_long_df_j = data.frame(matrix(ncol = length(withinsub_col_names), nrow = 0))
+    colnames(block_long_df_j) = withinsub_col_names
+    
+    # check trial number per block
+    for (k in 1:nrow(block_df)) {
+      # k = 9
+      # print(k)
+      block_type_k = block_df$trial_type[k] # extract block type
+      if (k < nrow(block_df)) {
+      # find trial using block type
+      n_trials_k =  sum(decision_partner_df$onset >= block_df$onset[k] & 
+                          decision_partner_df$onset < block_df$onset[k+1])
+      # marking block type for each trial
+      decision_partner_df$block_type[decision_partner_df$onset >= block_df$onset[k] & 
+                          decision_partner_df$onset < block_df$onset[k+1]] = block_type_k
+      } else {
+        n_trials_k = sum(decision_partner_df$onset >= block_df$onset[k])
+        decision_partner_df$block_type[decision_partner_df$onset >= block_df$onset[k]] = block_type_k
+      }
+      block_df$BlockTrial[k] = n_trials_k
+      if (n_trials_k >= 4) {
+        block_df$BlockInclude[k] = "yes"
+      }
+      # cleanup and renome
+      block_df_clean = block_df %>% 
+        # rename columns
+        mutate(block_type = trial_type) %>% 
+        select(onset, block_type, BlockNum, BlockTrial, BlockInclude)
+      
+      block_df_clean$run = j
+      block_df_clean$subID = sub_name
+    }
+    block_long_df = rbind(block_long_df, block_df_clean)
+    decision_partner_df$subjID = sub_name
+    
+    all_long_df = rbind(all_long_df, decision_partner_df)
+    
+  }
+}
+```
+
+# recode and reorder
+```{r}
+all_clean_df = all_long_df %>% 
+  mutate(offer = Offer,
+         accept = as.numeric(grepl("accept", .$trial_type, fixed = TRUE)),
+         human = as.numeric(grepl("ingroup", .$trial_type, fixed = TRUE) | 
+                              grepl("outgroup", .$trial_type, fixed = TRUE)),
+         ingroup = as.numeric(grepl("ingroup", .$trial_type, fixed = TRUE)),
+         block_fair = as.numeric(grepl("_fair", .$block_type, fixed = TRUE))) %>% 
+  select(subjID, offer, accept, response_time, human, ingroup, block_fair) %>% 
+  mutate(response_time = as.numeric(response_time)-1)
+
+sum(all_clean_df$response_time <0.2)
+
+participants_df = participants_df %>% 
+  mutate(Include = case_when(trial_total >= 115 ~ "yes",
+                             trial_total < 115 ~ "no")) %>% 
+  select(-group)
+
+block_long_df = block_long_df %>% 
+  select(subID, run, block_type, BlockNum, BlockTrial, BlockInclude)
+```
+
+# save cleaned data
+```{r}
+write.csv(all_clean_df, paste(data_dir, "all_trials.csv", sep = "/"), row.names = FALSE)
+write.csv(block_long_df, paste(data_dir, "block_check", sep = "/"), row.names = FALSE)
+write.csv(participants_df, paste(data_dir, "participant_check.csv", sep = "/"), row.names = FALSE)
+```
+
+# create separate txt for each condition
+```{r}
+computer_df = all_clean_df[all_clean_df$human == 0,]
+human_df = all_clean_df[all_clean_df$human == 1,]
+ingroup_df = human_df[human_df$ingroup == 1,]
+outgroup_df = human_df[human_df$ingroup == 0,]
+```
+
+# check behaviors of each participant
+```{r}
+col_names_choice_check = c("subjID", 
+                           "computer_total", "computer_accept", "computer_reject",
+                           "human_total", "human_accept", "human_reject",
+                           "ingroup_total", "ingroup_accept", "ingroup_reject",
+                           "outgroup_total", "outgroup_accept", "outgroup_reject")
+choice_check = data.frame(matrix(ncol = length(col_names_choice_check), nrow = nrow(participants_df)))
+colnames(choice_check) = col_names_choice_check
+for (i in 1:nrow(participants_df)) {
+  sub_name = sublist[i]
+  computer_total = nrow(computer_df[computer_df$subjID == sub_name, ])
+  computer_accept <- nrow(computer_df[computer_df$subjID == sub_name & computer_df$accept == 1, ])
+  computer_reject <- nrow(computer_df[computer_df$subjID == sub_name & computer_df$accept == 0, ])
+  
+  human_total = nrow(human_df[human_df$subjID == sub_name, ])
+  human_accept <- nrow(human_df[human_df$subjID == sub_name & human_df$accept == 1, ])
+  human_reject <- nrow(human_df[human_df$subjID == sub_name & human_df$accept == 0, ])
+  
+  ingroup_total = nrow(ingroup_df[ingroup_df$subjID == sub_name, ])
+  ingroup_accept <- nrow(ingroup_df[ingroup_df$subjID == sub_name & ingroup_df$accept == 1, ])
+  ingroup_reject <- nrow(ingroup_df[ingroup_df$subjID == sub_name & ingroup_df$accept == 0, ])
+  
+  outgroup_total = nrow(outgroup_df[outgroup_df$subjID == sub_name, ])
+  outgroup_accept <- nrow(outgroup_df[outgroup_df$subjID == sub_name & outgroup_df$accept == 1, ])
+  outgroup_reject <- nrow(outgroup_df[outgroup_df$subjID == sub_name & outgroup_df$accept == 0, ])
+  
+  choice_check$subjID[i] = sub_name
+  
+  choice_check$computer_reject[i] = computer_reject
+  choice_check$human_reject[i] = human_reject
+  choice_check$ingroup_reject[i] = ingroup_reject
+  choice_check$outgroup_reject[i] = outgroup_reject
+  
+  choice_check$computer_accept[i] = computer_accept
+  choice_check$human_accept[i] = human_accept
+  choice_check$ingroup_accept[i] = ingroup_accept
+  choice_check$outgroup_accept[i] = outgroup_accept
+  
+  choice_check$computer_total[i] = computer_total
+  choice_check$human_total[i] = human_total
+  choice_check$ingroup_total[i] = ingroup_total
+  choice_check$outgroup_total[i] = outgroup_total
+}
+
+choice_check = choice_check %>% 
+  mutate(computer_accept_diff = computer_total - computer_accept,
+         computer_reject_diff = computer_total - computer_reject,
+         ingroup_accept_diff = ingroup_total - ingroup_accept,
+         ingroup_reject_diff = ingroup_total - ingroup_reject,
+         outgroup_accept_diff = outgroup_total - outgroup_accept,
+         outgroup_reject_diff = outgroup_total - outgroup_reject)
+  
+  
+sub_exclude = choice_check$subjID[choice_check$computer_accept_diff <= 2 |
+                                    choice_check$ingroup_accept_diff <= 2 |
+                                    choice_check$outgroup_accept_diff <= 2 |
+                                    choice_check$computer_reject_diff <= 2 |
+                                    choice_check$ingroup_reject_diff <= 2 |
+                                    choice_check$outgroup_reject_diff <= 2]
+length(sub_exclude)
+
+```
+
+# exclude subjects that choose reject fewer than 11 times (0-10)
+```{r}
+all_clean_filtered_df = all_clean_df[!(all_clean_df$subjID %in% sub_exclude),]
+sub_include = unique(all_clean_filtered_df$subjID)
+sub_include = data.frame(subjID = sub_include[])
+```
+
+# create separate txt for each condition
+```{r}
+computer_filtered_df = all_clean_filtered_df[all_clean_filtered_df$human == 0,]
+human_filtered_df = all_clean_filtered_df[all_clean_filtered_df$human == 1,]
+ingroup_filtered_df = human_filtered_df[human_filtered_df$ingroup == 1,]
+outgroup_filtered_df = human_filtered_df[human_filtered_df$ingroup == 0,]
+```
+
+# save filtered data
+```{r}
+write.csv(all_clean_filtered_df, file = paste(data_dir, "all_clean_filtered_df.csv", sep = "/"), 
+            row.names = FALSE)
+write.csv(sub_include, file = paste(data_dir, "sub_include.csv", sep = "/"), 
+            row.names = FALSE)
+write.table(computer_filtered_df, file = paste(data_dir, "computer_filtered.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(human_filtered_df, file = paste(data_dir, "human_filtered.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(ingroup_filtered_df, file = paste(data_dir, "ingroup_filtered.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(outgroup_filtered_df, file = paste(data_dir, "outgroup_filtered.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+```
+
+
+

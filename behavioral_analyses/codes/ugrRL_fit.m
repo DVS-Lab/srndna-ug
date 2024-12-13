@@ -25,13 +25,7 @@ N_iter = 10000;
 
 full_tbl = cell(N_sub,2);
 
-%%%%%%% for testing. to delete.
-sub_list_test = [10, 13, 16, 22, 28, 29, 30, 32, 37];
-full_tbl_test = cell(N_sub, 2);
-%%%%%%% for testing. to delete.
-
 for s = 1:N_sub
-% for s = 13
 % for s = 1:2 %%% for testing purpose. to delete.
     sub_name = sub_list{s,1};
     computer_sub_mat = computer_mat(...
@@ -67,44 +61,36 @@ for s = 1:N_sub
         1, "descend"); % max offer rejected
 
     % sub might press the wrong button
-    if isscalar(reject_descend) == 1
+    if isscalar(reject_descend)
         reject_max = reject_descend;
     else
-        if reject_descend(1) == 10 | reject_descend(1) - reject_descend(2) > 1
+        if reject_descend(1) == 10 || reject_descend(1) - reject_descend(2) > 1
             reject_max = reject_descend(2);
         else
             reject_max = reject_descend(1);
         end
     end
     
-
     norm0_mu = (accept_min + reject_max)/2;
     norm0_sigma = max(abs(accept_min - reject_max)/3,1);
     norm0_lb = 1;
     norm0_ub = 20;
 
-    sub_name{1} + sprintf(", s=%d", s)
-end
+    sub_name{1} + sprintf(", s=%d, accept_min=%d, reject_max=%d, norm0_mu=%d",...
+        s, accept_min, reject_max, norm0_mu)
+
     tic
 
     for iter = 1:N_iter
     % for iter = 1:2 %%% for testing purpose. to delete.
        
         % re-initialize optimization for each iteration
-        lb_sub = [9, 9, 0];      % Lower bounds
-        ub_sub = [10, 10, 1];     % Upper bounds
+        lb_sub = [0, 0, 0];      % Lower bounds
+        ub_sub = [20, 10, 1];     % Upper bounds
 
-        % %%%%%%% for testing. to delete.
-        x0_sub = [9.9511, 9.9034, 0.4370];
-        % %%%%%%% for testing. to delete.
-
-        % x0_sub = [unifrnd(lb_sub(1),ub_sub(1)), ...
-        %     unifrnd(lb_sub(2),ub_sub(2)), ...
-        %     unifrnd(0,1)];  % Initial values [alpha, tau, epsilon]
-
-        %%%%% fixed norm0 for testing purpose. to delete.
-        % norm0_sub = 7.5;
-        %%%%%
+        x0_sub = [unifrnd(lb_sub(1),ub_sub(1)), ...
+            unifrnd(lb_sub(2),ub_sub(2)), ...
+            unifrnd(0,1)];  % Initial values [alpha, tau, epsilon]
 
         while true % Generate random numbers until one falls within bounds
             norm0_sub = normrnd(norm0_mu, norm0_sigma);
@@ -112,10 +98,6 @@ end
                 break;
             end
         end
-
-        %%%%% fixed x0 for testing purpose. to delete.
-        % x0_sub = [9.6673, 9, 0.8016];
-        %%%%%
 
         % record initials
         init_tbl_sub(iter, 'alpha0') = {x0_sub(1)};
@@ -136,13 +118,13 @@ end
         init_tbl_sub(iter, 'alpha_i') = {params(1)};  % envy parameter
         init_tbl_sub(iter, 'tau_i') = {params(2)};   % inverse temperature
         init_tbl_sub(iter, 'epsilon_i') = {params(3)}; % learning rate
-        full_tbl_test{s,2} = init_tbl_sub;
+        % full_tbl{s,2} = init_tbl_sub; % for testing. to delete.
     end
     writetable(init_tbl_sub, ...
-        fullfile(data_dir, append(sub_name{1}, "_ugrRL_test.csv")))
+        fullfile(data_dir, append(sub_name{1}, "_ugrRL.csv")))
     full_tbl{s,2} = init_tbl_sub;
     toc
-% end
+end
 tic
-save(fullfile(fits_dir, append("subs_include", "_ugrRL_test.mat")), "full_tbl")
+save(fullfile(fits_dir, append("subs_include", "_ugrRL.mat")), "full_tbl")
 toc

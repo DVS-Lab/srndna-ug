@@ -44,28 +44,15 @@ function nLL = ugrRL_neg_LL_fun(params, choices, rewards, norm0)
             % Softmax probability
             p = 1 / (1 + exp(-tau * util));
 
-            %%%%%%%
             % Update log-likelihood,
             % log_lik = accept(i,t) * (-log(p)) + (1-accept(i,t)) * (-log(1 - p));
             if choices(t) == 1
-                LL = LL + log(p);
+                LL = LL + log(max(p, 1e-100)); % to go around p = 0
+                % LL = LL + log(p);
             else
-                LL = LL + log(max(1-p, 0.000000001));
+                LL = LL + log(max(1-p, 1e-100)); % to go around 1-p = 0
+                % LL = LL + log(1-p);
             end
-            %%%%%%%
-
-            % % Update log-likelihood,
-            % % log_lik = accept(i,t) * (-log(p)) + (1-accept(i,t)) * (-log(1 - p));
-            % if norm < 0 || norm > 20
-            %     continue;
-            % else
-            %     if choices(t) == 1
-            %         LL = LL + log(p);
-            %     else
-            %         LL = LL + log(1-p);
-            %     end
-            % end
-            % %%%%%
         end
 
         nLL = -LL;  % Return negative log-likelihood
