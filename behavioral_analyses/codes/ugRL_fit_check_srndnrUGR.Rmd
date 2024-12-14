@@ -424,8 +424,8 @@ dir.create(file.path(figures_dir, fig_folder))
 plot_title = "alpha 0-20, tau 0-10, norm0 choice informed"
 param_range = c(20, 10, 1)
 
-for (i in 1:nrow(participants_df)) {
-# for (i in 36) {
+# for (i in 1:nrow(participants_df)) {
+for (i in 11) {
   sub_i_name = participants_df$subjID[i]
   print(paste(i, sub_i_name, sep = "/"))
   
@@ -436,7 +436,7 @@ for (i in 1:nrow(participants_df)) {
     filter(exitflag == 1) %>%
     # filter(negLL <= min(negLL) + 1) %>%
     # filter(negLL <= quantile(negLL, probs = 1000/N_iter)) %>%
-    filter(negLL <= min(quantile(negLL, probs = 2000/N_iter),
+    filter(negLL <= min(quantile(negLL, probs = 300/N_iter),
                         min(negLL) + 1)) %>%
     select(negLL, prior_names, posterior_names)
   

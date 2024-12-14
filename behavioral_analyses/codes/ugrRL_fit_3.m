@@ -30,7 +30,7 @@ N_iter = 200000;
 full_tbl = cell(N_sub,2);
 
 % for s = 1:N_sub
-for s = 1:20
+for s = 21:30
 % for s = 36 %%% for testing purpose. to delete.
     sub_name = sub_list{s,1};
     computer_sub_mat = computer_mat(...
