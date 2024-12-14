@@ -1,6 +1,5 @@
 posterior_histo_plot_fun = 
-  function(sub_i_name, sub_i_fit, param_range, 
-           cvs_suff, fig_folder, w, h, bin_N, figure_dir) {
+  function(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w, h, bin_N, bin_N_scaled, figure_dir) {
   # ### for testing
   # param_range = c(50, 10, 1) # alpha, tau, epsilon
   # sub_i_fit = 
@@ -13,34 +12,34 @@ posterior_histo_plot_fun =
     posterior_name = "alpha_i"
     sub_i_fit[, posterior_name] = sub_i_fit[, posterior_name]
     post_alpha = ggplot(sub_i_fit, aes_string(x = posterior_name)) +
-      geom_histogram(binwidth = bin_width,  fill = "lightblue", color = "black") +
+      geom_histogram(binwidth = param_range[1]/bin_N,  fill = "lightblue", color = "black") +
       labs(title = posterior_name,
            y = "Frequency",
            x = "alpha, post") +
-      coord_cartesian(xlim = c(0, 1))
+      coord_cartesian(xlim = c(0, param_range[1]))
     
     posterior_name = "tau_i"
     sub_i_fit[, posterior_name] = sub_i_fit[, posterior_name]
     post_tau = ggplot(sub_i_fit, aes_string(x = posterior_name)) +
-      geom_histogram(binwidth = bin_width,  fill = "lightblue", color = "black") +
+      geom_histogram(binwidth = param_range[2]/bin_N,  fill = "lightblue", color = "black") +
       labs(title = posterior_name,
            y = "Frequency",
            x = "tau, post") +
-      coord_cartesian(xlim = c(0, 1))
+      coord_cartesian(xlim = c(0, param_range[2]))
     
     posterior_name = "epsilon_i"
     sub_i_fit[, posterior_name] = sub_i_fit[, posterior_name]
     post_ep = ggplot(sub_i_fit, aes_string(x = posterior_name)) +
-      geom_histogram(binwidth = bin_width,  fill = "lightblue", color = "black") +
+      geom_histogram(binwidth = param_range[3]/bin_N,  fill = "lightblue", color = "black") +
       labs(title = posterior_name,
            y = "Frequency", 
            x = "epsilon, post") + 
-      coord_cartesian(xlim = c(0, 1))  
+      coord_cartesian(xlim = c(0, param_range[3]))  
     
   posterior_name = "alpha_i"
   sub_i_fit[, posterior_name] = sub_i_fit[, posterior_name]/param_range[1]
   post_alpha_scaled = ggplot(sub_i_fit, aes_string(x = posterior_name)) +
-    geom_histogram(bins = bin_N,  fill = "lightblue", color = "black") +
+    geom_histogram(bins = bin_N_scaled,  fill = "lightblue", color = "black") +
     labs(title = posterior_name,
          y = "Frequency",
          x = "alpha scaled, post")
@@ -49,7 +48,7 @@ posterior_histo_plot_fun =
   posterior_name = "tau_i"
   sub_i_fit[, posterior_name] = sub_i_fit[, posterior_name]/param_range[2]
   post_tau_scaled = ggplot(sub_i_fit, aes_string(x = posterior_name)) +
-    geom_histogram(bins = bin_N,  fill = "lightblue", color = "black") +
+    geom_histogram(bins = bin_N_scaled,  fill = "lightblue", color = "black") +
     labs(title = posterior_name,
          y = "Frequency",
          x = "tau scaled, post")
@@ -58,16 +57,16 @@ posterior_histo_plot_fun =
   posterior_name = "epsilon_i"
   sub_i_fit[, posterior_name] = sub_i_fit[, posterior_name]/param_range[3]
   post_ep_scaled = ggplot(sub_i_fit, aes_string(x = posterior_name)) +
-    geom_histogram(bins = bin_N,  fill = "lightblue", color = "black") +
+    geom_histogram(bins = bin_N_scaled,  fill = "lightblue", color = "black") +
     labs(title = posterior_name,
          y = "Frequency", 
-         x = "epsilon scaled, post") 
+         x = "epsilon scaled, post")
     # coord_cartesian(xlim = c(0, 1))
   
   prior_name = "alpha0"
   sub_i_fit[, prior_name] = sub_i_fit[, prior_name]/param_range[1]
   pri_alpha_scaled = ggplot(sub_i_fit, aes_string(x = prior_name)) +
-    geom_histogram(bins = bin_N,  fill = "lightgreen", color = "black") +
+    geom_histogram(bins = bin_N_scaled,  fill = "lightgreen", color = "black") +
     labs(title = prior_name,
          y = "Frequency",
          x = "alpha scaled, prior")
@@ -76,7 +75,7 @@ posterior_histo_plot_fun =
   prior_name = "tau0"
   sub_i_fit[, prior_name] = sub_i_fit[, prior_name]/param_range[2]
   pri_tau_scaled = ggplot(sub_i_fit, aes_string(x = prior_name)) +
-    geom_histogram(bins = bin_N,  fill = "lightgreen", color = "black") +
+    geom_histogram(bins = bin_N_scaled,  fill = "lightgreen", color = "black") +
     labs(title = prior_name,
          y = "Frequency",
          x = "tau scaled, prior")
@@ -85,15 +84,15 @@ posterior_histo_plot_fun =
   prior_name = "epsilon0"
   sub_i_fit[, prior_name] = sub_i_fit[, prior_name]/param_range[3]
   pri_ep_scaled = ggplot(sub_i_fit, aes_string(x = prior_name)) +
-    geom_histogram(bins = bin_N,  fill = "lightgreen", color = "black") +
+    geom_histogram(bins = bin_N_scaled,  fill = "lightgreen", color = "black") +
     labs(title = prior_name,
          y = "Frequency", 
          x = "epsilon scaled, prior")
     # coord_cartesian(xlim = c(0, 1))
   
-  p_post_pri = ggarrange(post_alpha, post_ep, post_tau,
-                         post_alpha_scaled, post_ep_scaled, post_tau_scaled, 
-                         pri_alpha_scaled, pri_ep_scaled, pri_tau_scaled, 
+  p_post_pri = ggarrange(post_alpha, post_tau, post_ep, 
+                         post_alpha_scaled, post_tau_scaled, post_ep_scaled, 
+                         pri_alpha_scaled, pri_tau_scaled, pri_ep_scaled, 
                          nrow = 3, ncol = 3, heights = h, widths = w)
   
   ggsave(paste(figure_dir, fig_folder, paste(sub_i_name, fig_folder, "histo.png", sep = "_"), 

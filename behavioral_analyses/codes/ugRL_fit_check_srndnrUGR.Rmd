@@ -102,10 +102,10 @@ prior_names = c('alpha0', 'tau0', 'epsilon0', 'norm0')
 w_corr = 7
 h_corr = 7
 
-h_histo = 12
-w_histo = 12
-bin_N = 30
-bin_width = 1/50
+h_histo = 7
+w_histo = 7
+bin_N = 50
+bin_N_scaled = 30
 ```
 
 ## alpha 0-20, tau 0-10, norm0 customized based on choice
@@ -116,18 +116,18 @@ plot_title = "alpha 0-20, tau 0-10"
 param_range = c(20, 10, 1)
 
 for (i in 1:nrow(participants_df)) {
-  participants_df$subjID[i]
-  print(paste(i, participants_df$subjID[i], sep = "/"))
   sub_i_name = participants_df$subjID[i]
-  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  print(paste(i, sub_i_name, sep = "/"))
   
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
   print(sub_i_csv)
+  
   sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
     # filter(exitflag == 1) %>% 
     filter(negLL <= quantile(negLL, probs = 0.1)) %>% 
     select(negLL, prior_names, posterior_names)
   
-  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
   # corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
 ```
@@ -140,18 +140,18 @@ plot_title = "alpha 0-30, tau 0-10"
 param_range = c(30, 10, 1)
 
 for (i in 1:nrow(participants_df)) {
-  participants_df$subjID[i]
-  print(paste(i, participants_df$subjID[i], sep = "/"))
   sub_i_name = participants_df$subjID[i]
-  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  print(paste(i, sub_i_name, sep = "/"))
   
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
   print(sub_i_csv)
+  
   sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
     # filter(exitflag == 1) %>% 
     filter(negLL <= quantile(negLL, probs = 0.1)) %>%
     select(negLL, prior_names, posterior_names)
   
-  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
   corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
 ```
@@ -175,7 +175,7 @@ for (i in 1:nrow(participants_df)) {
     filter(negLL <= quantile(negLL, probs = 0.1)) %>%
     select(negLL, prior_names, posterior_names)
   
-  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
   corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
 ```
@@ -200,7 +200,7 @@ for (i in 1:nrow(participants_df)) {
     filter(negLL <= quantile(negLL, probs = 0.1)) %>%
     select(negLL, prior_names, posterior_names)
   
-  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
   corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
 ```
@@ -225,7 +225,7 @@ for (i in 1:nrow(participants_df)) {
     filter(negLL <= quantile(negLL, probs = 0.1)) %>%
     select(negLL, prior_names, posterior_names)
   
-  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
   corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
 ```
@@ -238,7 +238,7 @@ dir.create(file.path(figures_dir, fig_folder))
 plot_title = "alpha 0-500, tau 0-100, norm0 choice informed"
 param_range = c(500, 100, 1)
 
-for (i in 1:nrow(participants_df)) {
+for (i in 1:1) {
   sub_i_name = participants_df$subjID[i]
   print(paste(i, sub_i_name, sep = "/"))
   
@@ -250,7 +250,7 @@ for (i in 1:nrow(participants_df)) {
     filter(negLL <= quantile(negLL, probs = 0.1)) %>%
     select(negLL, prior_names, posterior_names)
 
-  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
   corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
 ```
