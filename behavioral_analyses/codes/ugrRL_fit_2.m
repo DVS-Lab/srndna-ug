@@ -25,7 +25,7 @@ coltypes = {'double', 'double', 'double', 'double','double', ...
     'double','double', ...
     'double', 'double', 'double', 'double'};
 
-N_iter = 200000;
+N_iter = 500000;
 
 full_tbl = cell(N_sub,2);
 
