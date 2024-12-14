@@ -94,18 +94,18 @@ for s = 1:N_sub
         x0_sub = [unifrnd(lb_sub(1),ub_sub(1)), ...
             unifrnd(lb_sub(2),ub_sub(2)), ...
             unifrnd(0,1)];  % Initial values [alpha, tau, epsilon]
-        params_scaling = [100, 20, 1]; % scaling factors
+        params_scaling = [50, 10, 1]; % scaling factors
 
         %%% informed variable norm initial
-        while true % Generate random numbers until one falls within bounds
-            norm0_sub = normrnd(norm0_mu, norm0_sigma);
-            if norm0_sub >= norm0_lb && norm0_sub <= norm0_ub
-                break;
-            end
-        end
+        % while true % Generate random numbers until one falls within bounds
+        %     norm0_sub = normrnd(norm0_mu, norm0_sigma);
+        %     if norm0_sub >= norm0_lb && norm0_sub <= norm0_ub
+        %         break;
+        %     end
+        % end
 
         %%% random norm initial
-        % norm0_sub = unifrnd(0,20); % can use this to compare model, e.g. informed variable norm0 vs uninformed variable norm 0
+        norm0_sub = unifrnd(0,20); % can use this to compare model, e.g. informed variable norm0 vs uninformed variable norm 0
 
         % record initials
         init_tbl_sub(iter, 'alpha0') = {x0_sub(1) * params_scaling(1)}; % real
@@ -140,6 +140,7 @@ for s = 1:N_sub
         fullfile(fits_dir, append(sub_name{1}, ...
         "_alpha", string(params_scaling(1)), ...
         "tau", string(params_scaling(2)), ...
+        "norm0rnd", ...
         "_ugrRL.csv")))
     full_tbl{s,2} = init_tbl_sub;
     toc
@@ -148,6 +149,7 @@ end
 save(fullfile(fits_dir, append("subs_include", ...
     "_alpha", string(params_scaling(1)), ...
     "tau", string(params_scaling(2)), ...
+    "norm0rnd", ...
     "_ugrRL.mat")), "full_tbl")
 
 format shortG
