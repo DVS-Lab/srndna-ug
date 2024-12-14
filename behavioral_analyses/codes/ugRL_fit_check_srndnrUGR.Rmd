@@ -424,8 +424,8 @@ dir.create(file.path(figures_dir, fig_folder))
 plot_title = "alpha 0-20, tau 0-10, norm0 choice informed"
 param_range = c(20, 10, 1)
 
-# for (i in 1:nrow(participants_df)) {
-for (i in 36) {
+for (i in 1:nrow(participants_df)) {
+# for (i in 36) {
   sub_i_name = participants_df$subjID[i]
   print(paste(i, sub_i_name, sep = "/"))
   
