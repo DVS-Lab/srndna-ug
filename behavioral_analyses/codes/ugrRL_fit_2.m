@@ -51,10 +51,10 @@ for s = 11:20
         sort(unique(computer_sub_mat.offer(computer_sub_mat.accept == 1))...
         ,1 , "ascend"); % min offer accepted,
 
-    if isscalar(accept_ascend) == 1
+    if isscalar(accept_ascend)
         accept_min = accept_ascend;
     else
-        if accept_ascend(1) == 1 | accept_ascend(2) - accept_ascend(1)>1 % to prevend wrong button press affect norm0
+        if accept_ascend(1) == 1 || accept_ascend(2) - accept_ascend(1)>1 % to prevend wrong button press affect norm0
             accept_min = accept_ascend(2);
         else
             accept_min = accept_ascend(1);
@@ -78,7 +78,7 @@ for s = 11:20
 
     norm0_mu = (accept_min + reject_max)/2;
     norm0_sigma = max(abs(accept_min - reject_max)/3,1);
-    norm0_lb = 1;
+    norm0_lb = 0;
     norm0_ub = 20;
 
     sub_name{1} + sprintf(", s=%d, accept_min=%d, reject_max=%d, norm0_mu=%d",...
@@ -99,15 +99,15 @@ for s = 11:20
         params_scaling = [50, 20, 1]; % scaling factors
 
         %%% informed variable norm initial
-        % while true % Generate random numbers until one falls within bounds
-        %     norm0_sub = normrnd(norm0_mu, norm0_sigma);
-        %     if norm0_sub >= norm0_lb && norm0_sub <= norm0_ub
-        %         break;
-        %     end
-        % end
+        while true % Generate random numbers until one falls within bounds
+            norm0_sub = normrnd(norm0_mu, norm0_sigma);
+            if norm0_sub >= norm0_lb && norm0_sub <= norm0_ub
+                break;
+            end
+        end
 
         %%% random norm initial
-        norm0_sub = unifrnd(0,20); % can use this to compare model, e.g. informed variable norm0 vs uninformed variable norm 0
+        % norm0_sub = unifrnd(0,20); % can use this to compare model, e.g. informed variable norm0 vs uninformed variable norm 0
 
         % record initials
         init_tbl_sub(iter, 'alpha0') = {x0_sub(1) * params_scaling(1)}; % real
@@ -142,7 +142,7 @@ for s = 11:20
         fullfile(fits_dir, append(sub_name{1}, ...
         "_alpha", string(params_scaling(1)), ...
         "tau", string(params_scaling(2)), ...
-        "norm0rnd", ...
+        "norm0informed", ...
         "_ugrRL.csv")))
     full_tbl{s,2} = init_tbl_sub;
     toc
