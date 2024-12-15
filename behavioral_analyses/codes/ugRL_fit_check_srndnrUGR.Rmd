@@ -445,11 +445,11 @@ for (i in 1:nrow(participants_df)) {
 }
 ```
 
-## alpha 0-50, tau 0-20, norm0 rnd
+## alpha 0-50, tau 0-20, norm0 rnd, non-zero exitflag, first 5000 min negLL
 ```{r}
-N_iter = 200000
+N_iter = 500000
 cvs_suff = "_alpha50tau20norm0rnd_ugrRL.csv"
-fig_folder = "ugRL_alpha50tau20norm0rnd"
+fig_folder = "ugRL_alpha50tau20norm0rnd_5000"
 dir.create(file.path(figures_dir, fig_folder))
 plot_title = "alpha 0-20, tau 0-10, norm0 choice informed"
 param_range = c(50, 20, 1)
@@ -462,17 +462,48 @@ for (i in 1:nrow(participants_df)) {
   sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
     filter(exitflag > 0) %>%
     # filter(negLL <= min(negLL) + 1) %>%
-    # filter(negLL <= quantile(negLL, probs = 1000/N_iter)) %>%
+    filter(negLL <= quantile(negLL, probs = 5000/N_iter)) %>%
     # filter(negLL <= max(quantile(negLL, probs = 1000/N_iter),
     #                     min(negLL) + 1)) %>%
-    filter(negLL <= min(quantile(negLL, probs = 1000/N_iter),
-                        min(negLL) + 1)) %>%
+    # filter(negLL <= min(quantile(negLL, probs = 5000/N_iter),
+    #                     min(negLL) + 1)) %>%
     select(negLL, prior_names, posterior_names)
   
   print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
   print(sub_i_csv)
   
-  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
-  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+  # posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
+  # corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+}
+```
+## alpha 0-50, tau 0-20, norm0 rnd, non-zero exitflag, min negLL +1
+```{r}
+N_iter = 500000
+cvs_suff = "_alpha50tau20norm0rnd_ugrRL.csv"
+fig_folder = "ugRL_alpha50tau20norm0rnd_negLLminPlus1"
+dir.create(file.path(figures_dir, fig_folder))
+plot_title = "alpha 0-20, tau 0-10, norm0 choice informed"
+param_range = c(50, 20, 1)
+
+for (i in 1:nrow(participants_df)) {
+# for (i in 36) {
+  sub_i_name = participants_df$subjID[i]
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  
+  sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
+    filter(exitflag > 0) %>%
+    filter(negLL <= min(negLL) + 1) %>%
+    # filter(negLL <= quantile(negLL, probs = 5000/N_iter)) %>%
+    # filter(negLL <= max(quantile(negLL, probs = 1000/N_iter),
+    #                     min(negLL) + 1)) %>%
+    # filter(negLL <= min(quantile(negLL, probs = 5000/N_iter),
+    #                     min(negLL) + 1)) %>%
+    select(negLL, prior_names, posterior_names)
+  
+  print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
+  print(sub_i_csv)
+  
+  # posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
+  # corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
 ```
