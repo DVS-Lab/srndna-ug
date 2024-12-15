@@ -36,7 +36,7 @@ full_tbl = cell(N_sub,2);
 
 % for s = 1:N_sub
 for s = 1:10
-% for s = 36 %%% for testing purpose. to delete.
+    % for s = 36 %%% for testing purpose. to delete.
     sub_name = sub_list{s,1};
     computer_sub_mat = computer_mat(...
         strcmp(computer_mat.subjID, sub_name) == 1,:);
@@ -54,7 +54,12 @@ for s = 1:10
     % sub might press the wrong button
     accept_ascend = ...
         sort(unique(computer_sub_mat.offer(computer_sub_mat.accept == 1))...
-        ,1 , "ascend"); % min offer accepted,
+        ,1 , "ascend"); % min offer accepted
+    accept_descend = ...
+        sort(unique(computer_sub_mat.offer(computer_sub_mat.accept == 1))...
+        ,1 , "descend"); % max offer accepted
+
+    accept_max = accept_descend(1);
 
     if isscalar(accept_ascend)
         accept_min = accept_ascend;
@@ -70,6 +75,12 @@ for s = 1:10
         sort(unique(computer_sub_mat.offer(computer_sub_mat.accept == 0)),...
         1, "descend"); % max offer rejected
 
+    reject_ascend = ...
+        sort(unique(computer_sub_mat.offer(computer_sub_mat.accept == 0)),...
+        1, "ascend"); % max offer rejected
+
+    reject_min = reject_ascend(1);
+
     % sub might press the wrong button
     if isscalar(reject_descend)
         reject_max = reject_descend;
@@ -81,30 +92,32 @@ for s = 1:10
         end
     end
 
-    norm0_mu = (accept_min + reject_max)/2;
-    norm0_width = abs(accept_min - reject_max);
-    
-%     %%% only for collecting norm0 estimate info. to comment out
-%     norm0_tbl(s,"subjID") = {sub_name};
-%     norm0_tbl(s,"norm0_mu") = {norm0_mu};
-%     norm0_tbl(s,"norm0_low") = {norm0_mu - norm0_width*0.5};
-%     norm0_tbl(s,"norm0_high") = {norm0_mu + norm0_width*0.5};
-% end
-%     writetable(norm0_tbl, ...
-%         fullfile(fits_dir, "sub_include_norm0_guess.csv"))
-%     %%%%%%%%%%%%%%%%%%%%%
+    norm0_extremes = [reject_min, reject_max, accept_min, accept_max];
+
+    norm0_mu = (min(norm0_extremes) + max(norm0_extremes))/2;
+    norm0_width = abs(min(norm0_extremes) - max(norm0_extremes));
+
+    %     %%% only for collecting norm0 estimate info. to comment out
+    %     norm0_tbl(s,"subjID") = {sub_name};
+    %     norm0_tbl(s,"norm0_mu") = {norm0_mu};
+    %     norm0_tbl(s,"norm0_low") = {norm0_mu - norm0_width*0.5};
+    %     norm0_tbl(s,"norm0_high") = {norm0_mu + norm0_width*0.5};
+    % end
+    %     writetable(norm0_tbl, ...
+    %         fullfile(fits_dir, "sub_include_norm0_guess.csv"))
+    %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     norm0_sigma = max(norm0_width/2,2);
     norm0_lb = 0;
     norm0_ub = 20;
 
-    sub_name{1} + sprintf(", s=%d, accept_min=%d, reject_max=%d, norm0_mu=%d",...
-        s, accept_min, reject_max, norm0_mu)
+    sub_name{1} + sprintf(", s=%d, norm0_lower=%d, norm0_higher=%d, norm0_mu=%d",...
+        s, min(norm0_extremes), max(norm0_extremes), norm0_mu)
 
     tic
 
-    for iter = 1:N_iter
-        % for iter = 1:2 %%% for testing purpose. to delete.
+    % for iter = 1:N_iter
+    for iter = 1:2 %%% for testing purpose. to delete.
 
         % re-initialize optimization for each iteration
         lb_sub = [0, 0, 0];      % scaled Lower bounds
@@ -159,7 +172,7 @@ for s = 1:10
         fullfile(fits_dir, append(sub_name{1}, ...
         "_alpha", string(params_scaling(1)), ...
         "tau", string(params_scaling(2)), ...
-        "norm0informed", ...
+        "norm0informedUPDATED", ...
         "_ugrRL.csv")))
     full_tbl{s,2} = init_tbl_sub;
     toc
