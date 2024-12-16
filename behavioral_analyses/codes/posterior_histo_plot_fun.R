@@ -69,7 +69,7 @@ posterior_histo_plot_fun =
       geom_histogram(bins = bin_N_scaled,  fill = "lightgreen", color = "black") +
       labs(title = prior_name,
            y = "Frequency",
-           x = "alpha scaled, prior")
+           x = "alpha scaled, prior") +
     coord_cartesian(xlim = c(0, 1))
     
     prior_name = "tau0"
@@ -78,7 +78,7 @@ posterior_histo_plot_fun =
       geom_histogram(bins = bin_N_scaled,  fill = "lightgreen", color = "black") +
       labs(title = prior_name,
            y = "Frequency",
-           x = "tau scaled, prior")
+           x = "tau scaled, prior") +
     coord_cartesian(xlim = c(0, 1))
     
     prior_name = "epsilon0"
@@ -87,7 +87,7 @@ posterior_histo_plot_fun =
       geom_histogram(bins = bin_N_scaled,  fill = "lightgreen", color = "black") +
       labs(title = prior_name,
            y = "Frequency", 
-           x = "epsilon scaled, prior")
+           x = "epsilon scaled, prior") +
     coord_cartesian(xlim = c(0, 1))
     
     prior_name = "norm0"

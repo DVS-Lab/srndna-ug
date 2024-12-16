@@ -101,7 +101,6 @@ norm0_df = read.csv(file = paste(fits_dir, "sub_include_norm0_guess.csv", sep = 
 # computer_df = read.table(paste(data_dir, "computer_filtered.txt", sep = "/"), sep = "\t", header = T)
 ```
 
-# plot corr matrix and distribution
 ## figure parameters
 ```{r}
 w_corr = 7
@@ -113,6 +112,7 @@ bin_N = 50
 bin_N_scaled = 30
 ```
 
+# computer condition
 ## alpha 0-20, tau 0-10, norm0 customized based on choice
 ```{r}
 cvs_suff = "_ugrRL.csv"
@@ -807,3 +807,243 @@ for (i in 1:nrow(participants_df)) {
   corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
 ```
+
+## expanded alpha and tau
+### alpha 50-100 OR tau 20-10, norm0 informed, exitflag > 0, 5000
+```{r}
+N_iter = 500000
+fig_folder = "ugRL_alpha100tau30norm0informedUPDATED_5000"
+dir.create(file.path(figures_dir, fig_folder))
+plot_title = "alpha 50-100 OR tau 20-10, norm0 informed"
+# param_range = c(50, 20, 1)
+
+sub_list_expand = c("sub-111", "sub-113", "sub-116", 
+                    "sub-124", "sub-127", "sub-129", 
+                    "sub-135", "sub-143", "sub-144", "sub-159");
+
+sub_list_expand_param = c('tau', 'alpha', 'both', 
+                          'tau', 'both', 'alpha', 
+                          'alpha', 'tau', 'tau', 'alpha');
+
+for (i in 1:length(sub_list_expand)) {
+  para_type = sub_list_expand_param[i]
+  if (para_type == "alpha") {
+    cvs_suff = "_alpha100tau20norm0informedUPDATED_ugrRL.csv"
+    param_range = c(100, 20, 1)
+  } else if (para_type == "tau") {
+    cvs_suff = "_alpha50tau30norm0informedUPDATED_ugrRL.csv"
+    param_range = c(50, 30, 1)
+  }  else if (para_type == "both") {
+    cvs_suff = "_alpha100tau30norm0informedUPDATED_ugrRL.csv"
+    param_range = c(100, 30, 1)
+  }
+  
+  sub_i_name = sub_list_expand[i]
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  
+  sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
+    filter(exitflag > 0) %>% 
+    # filter(negLL <= min(.$negLL) + 1) %>%
+    filter(negLL <= quantile(negLL, probs = 5000/nrow(.))) %>% 
+    # filter(negLL <= max(quantile(negLL, probs = 1000/nrow(.)),
+    #                     min(negLL) + 1)) %>%
+    # filter(negLL <= min(quantile(negLL, probs = 1000/nrow(.)),
+    #                     min(negLL) + 1)) %>%
+    select(negLL, prior_names, posterior_names)
+
+  print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
+  print(sub_i_csv)
+  
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
+  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+}
+```
+
+### alpha 50-100 OR tau 20-10, norm0 informed, exitflag > 0, 1000
+```{r}
+N_iter = 500000
+fig_folder = "ugRL_alpha100tau30norm0informedUPDATED_1000"
+dir.create(file.path(figures_dir, fig_folder))
+plot_title = "alpha 50-100 OR tau 20-30, norm0 informed"
+# param_range = c(50, 20, 1)
+
+sub_list_expand = c("sub-111", "sub-113", "sub-116", 
+                    "sub-124", "sub-127", "sub-129", 
+                    "sub-135", "sub-143", "sub-144", "sub-159");
+
+sub_list_expand_param = c('tau', 'alpha', 'both', 
+                          'tau', 'both', 'alpha', 
+                          'alpha', 'tau', 'tau', 'alpha');
+
+for (i in 1:length(sub_list_expand)) {
+  para_type = sub_list_expand_param[i]
+  if (para_type == "alpha") {
+    cvs_suff = "_alpha100tau20norm0informedUPDATED_ugrRL.csv"
+    param_range = c(100, 20, 1)
+  } else if (para_type == "tau") {
+    cvs_suff = "_alpha50tau30norm0informedUPDATED_ugrRL.csv"
+    param_range = c(50, 30, 1)
+  }  else if (para_type == "both") {
+    cvs_suff = "_alpha100tau30norm0informedUPDATED_ugrRL.csv"
+    param_range = c(100, 30, 1)
+  }
+  
+  sub_i_name = sub_list_expand[i]
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  
+  sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
+    filter(exitflag > 0) %>% 
+    # filter(negLL <= min(.$negLL) + 1) %>%
+    filter(negLL <= quantile(negLL, probs = 1000/nrow(.))) %>% 
+    # filter(negLL <= max(quantile(negLL, probs = 1000/nrow(.)),
+    #                     min(negLL) + 1)) %>%
+    # filter(negLL <= min(quantile(negLL, probs = 1000/nrow(.)),
+    #                     min(negLL) + 1)) %>%
+    select(negLL, prior_names, posterior_names)
+
+  print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
+  print(sub_i_csv)
+  
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
+  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+}
+```
+
+# ingroup condition
+## alpha 0-50, tau 0-20, norm0 informed, exitflag > 0, 5000
+```{r}
+N_iter = 500000
+cvs_suff = "_alpha50tau20norm0informedUPDATED_ugrRL_ingroup.csv"
+fig_folder = "ugRL_alpha50tau20norm0informedUPDATED_ingroup_5000"
+dir.create(file.path(figures_dir, fig_folder))
+plot_title = "alpha 0-50, tau 0-20, norm0 informed"
+param_range = c(50, 20, 1)
+
+for (i in 1:nrow(participants_df)) {
+# for (i in 39) {
+  sub_i_name = participants_df$subjID[i]
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  
+  sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
+    filter(exitflag > 0) %>% 
+    # filter(negLL <= min(.$negLL) + 1) %>%
+    filter(negLL <= quantile(negLL, probs = 5000/nrow(.))) %>%
+    # filter(negLL <= max(quantile(negLL, probs = 1000/nrow(.)),
+    #                     min(negLL) + 1)) %>%
+    # filter(negLL <= min(quantile(negLL, probs = 1000/nrow(.)),
+    #                     min(negLL) + 1)) %>%
+    select(negLL, prior_names, posterior_names)
+  
+  print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
+  print(sub_i_csv)
+  
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
+  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+}
+```
+
+## alpha 0-50, tau 0-20, norm0 informed, exitflag > 0, 1000
+```{r}
+N_iter = 500000
+cvs_suff = "_alpha50tau20norm0informedUPDATED_ugrRL_ingroup.csv"
+fig_folder = "ugRL_alpha50tau20norm0informedUPDATED_ingroup_1000"
+dir.create(file.path(figures_dir, fig_folder))
+plot_title = "alpha 0-50, tau 0-20, norm0 informed"
+param_range = c(50, 20, 1)
+
+for (i in 1:nrow(participants_df)) {
+# for (i in 39) {
+  sub_i_name = participants_df$subjID[i]
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  
+  sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
+    filter(exitflag > 0) %>% 
+    # filter(negLL <= min(.$negLL) + 1) %>%
+    filter(negLL <= quantile(negLL, probs = 1000/nrow(.))) %>%
+    # filter(negLL <= max(quantile(negLL, probs = 1000/nrow(.)),
+    #                     min(negLL) + 1)) %>%
+    # filter(negLL <= min(quantile(negLL, probs = 1000/nrow(.)),
+    #                     min(negLL) + 1)) %>%
+    select(negLL, prior_names, posterior_names)
+  
+  print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
+  print(sub_i_csv)
+  
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
+  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+}
+```
+
+# outgroup condition
+## alpha 0-50, tau 0-20, norm0 informed, exitflag > 0, 5000
+```{r}
+N_iter = 500000
+cvs_suff = "_alpha50tau20norm0informedUPDATED_ugrRL_outgroup.csv"
+fig_folder = "ugRL_alpha50tau20norm0informedUPDATED_outgroup_5000"
+dir.create(file.path(figures_dir, fig_folder))
+plot_title = "alpha 0-50, tau 0-20, norm0 informed"
+param_range = c(50, 20, 1)
+
+for (i in 1:nrow(participants_df)) {
+  # for (i in 39) {
+  sub_i_name = participants_df$subjID[i]
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  
+  sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
+    filter(exitflag > 0) %>% 
+    # filter(negLL <= min(.$negLL) + 1) %>%
+    filter(negLL <= quantile(negLL, probs = 5000/nrow(.))) %>%
+    # filter(negLL <= max(quantile(negLL, probs = 1000/nrow(.)),
+    #                     min(negLL) + 1)) %>%
+    # filter(negLL <= min(quantile(negLL, probs = 1000/nrow(.)),
+    #                     min(negLL) + 1)) %>%
+    select(negLL, prior_names, posterior_names)
+  
+  print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
+  print(sub_i_csv)
+  
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
+  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+}
+```
+
+## alpha 0-50, tau 0-20, norm0 informed, exitflag > 0, 1000
+```{r}
+N_iter = 500000
+cvs_suff = "_alpha50tau20norm0informedUPDATED_ugrRL_outgroup.csv"
+fig_folder = "ugRL_alpha50tau20norm0informedUPDATED_outgroup_1000"
+dir.create(file.path(figures_dir, fig_folder))
+plot_title = "alpha 0-50, tau 0-20, norm0 informed"
+param_range = c(50, 20, 1)
+
+for (i in 1:nrow(participants_df)) {
+  # for (i in 39) {
+  sub_i_name = participants_df$subjID[i]
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  
+  sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
+    filter(exitflag > 0) %>% 
+    # filter(negLL <= min(.$negLL) + 1) %>%
+    filter(negLL <= quantile(negLL, probs = 1000/nrow(.))) %>%
+    # filter(negLL <= max(quantile(negLL, probs = 1000/nrow(.)),
+    #                     min(negLL) + 1)) %>%
+    # filter(negLL <= min(quantile(negLL, probs = 1000/nrow(.)),
+    #                     min(negLL) + 1)) %>%
+    select(negLL, prior_names, posterior_names)
+  
+  print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
+  print(sub_i_csv)
+  
+  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
+  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+}
+```
+
+
+
+
+
+
+
+
+
