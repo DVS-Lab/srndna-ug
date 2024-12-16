@@ -7,8 +7,8 @@ clear
 %% set up directory and load data
 data_dir = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses/data";
 fits_dir = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses/fits";
-computer_dir = fullfile(data_dir, "computer_filtered.txt");
-computer_mat = readtable(computer_dir);
+ingroup_dir = fullfile(data_dir, "ingroup_filtered.txt");
+ingroup_mat = readtable(ingroup_dir);
 
 sub_list = readtable(fullfile(data_dir, "sub_include.csv"));
 [N_sub,~] = size(sub_list);
@@ -39,11 +39,11 @@ ub_sub = [1, 1, 1];     % scaled Upper bounds
 params_scaling = [50, 20, 1]; % scaling factors
 
 % for s = 1:N_sub
-for s = 1:10
+for s = 21:30
     % for s = 36 %%% for testing purpose. to delete.
     sub_name = sub_list{s,1};
-    computer_sub_mat = computer_mat(...
-        strcmp(computer_mat.subjID, sub_name) == 1,:);
+    ingroup_sub_mat = ingroup_mat(...
+        strcmp(ingroup_mat.subjID, sub_name) == 1,:);
 
     full_tbl{s,1} = sub_name;
 
@@ -52,15 +52,15 @@ for s = 1:10
         'VariableTypes', coltypes, 'VariableNames', colnames);
 
     % set initial norm based on choice information
-    accept_sub = computer_sub_mat.accept;
-    offer_sub = computer_sub_mat.offer;
+    accept_sub = ingroup_sub_mat.accept;
+    offer_sub = ingroup_sub_mat.offer;
 
     % sub might press the wrong button
     accept_ascend = ...
-        sort(unique(computer_sub_mat.offer(computer_sub_mat.accept == 1))...
+        sort(unique(ingroup_sub_mat.offer(ingroup_sub_mat.accept == 1))...
         ,1 , "ascend"); % min offer accepted
     accept_descend = ...
-        sort(unique(computer_sub_mat.offer(computer_sub_mat.accept == 1))...
+        sort(unique(ingroup_sub_mat.offer(ingroup_sub_mat.accept == 1))...
         ,1 , "descend"); % max offer accepted
 
     accept_max = accept_descend(1);
@@ -76,11 +76,11 @@ for s = 1:10
     end
 
     reject_descend = ...
-        sort(unique(computer_sub_mat.offer(computer_sub_mat.accept == 0)),...
+        sort(unique(ingroup_sub_mat.offer(ingroup_sub_mat.accept == 0)),...
         1, "descend"); % max offer rejected
 
     reject_ascend = ...
-        sort(unique(computer_sub_mat.offer(computer_sub_mat.accept == 0)),...
+        sort(unique(ingroup_sub_mat.offer(ingroup_sub_mat.accept == 0)),...
         1, "ascend"); % max offer rejected
 
     reject_min = reject_ascend(1);
@@ -108,7 +108,7 @@ for s = 1:10
     %     norm0_tbl(s,"norm0_high") = {norm0_mu + norm0_width*0.5};
     % end
     %     writetable(norm0_tbl, ...
-    %         fullfile(fits_dir, "sub_include_norm0_guess.csv"))
+    %         fullfile(fits_dir, "sub_include_norm0_guess_ingroup.csv"))
     %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     norm0_sigma = min(norm0_width/6,1.5); % 10/6
@@ -177,7 +177,7 @@ for s = 1:10
         "_alpha", string(params_scaling(1)), ...
         "tau", string(params_scaling(2)), ...
         "norm0informedUPDATED", ...
-        "_ugrRL.csv")))
+        "_ugrRL_ingroup.csv")))
     full_tbl{s,2} = init_tbl_sub;
     toc
 end
