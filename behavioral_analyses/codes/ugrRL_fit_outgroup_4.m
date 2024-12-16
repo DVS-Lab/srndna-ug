@@ -1,5 +1,5 @@
-% created 12/11/2024 by Jen Yang
-% last modified 12/11/2024 by Jen Yang
+% created 12/16/2024 by Jen Yang
+% last modified 12/16/2024 by Jen Yang
 % code to fit ug_delta per subject
 
 clear
@@ -39,7 +39,7 @@ ub_sub = [1, 1, 1];     % scaled Upper bounds
 params_scaling = [50, 20, 1]; % scaling factors
 
 % for s = 1:N_sub
-for s = 1:10
+for s = 31:N_sub
     % for s = 36 %%% for testing purpose. to delete.
     sub_name = sub_list{s,1};
     outgroup_sub_mat = outgroup_mat(...
