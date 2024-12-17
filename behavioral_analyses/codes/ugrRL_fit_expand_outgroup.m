@@ -1,5 +1,5 @@
 % created 12/11/2024 by Jen Yang
-% last modified 12/11/2024 by Jen Yang
+% last modified 12/16/2024 by Jen Yang
 % code to fit ug_delta per subject
 
 clear
@@ -10,8 +10,20 @@ fits_dir = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses/fits";
 outgroup_dir = fullfile(data_dir, "outgroup_filtered.txt");
 outgroup_mat = readtable(outgroup_dir);
 
-sub_list = readtable(fullfile(data_dir, "sub_include.csv"));
-[N_sub,~] = size(sub_list);
+% sub_list = readtable(fullfile(data_dir, "sub_include.csv"));
+sub_list_expand = [...
+    106, 109, 110, 112, 113, ...
+    121, 124, 128, 129, ...
+    137, 145, ...
+    151, 154, 157, 158, 159];
+sub_list_expand_param = {...
+    'alpha', 'both', 'both', 'both', 'both', ...
+    'alpha', 'tau', 'alpha', 'alpha',...
+    'both', 'both', ...
+    'both','alpha', 'alpha', 'alpha', 'alpha'};
+
+% [N_sub,~] = size(sub_list);
+[~, N_sub_extend] = size(sub_list_expand);
 
 %% prepare cell to save fits
 % row - each iteration
@@ -27,25 +39,29 @@ coltypes = {'double', 'double', 'double', 'double','double', ...
 
 N_iter = 500000;
 
-full_tbl = cell(N_sub,2);
+full_tbl = cell(N_sub_extend,2);
 
 % norm0_tbl = table('Size',[N_sub,4],...
 %         'VariableTypes', {'string', 'double', 'double', 'double'}, ...
 %         'VariableNames', ["subjID", "norm0_mu", "norm0_low", "norm0_high"]);
 
+% param bounds and scaling set up
 lb_sub = [0, 0, 0];      % scaled Lower bounds
 ub_sub = [1, 1, 1];     % scaled Upper bounds
 % params_scaling = [20, 10, 1]; % scaling factors
-params_scaling = [50, 20, 1]; % scaling factors
+params_scaling_old = [50, 20, 1]; % scaling factors
+params_scaling_new = [100, 30, 1]; % scaling factors
 
 % for s = 1:N_sub
-for s = 11:20
+for s = 1:N_sub_extend
     % for s = 36 %%% for testing purpose. to delete.
-    sub_name = sub_list{s,1};
+    % sub_name = sub_list{s,1};
+    sub_name_expand = sprintf("sub-%.0f", sub_list_expand(s));
+    
     outgroup_sub_mat = outgroup_mat(...
-        strcmp(outgroup_mat.subjID, sub_name) == 1,:);
+        strcmp(outgroup_mat.subjID, sub_name_expand) == 1,:);
 
-    full_tbl{s,1} = sub_name;
+    full_tbl{s,1} = sub_name_expand;
 
     % make empty table for current sut
     init_tbl_sub = table('Size',[N_iter,length(colnames)],...
@@ -108,31 +124,76 @@ for s = 11:20
     %     norm0_tbl(s,"norm0_high") = {norm0_mu + norm0_width*0.5};
     % end
     %     writetable(norm0_tbl, ...
-    %         fullfile(fits_dir, "sub_include_norm0_guess_outgroup.csv"))
+    %         fullfile(fits_dir, "sub_include_norm0_guess.csv"))
     %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     norm0_sigma = min(norm0_width/6,1.5); % 10/6
     norm0_lb = 0;
     norm0_ub = 20;
 
-    sub_name{1} + ...
+    sub_name_expand{1} + ...
         sprintf(", s=%d, norm0_lower=%.1f, norm0_higher=%.1f, norm0_mu=%.1f, norm0_sig=%.1f",...
         s, 0.5*(reject_min+reject_max), ...
         0.5*(accept_min+accept_max), ...
         norm0_mu, norm0_sigma)
 
     tic
+    
+    % check param that to be expanded
+    param_expand_type = sub_list_expand_param{s};
 
+    switch param_expand_type
+        case 'alpha'
+            params_scaling_expand = ...
+                [params_scaling_new(1), params_scaling_old(2), 1]; % scaling factors
+        case 'tau'
+            params_scaling_expand = ...
+                [params_scaling_old(1), params_scaling_new(2), 1]; % scaling factors
+        case 'both'
+            params_scaling_expand = ...
+                [params_scaling_new(1), params_scaling_new(2), 1]; % scaling factors
+            
+    end
+    params_expand = params_scaling_old./params_scaling_expand;
+    
     for iter = 1:N_iter
     % for iter = 1:2 %%% for testing purpose. to delete.
 
-        % re-initialize parameters for each iteration
-        %%% alpha, tau, epsilon
-        x0_sub = [unifrnd(lb_sub(1),ub_sub(1)), ...
-            unifrnd(lb_sub(2),ub_sub(2)), ...
-            unifrnd(0,1)];  % Initial values [alpha, tau, epsilon]
+        % re-initialize optimization for each iteration
+        % x0_sub = [unifrnd(lb_sub(1),ub_sub(1)), ...
+        %     unifrnd(lb_sub(2),ub_sub(2)), ...
+        %     unifrnd(0,1)];  % Initial values [alpha, tau, epsilon]
         
-        %%% norm0
+        %%% generate prior that only stays in expanded ranges 
+        while true % Generate random numbers until one falls within bounds
+            x0_sub = [unifrnd(lb_sub(1),ub_sub(1)), ...
+                unifrnd(lb_sub(2),ub_sub(2)), ...
+                unifrnd(0,1)];  % Initial values [alpha, tau, epsilon]
+
+            switch param_expand_type
+                case 'alpha'
+                    % params_scaling_expand = ...
+                    %     [params_scaling_new(1), params_scaling_old(2), 1]; % scaling factors
+                    if x0_sub(1) >= params_expand(1) % move on to estimate only when alpha or tau is in the expanded range
+                        break;
+                    end
+                case 'tau'
+                    % params_scaling_expand = ...
+                    %     [params_scaling_old(1), params_scaling_new(2), 1]; % scaling factors
+                    if x0_sub(2) >= params_expand(2) % move on to estimate only when tau is in the expanded range
+                        break;
+                    end
+                case 'both'
+                    % params_scaling_expand = ...
+                    %     [params_scaling_new(1), params_scaling_new(2), 1]; % scaling factors
+                    if x0_sub(1) >= params_expand(1) || x0_sub(2) >= params_expand(2) % move on to estimate only when either alpha or tau is in the expanded range
+                        break;
+                    end
+
+            end
+        end
+
+        %%% informed variable norm initial
         while true % Generate random numbers until one falls within bounds
             norm0_sub = normrnd(norm0_mu, norm0_sigma);
             if norm0_sub >= norm0_lb && norm0_sub <= norm0_ub
@@ -144,9 +205,9 @@ for s = 11:20
         % norm0_sub = unifrnd(0,20); % can use this to compare model, e.g. informed variable norm0 vs uninformed variable norm 0
 
         % record initials
-        init_tbl_sub(iter, 'alpha0') = {x0_sub(1) * params_scaling(1)}; % real
-        init_tbl_sub(iter, 'tau0')= {x0_sub(2) * params_scaling(2)};
-        init_tbl_sub(iter, 'epsilon0') = {x0_sub(3) * params_scaling(3)};
+        init_tbl_sub(iter, 'alpha0') = {x0_sub(1) * params_scaling_expand(1)}; % real
+        init_tbl_sub(iter, 'tau0')= {x0_sub(2) * params_scaling_expand(2)};
+        init_tbl_sub(iter, 'epsilon0') = {x0_sub(3) * params_scaling_expand(3)};
         init_tbl_sub(iter, 'norm0') = {norm0_sub};
 
         init_tbl_sub(iter, 'alpha0_s') = {x0_sub(1)}; % scaled
@@ -157,15 +218,15 @@ for s = 11:20
         [params, negLL, exitflag] = ...
             ugrRL_fun(accept_sub, offer_sub, ...
             norm0_sub, x0_sub, ...
-            lb_sub, ub_sub, params_scaling);
+            lb_sub, ub_sub, params_scaling_expand);
 
         % record estimates
         init_tbl_sub(iter, 'exitflag') = {exitflag};
         init_tbl_sub(iter, 'negLL') = {negLL};
 
-        init_tbl_sub(iter, 'alpha_i') = {params(1) * params_scaling(1)};  % envy parameter, real
-        init_tbl_sub(iter, 'tau_i') = {params(2) * params_scaling(2)};   % inverse temperature
-        init_tbl_sub(iter, 'epsilon_i') = {params(3) * params_scaling(3)}; % learning rate
+        init_tbl_sub(iter, 'alpha_i') = {params(1) * params_scaling_expand(1)};  % envy parameter, real
+        init_tbl_sub(iter, 'tau_i') = {params(2) * params_scaling_expand(2)};   % inverse temperature
+        init_tbl_sub(iter, 'epsilon_i') = {params(3) * params_scaling_expand(3)}; % learning rate
 
         init_tbl_sub(iter, 'alpha_i_s') = {params(1)};  % envy parameter, scaled
         init_tbl_sub(iter, 'tau_i_s') = {params(2)};   % inverse temperature
@@ -173,9 +234,9 @@ for s = 11:20
 
     end
     writetable(init_tbl_sub, ...
-        fullfile(fits_dir, append(sub_name{1}, ...
-        "_alpha", string(params_scaling(1)), ...
-        "tau", string(params_scaling(2)), ...
+        fullfile(fits_dir, append(sub_name_expand{1}, ...
+        "_alpha", string(params_scaling_expand(1)), ...
+        "tau", string(params_scaling_expand(2)), ...
         "norm0informedUPDATED", ...
         "_ugrRL_outgroup.csv")))
     full_tbl{s,2} = init_tbl_sub;

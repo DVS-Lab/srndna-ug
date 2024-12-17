@@ -1,5 +1,5 @@
 % created 12/11/2024 by Jen Yang
-% last modified 12/11/2024 by Jen Yang
+% last modified 12/16/2024 by Jen Yang
 % code to fit ug_delta per subject
 
 clear
@@ -165,12 +165,31 @@ for s = 1:N_sub_extend
         %%% generate prior that only stays in expanded ranges 
         while true % Generate random numbers until one falls within bounds
             x0_sub = [unifrnd(lb_sub(1),ub_sub(1)), ...
-            unifrnd(lb_sub(2),ub_sub(2)), ...
-            unifrnd(0,1)];  % Initial values [alpha, tau, epsilon]
-            if x0_sub(1) >= params_expand(1) || x0_sub(2) >= params_expand(2) % move on to estimate only when either alpha or tau is in the expanded range
-                break;
+                unifrnd(lb_sub(2),ub_sub(2)), ...
+                unifrnd(0,1)];  % Initial values [alpha, tau, epsilon]
+
+            switch param_expand_type
+                case 'alpha'
+                    % params_scaling_expand = ...
+                    %     [params_scaling_new(1), params_scaling_old(2), 1]; % scaling factors
+                    if x0_sub(1) >= params_expand(1) % move on to estimate only when alpha or tau is in the expanded range
+                        break;
+                    end
+                case 'tau'
+                    % params_scaling_expand = ...
+                    %     [params_scaling_old(1), params_scaling_new(2), 1]; % scaling factors
+                    if x0_sub(2) >= params_expand(2) % move on to estimate only when tau is in the expanded range
+                        break;
+                    end
+                case 'both'
+                    % params_scaling_expand = ...
+                    %     [params_scaling_new(1), params_scaling_new(2), 1]; % scaling factors
+                    if x0_sub(1) >= params_expand(1) || x0_sub(2) >= params_expand(2) % move on to estimate only when either alpha or tau is in the expanded range
+                        break;
+                    end
+
             end
-        end      
+        end
 
         %%% informed variable norm initial
         while true % Generate random numbers until one falls within bounds
