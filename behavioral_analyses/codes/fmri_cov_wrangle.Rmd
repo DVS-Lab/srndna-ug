@@ -110,7 +110,9 @@ rej_rate_L3_df = rej_rate_L3_df %>%
          in_computer = ingroup_rej_rate - computer_rej_rate,
          in_computer_demean = in_computer - mean(in_computer),
          out_computer = outgroup_rej_rate - computer_rej_rate,
-         out_computer_demean = out_computer - mean(out_computer)
+         out_computer_demean = out_computer - mean(out_computer),
+         soc_nonsoc = 0.5 * (ingroup_rej_rate + outgroup_rej_rate) - computer_rej_rate,
+         soc_nonsoc_demean = soc_nonsoc - mean(soc_nonsoc)
   )
 ```
 
@@ -151,3 +153,14 @@ write.csv(out_computer_age_bi_df, paste(data_dir, "out_computer_age_rej.csv", se
           row.names = FALSE)
 ```
 
+## soc-nonsoc_age_bi_df
+```{r}
+soc-nonsoc_age_bi_df = rej_rate_L3_df %>% 
+  mutate(soc-nonsoc_young = soc-nonsoc_demean*young,
+         soc-nonsoc_old = soc-nonsoc_demean*old) %>% 
+  select(subjID, ismale, tsnr, fd_mean, RT, 
+         young, old,
+         soc-nonsoc_young, soc-nonsoc_old)
+write.csv(soc-nonsoc_age_bi_df, paste(data_dir, "soc-nonsoc_age_rej.csv", sep = "/"),
+          row.names = FALSE)
+```
