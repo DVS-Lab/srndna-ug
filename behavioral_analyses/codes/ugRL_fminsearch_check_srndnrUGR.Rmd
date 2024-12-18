@@ -75,8 +75,6 @@ data_dir = paste(gitrepo_path,"data", sep = "/")
 codes_dir = paste(gitrepo_path, "codes", sep = "/")
 fits_dir = paste(gitrepo_path,"fits", sep = "/")
 figures_dir = paste(gitrepo_path,"figures", sep = "/")
-
-bids_dir = "/Users/momocco/Documents/GitHub/srndna-datapaper/bids"
 ```
 
 # load functions
@@ -101,14 +99,14 @@ norm0_df = read.csv(file = paste(fits_dir, "sub_include_norm0_guess.csv", sep = 
 # computer_df = read.table(paste(data_dir, "computer_filtered.txt", sep = "/"), sep = "\t", header = T)
 ```
 
-## figure parameters
+# figure parameters
 ```{r}
 w_corr = 7
 h_corr = 7
 
 h_histo = 5
 w_histo = 10
-bin_N0 = 50
+bin_N0 = 30
 bin_N_scaled = 30
 ```
 
@@ -121,6 +119,7 @@ dir.create(file.path(figures_dir, fig_folder))
 plot_title = "min(negLL) + 1"
 
 for (i in 1:nrow(participants_df)) {
+  # i = 1
   sub_i_name = participants_df$subjID[i]
   sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
   
@@ -131,13 +130,39 @@ for (i in 1:nrow(participants_df)) {
     filter(negLL <= min(min(negLL)+1, quantile(negLL, probs = 1000/nrow(.)))) %>%
     select(negLL, prior_names, posterior_names)
   
+  nrow_df_i = nrow(sub_i_fit)
+  
+  # check nrow of filtered fit results. if nrow is larger than 1000, randomly choose 1000 rows
+  # if nrow is smaller than 1000, keep however many there are for further processing and plotting
+  if (nrow_df_i>1000) {
+    random_1000 <- sample(1:nrow_df_i, size = 1000, replace = TRUE)
+    sub_i_fit = sub_i_fit[random_1000,]
+  }
+  
+  # calculate param means and medians
+  mean_alpha = mean(sub_i_fit$alpha_i)
+  median_alpha = mean(sub_i_fit$alpha_i)
+  
+  mean_tau = mean(sub_i_fit$tau_i)
+  median_tau = mean(sub_i_fit$tau_i)
+  
+  mean_epsilon = mean(sub_i_fit$epsilon_i)
+  median_epsilon = mean(sub_i_fit$epsilon_i)
+  
+  parames_name = c("type", "mean", "median")
+  params_df = data.frame(type = c("alpha", "tau", "epsilon"),
+                         mean = c(mean_alpha, mean_tau, mean_epsilon),
+                         median = c(median_alpha, median_tau, median_epsilon))
+  
   bin_N = max(round(nrow(sub_i_fit)/bin_N0),5)
   
   print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
   print(sub_i_csv)
   
-  posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit_all, sub_i_fit, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit, params_df, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  if (nrow(sub_i_fit) > 4) {
   corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+  }
 }
 
 ## find the coordinate of cells that has NA in it
@@ -156,7 +181,9 @@ fig_folder = "ugRL_fminsearch_negLLminPLUS0p5"
 dir.create(file.path(figures_dir, fig_folder))
 plot_title = "min(negLL) + 0.5"
 
-for (i in 1:nrow(participants_df)) {
+# for (i in 1:nrow(participants_df)) {
+for (i in 36:nrow(participants_df)) {
+  # i = 1
   sub_i_name = participants_df$subjID[i]
   sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
   
@@ -167,69 +194,39 @@ for (i in 1:nrow(participants_df)) {
     filter(negLL <= min(min(negLL)+0.5, quantile(negLL, probs = 1000/nrow(.)))) %>%
     select(negLL, prior_names, posterior_names)
   
-  bin_N = max(round(nrow(sub_i_fit)/bin_N0),5)
+  nrow_df_i = nrow(sub_i_fit)
   
-  print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
-  print(sub_i_csv)
+  # check nrow of filtered fit results. if nrow is larger than 1000, randomly choose 1000 rows
+  # if nrow is smaller than 1000, keep however many there are for further processing and plotting
+  if (nrow_df_i>1000) {
+    random_1000 <- sample(1:nrow_df_i, size = 1000, replace = TRUE)
+    sub_i_fit = sub_i_fit[random_1000,]
+  }
   
-  posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit_all, sub_i_fit, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
-  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
-}
-```
-
-## min 1000 negLL
-```{r}
-cvs_suff = "_alphaRANDtauRANDnorm0informedUPDATED_ugrRL_fminsearch_computer.csv"
-fig_folder = "ugRL_fminsearch_negLL1000"
-dir.create(file.path(figures_dir, fig_folder))
-plot_title = "min negLL 1000"
-
-for (i in 1:nrow(participants_df)) {
-  sub_i_name = participants_df$subjID[i]
-  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  # calculate param means and medians
+  mean_alpha = mean(sub_i_fit$alpha_i)
+  median_alpha = mean(sub_i_fit$alpha_i)
   
-  sub_i_fit_all = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% na.omit()
-  sub_i_fit = sub_i_fit_all %>% 
-    filter(exitflag == 1) %>% 
-    filter(negLL <= quantile(negLL, probs = 1000/nrow(.))) %>%
-    # filter(negLL <= (min(negLL)+1)) %>% 
-    select(negLL, prior_names, posterior_names)
+  mean_tau = mean(sub_i_fit$tau_i)
+  median_tau = mean(sub_i_fit$tau_i)
+  
+  mean_epsilon = mean(sub_i_fit$epsilon_i)
+  median_epsilon = mean(sub_i_fit$epsilon_i)
+  
+  parames_name = c("type", "mean", "median")
+  params_df = data.frame(type = c("alpha", "tau", "epsilon"),
+                         mean = c(mean_alpha, mean_tau, mean_epsilon),
+                         median = c(median_alpha, median_tau, median_epsilon))
   
   bin_N = max(round(nrow(sub_i_fit)/bin_N0),5)
   
   print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
   print(sub_i_csv)
   
-  posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit_all, sub_i_fit, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit, params_df, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  if (nrow(sub_i_fit) > 4) {
   corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
-}
-```
-
-## min 500 negLL
-```{r}
-cvs_suff = "_alphaRANDtauRANDnorm0informedUPDATED_ugrRL_fminsearch_computer.csv"
-fig_folder = "ugRL_fminsearch_negLL1000"
-dir.create(file.path(figures_dir, fig_folder))
-plot_title = "min negLL 500"
-
-for (i in 1:nrow(participants_df)) {
-  sub_i_name = participants_df$subjID[i]
-  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
-  
-  sub_i_fit_all = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% na.omit()
-  sub_i_fit = sub_i_fit_all %>% 
-    filter(exitflag == 1) %>% 
-    filter(negLL <= quantile(negLL, probs = 500/nrow(.))) %>%
-    # filter(negLL <= (min(negLL)+1)) %>%
-    select(negLL, prior_names, posterior_names)
-  
-  bin_N = max(round(nrow(sub_i_fit)/bin_N0),5)
-  
-  print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
-  print(sub_i_csv)
-  
-  posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit_all, sub_i_fit, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
-  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+  }
 }
 ```
 

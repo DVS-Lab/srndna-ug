@@ -38,5 +38,4 @@ corrMatrix_plot_fun = function(sub_i_name, data_df, plot_title, w, h, figure_dir
   # print(matrix_plot)
   fig_name = paste(sub_i_name, "pri_post_HeatMap.jpg", sep = "_")
   ggsave(paste(figure_dir, fig_folder, fig_name, sep = "/"), width = w, height = h)
-  return()
 }
