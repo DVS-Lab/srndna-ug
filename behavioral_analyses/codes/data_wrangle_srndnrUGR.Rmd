@@ -244,6 +244,21 @@ ingroup_df = human_df[human_df$ingroup == 1,]
 outgroup_df = human_df[human_df$ingroup == 0,]
 ```
 
+# save all data per condition
+```{r}
+write.table(computer_df, file = paste(data_dir, "computer.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(human_df, file = paste(data_dir, "human.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(ingroup_df, file = paste(data_dir, "ingroup.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(outgroup_df, file = paste(data_dir, "outgroup.txt", sep = "/"), 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+```
+
+
+
+
 # check behaviors of each participant
 ```{r}
 col_names_choice_check = c("subjID", 

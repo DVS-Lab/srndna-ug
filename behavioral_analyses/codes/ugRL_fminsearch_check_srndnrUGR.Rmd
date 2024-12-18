@@ -81,7 +81,7 @@ bids_dir = "/Users/momocco/Documents/GitHub/srndna-datapaper/bids"
 
 # load functions
 ```{r}
-source(paste(codes_dir, "posterior_histo_plot_fun.R", sep = "/"))
+source(paste(codes_dir, "posterior_fminsearch_histo_plot_fun.R", sep = "/"))
 source(paste(codes_dir, "corrMatrix_upper_fun.R", sep = "/"))
 source(paste(codes_dir, "corrMatrix_plot_fun.R", sep = "/"))
 ```
@@ -106,35 +106,43 @@ norm0_df = read.csv(file = paste(fits_dir, "sub_include_norm0_guess.csv", sep = 
 w_corr = 7
 h_corr = 7
 
-h_histo = 7
+h_histo = 5
 w_histo = 10
 bin_N = 50
 bin_N_scaled = 30
 ```
 
-# computer condition
-## alpha 0-20, tau 0-10, norm0 customized based on choice
+# computer 
+## min negLL+1
 ```{r}
-cvs_suff = "_ugrRL.csv"
-fig_folder = "ugRL_alpha20tau10"
-plot_title = "alpha 0-20, tau 0-10"
-param_range = c(20, 10, 1)
+cvs_suff = "_alphaRANDtauRANDnorm0informedUPDATED_ugrRL_fminsearch_computer.csv"
+fig_folder = "ugRL_fminsearch_negLLminPLUSone"
+dir.create(file.path(figures_dir, fig_folder))
+plot_title = "min(negLL) + 1"
 
 for (i in 1:nrow(participants_df)) {
   sub_i_name = participants_df$subjID[i]
-  print(paste(i, sub_i_name, sep = "/"))
-  
   sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
-  print(sub_i_csv)
   
   sub_i_fit = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% 
-    # filter(exitflag == 1) %>% 
-    filter(negLL <= quantile(negLL, probs = 0.05)) %>% 
+    filter(exitflag == 1) %>% na.omit() %>% 
+    # filter(negLL <= quantile(negLL, probs = 1000/nrow(.))) %>%
+    filter(negLL <= (min(negLL)+1)) %>% 
     select(negLL, prior_names, posterior_names)
   
-  posterior_histo_plot_fun(sub_i_name, sub_i_fit, param_range, cvs_suff, fig_folder, w_histo, h_histo, bin_N, bin_N_scaled, figures_dir)
-  # corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+  print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
+  print(sub_i_csv)
+  
+  posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
+
+na_positions <- data.frame(
+  row = which(is.na(sub_i_fit), arr.ind = TRUE)[,1],
+  col = which(is.na(sub_i_fit), arr.ind = TRUE)[,2],
+  row_name = rownames(sub_i_fit)[which(is.na(sub_i_fit), arr.ind = TRUE)[,1]],
+  col_name = colnames(sub_i_fit)[which(is.na(sub_i_fit), arr.ind = TRUE)[,2]]
+)
 ```
 
 ## alpha 0-30, tau 0-10, norm0 customized based on choice
