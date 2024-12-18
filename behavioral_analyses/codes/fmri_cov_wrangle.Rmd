@@ -121,7 +121,7 @@ in_out_age_bi_df = rej_rate_L3_df %>%
   mutate(in_out_young = in_out_demean*young,
          in_out_old = in_out_demean*old) %>% 
   select(subjID, ismale, tsnr, fd_mean, RT, 
-         young, old, in_out_demean,
+         young, old,
          in_out_young, in_out_old)
 write.csv(in_out_age_bi_df, paste(data_dir, "in_out_age_rej.csv", sep = "/"),
           row.names = FALSE)
@@ -133,7 +133,7 @@ in_computer_age_bi_df = rej_rate_L3_df %>%
   mutate(in_computer_young = in_computer_demean*young,
          in_computer_old = in_computer_demean*old) %>% 
   select(subjID, ismale, tsnr, fd_mean, RT, 
-         young, old, in_computer_demean,
+         young, old,
          in_computer_young, in_computer_old)
 write.csv(in_computer_age_bi_df, paste(data_dir, "in_computer_age_rej.csv", sep = "/"),
           row.names = FALSE)
@@ -145,7 +145,7 @@ out_computer_age_bi_df = rej_rate_L3_df %>%
   mutate(out_computer_young = out_computer_demean*young,
          out_computer_old = out_computer_demean*old) %>% 
   select(subjID, ismale, tsnr, fd_mean, RT, 
-         young, old, out_computer_demean,
+         young, old,
          out_computer_young, out_computer_old)
 write.csv(out_computer_age_bi_df, paste(data_dir, "out_computer_age_rej.csv", sep = "/"),
           row.names = FALSE)

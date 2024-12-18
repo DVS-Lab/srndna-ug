@@ -57,30 +57,3 @@ trim_for_skewness <- function(data, target_skewness = 0, tolerance = 0.05) {
 # Apply sequential trimming
 trimmed_kurtosis <- trim_for_kurtosis(your_data)
 trimmed_both <- trim_for_skewness(trimmed_kurtosis)
-
-# Visualize results
-library(ggplot2)
-library(gridExtra)
-
-p1 <- ggplot(data.frame(x = your_data), aes(x = x)) +
-  geom_histogram(bins = 30, fill = "skyblue", color = "black") +
-  ggtitle(paste("Original Distribution\n",
-                "Kurtosis:", round(kurtosis(your_data), 2),
-                "Skewness:", round(skewness(your_data), 2))) +
-  theme_minimal()
-
-p2 <- ggplot(data.frame(x = trimmed_kurtosis), aes(x = x)) +
-  geom_histogram(bins = 30, fill = "lightgreen", color = "black") +
-  ggtitle(paste("Trimmed for Kurtosis\n",
-                "Kurtosis:", round(kurtosis(trimmed_kurtosis), 2),
-                "Skewness:", round(skewness(trimmed_kurtosis), 2))) +
-  theme_minimal()
-
-p3 <- ggplot(data.frame(x = trimmed_both), aes(x = x)) +
-  geom_histogram(bins = 30, fill = "lightcoral", color = "black") +
-  ggtitle(paste("Trimmed for Both\n",
-                "Kurtosis:", round(kurtosis(trimmed_both), 2),
-                "Skewness:", round(skewness(trimmed_both), 2))) +
-  theme_minimal()
-
-grid.arrange(p1, p2, p3, ncol = 3)
