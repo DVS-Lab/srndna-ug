@@ -97,9 +97,6 @@ indiv_df = read.csv(paste(data_dir, "participant_wide.csv", sep = "/"), header =
   mutate(age_bi = case_when(age <= 36 ~ "younger",
                             age > 36 ~ "older"))
 
-
-
-
 fit_df = all_trials_df %>% mutate(age_bi = "to code", sex = "to code")
 
 for (i in 1:nrow(indiv_df)) {

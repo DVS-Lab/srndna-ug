@@ -1,0 +1,175 @@
+---
+title: "rejection rate and outcome weight computation"
+author: "Jen Yang"
+date: "2024-12-17, last modified 2024-12-17"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    hightlight: zenburn
+    toc_depth: 6
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+# Load libraries
+```{r libraries, message=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(interactions)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+# library(raincloudplots)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(ggpubr)
+library(lubridate)
+library(readxl)
+library(gridExtra)
+library(scales)
+library(rstudioapi)
+library(jsonlite)
+library(rjson)
+library(readr)
+library(hBayesDM)
+library(brms)
+```
+
+# load functions
+```{r}
+w = 8
+h = 3
+```
+
+
+# set dir and load data
+```{r}
+gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
+
+data_dir = paste(gitrepo_path,"data", sep = "/")
+codes_dir = paste(gitrepo_path, "codes", sep = "/")
+fit_dir = paste(gitrepo_path,"fits", sep = "/")
+figure_dir = paste(gitrepo_path,"figures", sep = "/")
+
+computer_txt_path = paste(data_dir, "computer.txt", sep = "/")
+human_txt_path = paste(data_dir, "humand.txt", sep = "/")
+ingroup_txt_path = paste(data_dir, "ingroup.txt", sep = "/")
+outgroup_txt_path = paste(data_dir, "outgroup.txt", sep = "/")
+
+participant_df = read.csv(paste(data_dir, "sub_50.csv", sep = "/"), header = TRUE)
+
+computer_df = read.table(computer_txt_path, sep = "\t", header = T)
+outgroup_df = read.table(outgroup_txt_path, sep = "\t", header = T)
+ingroup_df = read.table(ingroup_txt_path, sep = "\t", header = T)
+```
+
+# prepare empty dataframe
+```{r}
+rej_df_colnames = c("subjID", "computer_rej_rate", "ingroup_rej_rate", "outgroup_rej_rate")
+rej_rates_df = data.frame(matrix(nrow = nrow(participant_df), ncol = length(rej_df_colnames)))
+colnames(rej_rates_df) = rej_df_colnames
+```
+
+# rejection rate calculation, proxy for norm
+```{r}
+for (i in 1:nrow(participant_df)) {
+  # i = 1 # for testing
+  # i = 3
+  sub_i = participant_df$subjID[i]
+  
+  computer_i_df = computer_df %>% filter(subjID == sub_i)
+  computer_rej_rate_i = 1-sum(computer_i_df$accept)/nrow(computer_i_df)
+  
+  ingroup_i_df = ingroup_df %>% filter(subjID == sub_i)
+  ingroup_rej_rate_i = 1-sum(ingroup_i_df$accept)/nrow(ingroup_i_df)
+  
+  outgroup_i_df = outgroup_df %>% filter(subjID == sub_i)
+  outgroup_rej_rate_i = 1-sum(outgroup_i_df$accept)/nrow(outgroup_i_df)
+  
+  rej_rates_df[i,] = c(sub_i, computer_rej_rate_i, ingroup_rej_rate_i, outgroup_rej_rate_i)
+}
+
+write.csv(rej_rates_df, paste(data_dir, "rej_rate_partner_50.csv", sep = "/"), row.names = FALSE)ß
+```
+
+# rejection rate as a function of fairness, each partner, proxy for fairness sensitivity (envy)
+```{r}
+for (i in 1:nrow(participant_df)) {
+  # i = 1 # for testing
+  i = 3
+  sub_i = participant_df$subjID[i]
+  
+  computer_i_df = computer_df %>% filter(subjID == sub_i)
+  ingroup_i_df = ingroup_df %>% filter(subjID == sub_i)
+  outgroup_i_df = outgroup_df %>% filter(subjID == sub_i)
+  
+  for (t in 1:10) {
+    t = 1
+    computer_i_df_t = computer_i_df[computer_i_df$offer == t,]
+    if (nrow(computer_i_df_t)>=1) {
+      computer_rej_t = 1 - (sum(computer_i_df_t$accept)/nrow(computer_i_df_t))
+    } else {computer_rej_t = NA}
+    
+    
+    ingroup_i_df_t = ingroup_i_df[ingroup_i_df$offer == t,]
+    if (nrow(ingroup_i_df_t)>=1) {
+      ingroup_rej_t = 1 - (sum(ingroup_i_df_t$accept)/nrow(ingroup_i_df_t))
+    } else {ingroup_rej_t = NA}
+    
+    outgroup_i_df_t = outgroup_i_df[outgroup_i_df$offer == t,]
+    if (nrow(outgroup_i_df_t)>=1) {
+      outgroup_rej_t = 1 - (sum(outgroup_i_df_t$accept)/nrow(outgroup_i_df_t))
+    } else {outgroup_rej_t = NA}
+    
+    ingroup_rej_rate_i = 1-sum(ingroup_i_df$accept)/nrow(ingroup_i_df)
+    
+    
+    outgroup_rej_rate_i = 1-sum(outgroup_i_df$accept)/nrow(outgroup_i_df)
+    
+    rej_rates_df[i,] = c(sub_i, computer_rej_rate_i, ingroup_rej_rate_i, outgroup_rej_rate_i)
+  }
+}
+```
+
+# choice weight skewness, proxy for epsilong
+```{r}
+
+```
+
+
+
+
+
+

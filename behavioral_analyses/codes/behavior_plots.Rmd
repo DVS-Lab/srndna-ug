@@ -1,0 +1,118 @@
+---
+title: "behavior_hypotheses_tests_srndnaUGR"
+author: "Jen Yang"
+date: "2024-11-11, last modified 2024-11-11"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    hightlight: zenburn
+    toc_depth: 6
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+# Load libraries
+```{r libraries, message_bi=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(interactions)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+# library(raincloudplots)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(ggpubr)
+library(lubridate)
+library(readxl)
+library(gridExtra)
+library(scales)
+library(rstudioapi)
+library(jsonlite)
+library(rjson)
+library(readr)
+library(hBayesDM)
+library(brms)
+library(emmeans)
+library(mediation)
+library(here)
+library(lme4)
+library(broom.mixed)
+library(easyRT)
+library(parameters)
+library(effectsize)
+library(effects)
+library(lmerTest)
+library(ez)
+```
+
+# load tsv and prolific raw data
+```{r}
+gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
+
+data_dir = paste(gitrepo_path,"data", sep = "/")
+codes_dir = paste(gitrepo_path, "codes", sep = "/")
+fit_dir = paste(gitrepo_path,"fits", sep = "/")
+figure_dir = paste(gitrepo_path,"figures", sep = "/")
+```
+
+# load and prepare data
+```{r}
+# load subs
+all_trials_df = read.csv(paste(data_dir, "all_trials.csv", sep = "/"), header = TRUE)
+colnames(all_trials_df)[colnames(all_trials_df) == "subjID"] <- "participant_id"
+indiv_df = read.csv(paste(data_dir, "participant_wide.csv", sep = "/"), header = TRUE)  %>%
+  mutate(age_bi = case_when(age <= 36 ~ "younger",
+                            age > 36 ~ "older"))
+
+fit_df = all_trials_df %>% mutate(age_bi = "to code", sex = "to code")
+
+for (i in 1:nrow(indiv_df)) {
+  # i = 1
+  sub_i = indiv_df$participant_id[i]
+  fit_df$age_bi[fit_df$participant_id == sub_i] = indiv_df$age_bi[i]
+  fit_df$sex[fit_df$participant_id == sub_i] = indiv_df$sex[i]
+}
+
+fit_df = fit_df %>% mutate(age_bi = relevel(as.factor(age_bi), ref = "younger"),
+                           sex = relevel(as.factor(sex), ref = "M"))
+
+```
+
+# decision visual check
+```{r}
+
+```
+

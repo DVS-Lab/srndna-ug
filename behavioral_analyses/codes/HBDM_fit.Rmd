@@ -1,7 +1,7 @@
 ---
 title: "HBDM_fit_srndnaUGR"
 author: "Jen Yang"
-date: "2024-11-1, last modified 2024-11-1"
+date: "2024-11-1, last modified 2024-12-10"
 output: 
   html_document:
     code_folding: hide
@@ -86,23 +86,37 @@ codes_dir = paste(gitrepo_path, "codes", sep = "/")
 fit_dir = paste(gitrepo_path,"fits", sep = "/")
 figure_dir = paste(gitrepo_path,"figures", sep = "/")
 
-computer_txt_path = paste(data_dir, "computer.txt", sep = "/")
-human_txt_path = paste(data_dir, "human.txt", sep = "/")
-ingroup_txt_path = paste(data_dir, "ingroup.txt", sep = "/")
-outgroup_txt_path = paste(data_dir, "outgroup.txt", sep = "/")
+computer_txt_path = paste(data_dir, "computer_filtered.txt", sep = "/")
+human_txt_path = paste(data_dir, "human_filtered.txt", sep = "/")
+ingroup_txt_path = paste(data_dir, "ingroup_filtered.txt", sep = "/")
+outgroup_txt_path = paste(data_dir, "outgroup_filtered.txt", sep = "/")
 
-participant_check_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = TRUE)
+puarticipant_df = read.csv(paste(data_dir, "sub_include.csv", sep = "/"), header = TRUE)
 ```
 
 # HBDM
+## set my own initials
+```{r}
+# init_fun <- function() {
+#   list(
+#     alpha = runif(1, 0, 1),  # Random value between 0 and 1 for alpha
+#     ep = runif(1, 0, 1), # Random value between 0 and 1 for epsilon
+#     tau = runif(1, 0, 10)   # Random value between 0 and 10 for tau
+#   )
+# }
+
+init_custom = runif(3, min = 0, max = 1)
+```
+
 ## computer
 ```{r}
 start.time = Sys.time()
 
 computer_fit = ug_delta(data = computer_txt_path,
   niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
-  inits = "random",
-  indPars = "mean",
+  inits = init_custom,
+  # inits = "random",
+  indPars = "median",
   vb = FALSE,
   inc_postpred = TRUE,
   adapt_delta = 0.95,
@@ -115,7 +129,7 @@ time.taken_pp_check <- round(end.time - start.time,2)
 print(time.taken_pp_check)
 
 save(computer_fit, 
-     file = paste(fit_dir, "computer_fit.rda", sep = "/"))
+     file = paste(fit_dir, "computer_fit_median_runif_revised_filtered.rda", sep = "/"))
 ```
 
 ### diagnostics
@@ -124,8 +138,9 @@ model_name = "computer_fit"
 diagnostics_rhat_neff_HBDM_fun(computer_fit)
 diagnostics_plot_HBDM_fun(model_name, computer_fit)
 fit_metrics = extract_ic(computer_fit, ic = "both")
+fit_metrics
 save(fit_metrics, 
-     file = paste(fit_dir, "computer_loo_waic.rda", sep = "/"))
+     file = paste(fit_dir, "computer_loo_waic_median_runif_revised_filtered.rda", sep = "/"))
 
 fit_metrics$LOOIC$diagnostics$pareto_k
 ```
@@ -135,8 +150,8 @@ fit_metrics$LOOIC$diagnostics$pareto_k
 start.time = Sys.time()
 human_fit = ug_delta(data = human_txt_path,
                         niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
-                        inits = "random",
-                        indPars = "mean",
+                        inits = init_custom,
+                        indPars = "median",
                         vb = FALSE,
                         inc_postpred = TRUE,
                         adapt_delta = 0.95,
@@ -149,7 +164,7 @@ time.taken_pp_check <- round(end.time - start.time,2)
 print(time.taken_pp_check)
 
 save(human_fit, 
-     file = paste(fit_dir, "human_fit.rda", sep = "/"))
+     file = paste(fit_dir, "human_fit_median_runif_revised_filtered.rda", sep = "/"))
 ```
 
 ### diagnostics
@@ -158,8 +173,9 @@ model_name = "human_fit"
 diagnostics_rhat_neff_HBDM_fun(human_fit)
 diagnostics_plot_HBDM_fun(model_name, human_fit)
 fit_metrics = extract_ic(human_fit, ic = "both")
+fit_metrics
 save(fit_metrics, 
-     file = paste(fit_dir, "human_loo_waic.rda", sep = "/"))
+     file = paste(fit_dir, "human_loo_waic_median_runif_revised_filtered.rda", sep = "/"))
 
 fit_metrics$LOOIC$diagnostics$pareto_k
 ```
@@ -170,8 +186,8 @@ start.time = Sys.time()
 
 ingroup_fit = ug_delta(data = ingroup_txt_path,
                         niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
-                        inits = "random",
-                        indPars = "mean",
+                        inits = init_custom,
+                        indPars = "median",
                         vb = FALSE,
                         inc_postpred = TRUE,
                         adapt_delta = 0.95,
@@ -184,7 +200,7 @@ time.taken_pp_check <- round(end.time - start.time,2)
 print(time.taken_pp_check)
 
 save(ingroup_fit, 
-     file = paste(fit_dir, "ingroup_fit.rda", sep = "/"))
+     file = paste(fit_dir, "ingroup_fit_median_runif_revised_filtered.rda", sep = "/"))
 
 ```
 
@@ -194,8 +210,9 @@ model_name = "ingroup_fit"
 diagnostics_rhat_neff_HBDM_fun(ingroup_fit)
 diagnostics_plot_HBDM_fun(model_name, ingroup_fit)
 fit_metrics = extract_ic(ingroup_fit, ic = "both")
+fit_metrics
 save(fit_metrics, 
-     file = paste(fit_dir, "ingroup_loo_waic.rda", sep = "/"))
+     file = paste(fit_dir, "ingroup_loo_waic_median_runif_revised_filtered.rda", sep = "/"))
 
 fit_metrics$LOOIC$diagnostics$pareto_k
 ```
@@ -207,8 +224,8 @@ start.time = Sys.time()
 
 outgroup_fit = ug_delta(data = outgroup_txt_path,
                         niter = 4000, nwarmup = 1000, nchain = 4, ncore = 4, nthin = 1,
-                        inits = "random",
-                        indPars = "mean",
+                        inits = init_custom,
+                        indPars = "median",
                         vb = FALSE,
                         inc_postpred = TRUE,
                         adapt_delta = 0.95,
@@ -221,7 +238,7 @@ time.taken_pp_check <- round(end.time - start.time,2)
 print(time.taken_pp_check)
 
 save(outgroup_fit, 
-     file = paste(fit_dir, "outgroup_fit.rda", sep = "/"))
+     file = paste(fit_dir, "outgroup_fit_median_runif_revised_filtered.rda", sep = "/"))
 
 ```
 
@@ -231,15 +248,16 @@ model_name = "outgroup_fit"
 diagnostics_rhat_neff_HBDM_fun(outgroup_fit)
 diagnostics_plot_HBDM_fun(model_name, outgroup_fit)
 fit_metrics = extract_ic(outgroup_fit, ic = "both")
+fit_metrics
 save(fit_metrics, 
-     file = paste(fit_dir, "outgroup_loo_waic.rda", sep = "/"))
+     file = paste(fit_dir, "outgroup_loo_waic_median_runif_revised_filtered.rda", sep = "/"))
 
 fit_metrics$LOOIC$diagnostics$pareto_k
 ```
 
 # extract random effects and save
 ```{r}
-participant_wide_df = participant_check_df %>% 
+participant_wide_df = puarticipant_df %>% 
   mutate(computer_alpha = computer_fit$allIndPars$alpha, 
          computer_epsilon = computer_fit$allIndPars$ep,
          human_alpha = human_fit$allIndPars$alpha,
@@ -249,5 +267,28 @@ participant_wide_df = participant_check_df %>%
          ingroup_alpha = ingroup_fit$allIndPars$alpha,
          ingroup_epsilon = ingroup_fit$allIndPars$ep)
 
-write.csv(participant_wide_df, paste(data_dir, "participant_wide.csv", sep = "/"), row.names = FALSE)
+write.csv(participant_wide_df, paste(data_dir, "participant_wide_median_runif.csv", sep = "/"), row.names = FALSE)
 ```
+
+# free para boundary check
+```{r}
+# load(paste(gitrepo_path, "fits", "computer_fit_median_runif_revised_filtered.rda", sep = "/"))
+# load(paste(gitrepo_path, "fits", "human_fit_median_runif_revised_filtered.rda", sep = "/"))
+# load(paste(gitrepo_path, "fits", "ingroup_fit_median_runif_revised_filtered.rda", sep = "/"))
+# load(paste(gitrepo_path, "fits", "outgroup_fit_median_runif_revised_filtered.rda", sep = "/"))
+
+print(c(max(participant_wide_df$computer_alpha), min(participant_wide_df$computer_alpha)))
+print(c(max(participant_wide_df$computer_epsilon), min(participant_wide_df$computer_epsilon)))
+print(c(max(participant_wide_df$human_alpha), min(participant_wide_df$human_alpha)))
+print(c(max(participant_wide_df$human_epsilon), min(participant_wide_df$human_epsilon)))
+
+print(c(max(participant_wide_df$outgroup_alpha), min(participant_wide_df$outgroup_alpha)))
+print(c(max(participant_wide_df$outgroup_epsilon), min(participant_wide_df$outgroup_epsilon)))
+print(c(max(participant_wide_df$ingroup_alpha), min(participant_wide_df$ingroup_alpha)))
+print(c(max(participant_wide_df$ingroup_epsilon), min(participant_wide_df$ingroup_epsilon)))
+```
+
+```{r}
+printFit(computer_fit, human_fit, ingroup_fit, outgroup_fit, ic="both")
+```
+
