@@ -102,8 +102,7 @@ rej_rates_df = data.frame(matrix(nrow = nrow(participant_df), ncol = length(rej_
 colnames(rej_rates_df) = rej_df_colnames
 ```
 
-
-# rejection rate function
+# rejection rate calculation, proxy for norm
 ```{r}
 for (i in 1:nrow(participant_df)) {
   # i = 1 # for testing
@@ -121,11 +120,52 @@ for (i in 1:nrow(participant_df)) {
   
   rej_rates_df[i,] = c(sub_i, computer_rej_rate_i, ingroup_rej_rate_i, outgroup_rej_rate_i)
 }
+
+write.csv(rej_rates_df, paste(data_dir, "rej_rate_partner_50.csv", sep = "/"), row.names = FALSE)ß
 ```
 
-
+# rejection rate as a function of fairness, each partner, proxy for fairness sensitivity (envy)
 ```{r}
-write.csv(rej_rates_df, paste(data_dir, "rej_rate_partner_50.csv", sep = "/"), row.names = FALSE)
+for (i in 1:nrow(participant_df)) {
+  # i = 1 # for testing
+  i = 3
+  sub_i = participant_df$subjID[i]
+  
+  computer_i_df = computer_df %>% filter(subjID == sub_i)
+  ingroup_i_df = ingroup_df %>% filter(subjID == sub_i)
+  outgroup_i_df = outgroup_df %>% filter(subjID == sub_i)
+  
+  for (t in 1:10) {
+    t = 1
+    computer_i_df_t = computer_i_df[computer_i_df$offer == t,]
+    if (nrow(computer_i_df_t)>=1) {
+      computer_rej_t = 1 - (sum(computer_i_df_t$accept)/nrow(computer_i_df_t))
+    } else {computer_rej_t = NA}
+    
+    
+    ingroup_i_df_t = ingroup_i_df[ingroup_i_df$offer == t,]
+    if (nrow(ingroup_i_df_t)>=1) {
+      ingroup_rej_t = 1 - (sum(ingroup_i_df_t$accept)/nrow(ingroup_i_df_t))
+    } else {ingroup_rej_t = NA}
+    
+    outgroup_i_df_t = outgroup_i_df[outgroup_i_df$offer == t,]
+    if (nrow(outgroup_i_df_t)>=1) {
+      outgroup_rej_t = 1 - (sum(outgroup_i_df_t$accept)/nrow(outgroup_i_df_t))
+    } else {outgroup_rej_t = NA}
+    
+    ingroup_rej_rate_i = 1-sum(ingroup_i_df$accept)/nrow(ingroup_i_df)
+    
+    
+    outgroup_rej_rate_i = 1-sum(outgroup_i_df$accept)/nrow(outgroup_i_df)
+    
+    rej_rates_df[i,] = c(sub_i, computer_rej_rate_i, ingroup_rej_rate_i, outgroup_rej_rate_i)
+  }
+}
+```
+
+# choice weight skewness, proxy for epsilong
+```{r}
+
 ```
 
 
