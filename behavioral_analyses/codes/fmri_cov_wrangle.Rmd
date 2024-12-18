@@ -76,84 +76,78 @@ data_dir = paste(gitrepo_path,"data", sep = "/")
 
 # load data
 ```{r}
-# load subs
-participants_wide = "participant_wide.csv"
-participants_wide_df = read.csv(file = paste(data_dir, participants_wide, sep = "/"), header = TRUE)
+rej_rate_df = read.csv(file = paste(data_dir, "rej_rate_partner_50.csv", sep = "/"), header = TRUE)
 
-sub_remove = c("sub-120","sub-131","sub-145")
-participants_wide_df = participants_wide_df[!participants_wide_df$participant_id %in% sub_remove,]
+# sub_remove = c("sub-120","sub-131","sub-145")
+# rej_rate_df = rej_rate_df[!rej_rate_df$subjID %in% sub_remove,]
 
-L3_plain = "participant_L3_47.csv"
-L3_plain_df = read.csv(file = paste(data_dir, L3_plain, sep = "/"), header = TRUE)
+# load L3 subs as in L3 template
+L3_plain_df = read.csv(file = paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE)
+
+participant_check_df = read.csv(file = paste(data_dir, "participant_check.csv", sep = "/"), header = TRUE)
 ```
 
-# demean columns
+# combine data frame using the subject order in L3_plain
 ```{r}
-participants_wide_df = participants_wide_df %>% 
+rej_rate_L3_df = L3_plain_df
+rej_colnames = colnames(rej_rate_df)[-1]
+rej_rate_L3_df[, c("age", rej_colnames)] = NA
+for (i in 1:nrow(L3_plain_df)) {
+  sub_i = L3_plain_df$subjID[i]
+  rej_rate_L3_df[i,rej_colnames] = rej_rate_df[rej_rate_df$subjID == sub_i, rej_colnames]
+  rej_rate_L3_df$age[i] = participant_check_df$age[participant_check_df$participant_id == sub_i]
+}
+
+rej_rate_L3_df = rej_rate_L3_df %>% 
   mutate(
     # age_mean = age - mean(age),
          young = case_when(age <=36 ~ 1,
                            age > 36 ~ 0),
          old = case_when(age <=36 ~ 0,
                            age > 36 ~ 1),
-         Hum_Com_alpha = human_alpha-computer_alpha,
-         Hum_Com_epsilon = human_epsilon-computer_epsilon,
-         IN_OUT_alpha = ingroup_alpha-outgroup_alpha,
-         IN_OUT_epsilon = ingroup_epsilon-outgroup_epsilon,
-         Hum_Com_alpha_mean = Hum_Com_alpha-mean(Hum_Com_alpha),
-         Hum_Com_epsilon_mean = Hum_Com_epsilon-mean(Hum_Com_epsilon),
-         IN_OUT_alpha_mean = IN_OUT_alpha-mean(IN_OUT_alpha),
-         IN_OUT_epsilon_mean = IN_OUT_epsilon-mean(IN_OUT_epsilon)
+         in_out = ingroup_rej_rate - outgroup_rej_rate,
+         in_out_demean = in_out - mean(in_out),
+         in_computer = ingroup_rej_rate - computer_rej_rate,
+         in_computer_demean = in_computer - mean(in_computer),
+         out_computer = outgroup_rej_rate - computer_rej_rate,
+         out_computer_demean = out_computer - mean(out_computer)
   )
-
-all_df = merge(L3_plain_df, participants_wide_df, by.x = "participant_id")
 ```
 
 # construct different L3 cov and save
-## IN_OUT_alpha_AGE_bi
+## in_out_age_bi_df
 ```{r}
-IN_OUT_alpha_AGE_bi_df = all_df %>% 
-  mutate(IN_OUT_alpha_young = IN_OUT_alpha_mean*young,
-         IN_OUT_alpha_old = IN_OUT_alpha_mean*old) %>% 
-  select(participant_id, ismale, tsnr, fd_mean, RT, 
-         young, old, 
-         IN_OUT_alpha_young, IN_OUT_alpha_old)
-write.csv(IN_OUT_alpha_AGE_bi_df, paste(data_dir, "IN_OUT_alpha_AGE_bi.csv", sep = "/"),
+in_out_age_bi_df = rej_rate_L3_df %>% 
+  mutate(in_out_young = in_out_demean*young,
+         in_out_old = in_out_demean*old) %>% 
+  select(subjID, ismale, tsnr, fd_mean, RT, 
+         young, old, in_out_demean,
+         in_out_young, in_out_old)
+write.csv(in_out_age_bi_df, paste(data_dir, "in_out_age_rej.csv", sep = "/"),
           row.names = FALSE)
 ```
 
-## IN_OUT_epsilon_AGE_bi
+## in_computer_age_bi_df
 ```{r}
-IN_OUT_epsilon_AGE_bi_df = all_df %>% 
-  mutate(IN_OUT_epsilon_young = IN_OUT_epsilon_mean*young,
-         IN_OUT_epsilon_old = IN_OUT_epsilon_mean*old) %>% 
-  select(participant_id, ismale, tsnr, fd_mean, RT, 
-         young, old,
-         IN_OUT_epsilon_young, IN_OUT_epsilon_old)
-write.csv(IN_OUT_epsilon_AGE_bi_df, paste(data_dir, "IN_OUT_epsilon_AGE_bi.csv", sep = "/"),
+in_computer_age_bi_df = rej_rate_L3_df %>% 
+  mutate(in_computer_young = in_computer_demean*young,
+         in_computer_old = in_computer_demean*old) %>% 
+  select(subjID, ismale, tsnr, fd_mean, RT, 
+         young, old, in_computer_demean,
+         in_computer_young, in_computer_old)
+write.csv(in_computer_age_bi_df, paste(data_dir, "in_computer_age_rej.csv", sep = "/"),
           row.names = FALSE)
 ```
 
-## Hum_Com_alpha_AGE_bi
+## out_computer_age_bi_df
 ```{r}
-Hum_Com_alpha_AGE_bi_df = all_df %>% 
-  mutate(Hum_Com_alpha_young = Hum_Com_alpha_mean*young,
-         Hum_Com_alpha_old = Hum_Com_alpha_mean*old) %>% 
-  select(participant_id, ismale, tsnr, fd_mean, RT, 
-         young, old,
-         Hum_Com_alpha_young, Hum_Com_alpha_old)
-write.csv(Hum_Com_alpha_AGE_bi_df, paste(data_dir, "Hum_Com_alpha_AGE_bi.csv", sep = "/"),
+out_computer_age_bi_df = rej_rate_L3_df %>% 
+  mutate(out_computer_young = out_computer_demean*young,
+         out_computer_old = out_computer_demean*old) %>% 
+  select(subjID, ismale, tsnr, fd_mean, RT, 
+         young, old, out_computer_demean,
+         out_computer_young, out_computer_old)
+write.csv(out_computer_age_bi_df, paste(data_dir, "out_computer_age_rej.csv", sep = "/"),
           row.names = FALSE)
 ```
 
-## Hum_Com_epsilon_AGE_bi
-```{r}
-Hum_Com_epsilon_AGE_bi_df = all_df %>% 
-  mutate(Hum_Com_epsilon_young = Hum_Com_epsilon_mean*young,
-         Hum_Com_epsilon_old = Hum_Com_epsilon_mean*old) %>% 
-  select(participant_id, ismale, tsnr, fd_mean, RT, 
-         young, old,
-         Hum_Com_epsilon_young, Hum_Com_epsilon_old)
-write.csv(Hum_Com_epsilon_AGE_bi_df, paste(data_dir, "Hum_Com_epsilon_AGE_bi.csv", sep = "/"),
-          row.names = FALSE)
-```
