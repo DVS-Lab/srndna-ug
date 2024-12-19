@@ -113,6 +113,8 @@ bin_N_scaled = 30
 # computer 
 ## min negLL+1
 ```{r}
+set.seed(123)
+
 cvs_suff = "_alphaRANDtauRANDnorm0informedUPDATED_ugrRL_fminsearch_computer.csv"
 fig_folder = "ugRL_fminsearch_negLLminPLUSone"
 dir.create(file.path(figures_dir, fig_folder))
@@ -127,42 +129,37 @@ for (i in 1:nrow(participants_df)) {
   sub_i_fit = sub_i_fit_all %>% 
     filter(exitflag == 1) %>% 
     # filter(negLL <= quantile(negLL, probs = 1000/nrow(.))) %>%
-    filter(negLL <= min(min(negLL)+1, quantile(negLL, probs = 1000/nrow(.)))) %>%
+    filter(negLL <= (min(negLL)+1)) %>%
     select(negLL, prior_names, posterior_names)
   
-  nrow_df_i = nrow(sub_i_fit)
+  # generate 1000 samples from the remaining rows using bootstrapping
+  random_1000 <- sample(1:nrow_df_i, size = 1000, replace = TRUE)
+  sub_i_fit = sub_i_fit[random_1000,]
   
-  # check nrow of filtered fit results. if nrow is larger than 1000, randomly choose 1000 rows
-  # if nrow is smaller than 1000, keep however many there are for further processing and plotting
-  if (nrow_df_i>1000) {
-    random_1000 <- sample(1:nrow_df_i, size = 1000, replace = TRUE)
-    sub_i_fit = sub_i_fit[random_1000,]
-  }
-  
-  # calculate param means and medians
-  mean_alpha = mean(sub_i_fit$alpha_i)
-  median_alpha = mean(sub_i_fit$alpha_i)
-  
-  mean_tau = mean(sub_i_fit$tau_i)
-  median_tau = mean(sub_i_fit$tau_i)
-  
-  mean_epsilon = mean(sub_i_fit$epsilon_i)
-  median_epsilon = mean(sub_i_fit$epsilon_i)
+  # # calculate param means and medians
+  # mean_alpha = mean(sub_i_fit$alpha_i)
+  # median_alpha = mean(sub_i_fit$alpha_i)
+  # 
+  # mean_tau = mean(sub_i_fit$tau_i)
+  # median_tau = mean(sub_i_fit$tau_i)
+  # 
+  # mean_epsilon = mean(sub_i_fit$epsilon_i)
+  # median_epsilon = mean(sub_i_fit$epsilon_i)
   
   parames_name = c("type", "mean", "median")
   params_df = data.frame(type = c("alpha", "tau", "epsilon"),
                          mean = c(mean_alpha, mean_tau, mean_epsilon),
                          median = c(median_alpha, median_tau, median_epsilon))
   
-  bin_N = max(round(nrow(sub_i_fit)/bin_N0),5)
+  # bin_N = max(round(nrow(sub_i_fit)/bin_N0),5)
+  bin_N = 30
   
   print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
   print(sub_i_csv)
   
   posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit, params_df, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
-  if (nrow(sub_i_fit) > 4) {
+  
   corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
-  }
 }
 
 ## find the coordinate of cells that has NA in it

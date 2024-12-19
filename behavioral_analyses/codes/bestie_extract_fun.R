@@ -42,5 +42,7 @@ bestie_extract_fun = function(sub_i_name, cvs_suff, param_type_t){
   # Get the x value at the highest density
   peakmax_epsilon_x <- density_epsilon_1000$x[max(peaks_epsilon)]
   
+  
+  
   return(c(peakmax_alpha_x, peakmax_epsilon_x))
 }

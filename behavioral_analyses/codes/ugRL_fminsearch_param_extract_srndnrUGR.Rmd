@@ -100,6 +100,17 @@ norm0_df = read.csv(file = paste(fits_dir, "sub_include_norm0_guess.csv", sep = 
 # computer_df = read.table(paste(data_dir, "computer_filtered.txt", sep = "/"), sep = "\t", header = T)
 ```
 
+# figure parameters
+```{r}
+w_corr = 7
+h_corr = 7
+
+h_histo = 5
+w_histo = 10
+bin_N0 = 30
+bin_N_scaled = 30
+```
+
 # prepare dataframe for point estimates of params
 ```{r}
 alpha_esti_df = data.frame(subjID = participants_df$subjID,
@@ -115,7 +126,11 @@ epsilon_esti_df = data.frame(subjID = participants_df$subjID,
 
 ## min negLL+1
 ```{r}
+set.seed(123)
+
 cvs_mid = "_alphaRANDtauRANDnorm0informedUPDATED_ugrRL_fminsearch_"
+fig_folder = "ugRL_fminsearch_negLLminPLUSone"
+dir.create(file.path(figures_dir, fig_folder))
 partner_types = c("computer", "ingroup", "outgroup")
 for (i in 1:nrow(participants_df)) {
   # i = 4
@@ -126,7 +141,9 @@ for (i in 1:nrow(participants_df)) {
     cvs_suff = paste(cvs_mid, param_type_t, ".csv", sep = "")
     peakmax_alpha_epsilon = bestie_extract_fun(sub_i_name, cvs_suff, param_type_t)
     alpha_esti_df[alpha_esti_df$subjID == sub_i_name,param_type_t] = peakmax_alpha_epsilon[1]
-    epsilon_esti_df[epsilon_esti_df$subjID == sub_i_name, param_type_t] = peakmax_alpha_epsilon[2]
+    epsilon_esti_df[epsilon_esti_df$subjID == sub_i_name, param_type_t] = 
+      peakmax_alpha_epsilon[2]
+    
   }
 }
 
