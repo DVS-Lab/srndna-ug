@@ -184,7 +184,7 @@ dir.create(file.path(figures_dir, fig_folder))
 plot_title = "min(negLL) + 0.5"
 
 for (i in 1:nrow(participants_df)) {
-  # i = 1
+  i = 4
   sub_i_name = participants_df$subjID[i]
   sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
   

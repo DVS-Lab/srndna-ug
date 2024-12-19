@@ -18,8 +18,12 @@ bestie_extract_fun = function(sub_i_name, cvs_suff, param_type_t){
   random_1000 <- sample(1:nrow_df_i, size = 1000, replace = TRUE)
   sub_i_fit = sub_i_fit[random_1000,]
   
+  
+  
   # Calculate alpha density
-  alpha_i_1000 = sub_i_fit$alpha_i %>% sort()
+  # alpha_i_1000 = sub_i_fit$alpha_i %>% sort()
+  alpha_i_1000 = trimmed_vector ### for testing. to delete.
+  
   density_alpha_1000 <- density(alpha_i_1000)
   
   # Find peaks in the density curve. The + 1 is necessary due to an indexing offset created by the diff() function.
@@ -29,6 +33,7 @@ bestie_extract_fun = function(sub_i_name, cvs_suff, param_type_t){
   peaks_alpha_y <- density_alpha_1000$y[peaks_alpha]
   # Get the x value at the highest density
   peakmax_alpha_x <- density_alpha_1000$x[max(peaks_alpha)]
+  peakmax_alpha_x ### for testing. to delete.
   
   # Calculate epsilon density
   epsilon_i_1000 = sub_i_fit$epsilon_i %>% sort()
