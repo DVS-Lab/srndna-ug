@@ -129,5 +129,8 @@ for (i in 1:nrow(participants_df)) {
     epsilon_esti_df[epsilon_esti_df$subjID == sub_i_name, param_type_t] = peakmax_alpha_epsilon[2]
   }
 }
+
+write.csv(alpha_esti_df, paste(fits_dir, "alpha_39_1.csv", sep = "/"))
+write.csv(epsilon_esti_df, paste(fits_dir, "epsilon_39_1.csv", sep = "/"))
 ```
 
