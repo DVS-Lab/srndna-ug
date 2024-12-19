@@ -1,0 +1,10 @@
+/ContrastName1	O-Y_IN_OUT_alpha_age 
+/ContrastName2	Y-O_IN_OUT_alpha_age 
+/NumWaves	8
+/NumContrasts	2
+/PPheights		1.025254e+00	1.025254e+00
+/RequiredEffect		3.051	3.051
+
+/Matrix
+0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 -1.000000e+00 1.000000e+00 
+0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 1.000000e+00 -1.000000e+00 

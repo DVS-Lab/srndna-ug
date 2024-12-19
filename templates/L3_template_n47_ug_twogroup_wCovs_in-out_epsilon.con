@@ -1,0 +1,10 @@
+/ContrastName1	pos_IN_OUT_epsilon_age 
+/ContrastName2	neg_IN_OUT_epsilon_age 
+/NumWaves	8
+/NumContrasts	2
+/PPheights		1.574224e-03	1.574224e-03
+/RequiredEffect		3.623	3.623
+
+/Matrix
+0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 -1.000000e+00 1.000000e+00 
+0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 1.000000e+00 -1.000000e+00 

@@ -2197,7 +2197,7 @@ set fmri(con_mode) real
 set fmri(conpic_real.1) 1
 
 # Title for contrast_real 1
-set fmri(conname_real.1) "pos_IN_OUT_alpha_age"
+set fmri(conname_real.1) "O-Y_IN_OUT_alpha_age"
 
 # Real contrast_real vector 1 element 1
 set fmri(con_real1.1) 0.0
@@ -2227,7 +2227,7 @@ set fmri(con_real1.8) 1.0
 set fmri(conpic_real.2) 1
 
 # Title for contrast_real 2
-set fmri(conname_real.2) "neg_IN_OUT_alpha_age"
+set fmri(conname_real.2) "Y-O_IN_OUT_alpha_age"
 
 # Real contrast_real vector 2 element 1
 set fmri(con_real2.1) 0
