@@ -24,7 +24,7 @@ copenum=$1
 copenum_thresh_randomise=100 # actual contrasts start here. no need to do randomise main effects (e.g., reward > nothing/fixation/baseline)
 copename=$2
 REPLACEME=$3 # this defines the parts of the path that differ across analyses
-MAINOUTPUT=${maindir}/derivatives/fsl/L3_SJDM
+MAINOUTPUT=${maindir}/derivatives/fsl/L3_SANS
 #MAINOUTPUT=${maindir}/derivatives/fsl/L3_model-02_task-${task}_n${N}_flame1+2
 mkdir -p $MAINOUTPUT
 
@@ -34,7 +34,7 @@ mkdir -p $MAINOUTPUT
 ### --- Two groups with covariates ------------------------------
 # set outputs and check for existing
 cnum_pad=`zeropad ${copenum} 2`
-OUTPUT=${MAINOUTPUT}/L3_task-${task}_${REPLACEME}_cnum-${cnum_pad}_cname-${copename}_twogroup_wCovs_alpha_main
+OUTPUT=${MAINOUTPUT}/L3_task-${task}_${REPLACEME}_cnum-${cnum_pad}_cname-${copename}_twogroup_wCovs_in-out_rej
 if [ -e ${OUTPUT}.gfeat/cope1.feat/cluster_mask_zstat1.nii.gz ]; then
 
 	# run randomise if output doesn't exist and the contrasts (copes) are valid
@@ -51,8 +51,8 @@ else # try to run feat and clean up previous effort with partial output
 	# create template and run FEAT analyses
 #	ITEMPLATE=${maindir}/templates/L3_template_n${N}_${task}_twogroup_wCovs.fsf
 
-	ITEMPLATE=${maindir}/templates/L3_template_n${N}_${task}_twogroup_wCovs_in-out_alpha_main.fsf
-	OTEMPLATE=${MAINOUTPUT}/L3_task-${task}_${REPLACEME}_copenum-${copenum}_twogroup_wCovs_alpha_main.fsf
+	ITEMPLATE=${maindir}/templates/L3_template_n${N}_${task}_twogroup_wCovs_in-out_rej.fsf
+	OTEMPLATE=${MAINOUTPUT}/L3_task-${task}_${REPLACEME}_copenum-${copenum}_twogroup_wCovs_in-out_rej.fsf
 	
 	sed -e 's@OUTPUT@'$OUTPUT'@g' \
 	-e 's@COPENUM@'$copenum'@g' \

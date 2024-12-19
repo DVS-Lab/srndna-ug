@@ -5,18 +5,30 @@ scriptdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 maindir="$(dirname "$scriptdir")"
 
 # base paths
-TASK=ultimatum
-MAINOUTPUT=${maindir}/derivatives/fsl/L3_model-02_task-${TASK}_n47_flame1+2
-outputdir=${maindir}/derivatives/imaging_plots_SJDM
+TASK="ug"
+
+#MAINOUTPUT=${maindir}/derivatives/fsl/L3_model-02_task-${TASK}_n47_flame1+2
+MAINOUTPUT=${maindir}/derivatives/fsl/L3_SANS
+
+outputdir=${maindir}/imaging_plots_SANS
+
 mkdir -p $outputdir
 
 # activation: ROI name and other path information
-for ROI in 'in-out_alpha_age_ecn_1' 'in-out_epsilon_age_dmn_1' ; do
-	MASK=${maindir}/masks_SJDM/${ROI}.nii.gz
-	TYPE=act
-	for COPENUM in 2 4 6; do # act
+#for ROI in 'hum-com_alpha_ageBI_act' 'in-out_alpha_ageBI_act'; do
+for ROI in 'in-out_epsilon_age_dmn_z1_c2'; do
+	MASK=${maindir}/masks_SANS/${ROI}.nii.gz
+	TYPE='nppi-dmn'
+#	TYPE='nppi-ecn'
+#	TYPE='act'
+	for COPENUM in 2 4 6; do # acts
 		cnum_padded=`zeropad ${COPENUM} 2`
-		DATA=`ls -1 ${MAINOUTPUT}/L3_task-${TASK}_type-${TYPE}_cnum-${cnum_padded}_*_onegroup.gfeat/cope1.feat/filtered_func_data.nii.gz`
+
+#		DATA=`ls -1 ${MAINOUTPUT}/L3_task-${TASK}_type-${TYPE}_cnum-${cnum_padded}_*_onegroup.gfeat/cope1.feat/filtered_func_data.nii.gz`
+		DATA=`ls -1 ${MAINOUTPUT}/L3_task-${TASK}_type-${TYPE}_cnum-${cnum_padded}_*_twogroup_wCovs_in-out_epsilon.gfeat/cope1.feat/filtered_func_data.nii.gz`
+#		DATA=`ls -1 ${MAINOUTPUT}/L3_task-${TASK}_type-${TYPE}_cnum-${cnum_padded}_*_twogroup_wCovs_hum-com_epsilon.gfeat/cope1.feat/filtered_func_data.nii.gz`
+		
+		
 		fslmeants -i $DATA -o ${outputdir}/${ROI}_type-${TYPE}_cope-${cnum_padded}.txt -m ${MASK}
 	done
 done
@@ -36,7 +48,7 @@ done
 #	seed=$1
 #	ROI=$2
 #	TYPE=nppi-${seed}
-#	MASK=${maindir}/masks_SJDM/${ROI}.nii.gz
+#	MASK=${maindir}/masks_SANS/${ROI}.nii.gz
 #	for COPENUM in 1 2 3 4 5 6; do
 #		cnum_padded=`zeropad ${COPENUM} 2`
 #		DATA=`ls -1 ${MAINOUTPUT}/L3_task-${TASK}_type-${TYPE}_cnum-${cnum_padded}_*_onegroup.gfeat/cope1.feat/filtered_func_data.nii.gz`

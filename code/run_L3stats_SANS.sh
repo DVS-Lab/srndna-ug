@@ -10,14 +10,15 @@ maindir="$(dirname "$scriptdir")"
 
 
 # this loop defines the different types of analyses that will go into the group comparisons
-for analysis in nppi-dmn nppi-ecn act; do #act; do # nppi-dmn nppi-ecn; do
+#for analysis in nppi-dmn nppi-ecn; do #act; do # nppi-dmn nppi-ecn; do
+for analysis in act; do #act; do # nppi-dmn nppi-ecn; do
 	analysistype=type-${analysis}
 
 	# these define the cope number (copenum) and cope name (copename)
 	# "1 comp" "2 comp_p" "3 in" "4 in_p" "5 out" "6 out_p"
 	# "7 in_p-out_p" "8 soc_p-nonsoc_p" "9 in-out" "10 soc-nonsoc" "11 phys"
-#	for copeinfo in "1 comp" "2 comp_p" "3 in" "4 in_p" "5 out" "6 out_p" "7 in_p-out_p" "8 soc_p-nonsoc_p" "9 in-out" "10 soc-nonsoc" "11 phys"; do
-	for copeinfo in "7 in_p-out_p"; do
+	for copeinfo in "7 in_p-out_p" "8 soc_p-nonsoc_p" "9 in-out" "10 soc-nonsoc" "11 phys"; do
+#	for copeinfo in "7 in_p-out_p"; do
 #	for copeinfo in "8 soc_p-nonsoc_p"; do
 
 		# split copeinfo variable
@@ -31,8 +32,8 @@ for analysis in nppi-dmn nppi-ecn act; do #act; do # nppi-dmn nppi-ecn; do
 		fi
 
 
-		NCORES=9
-		SCRIPTNAME=${maindir}/code/L3stats_SJDM.sh
+		NCORES=11
+		SCRIPTNAME=${maindir}/code/L3stats_SANS.sh
 		while [ $(ps -ef | grep -v grep | grep $SCRIPTNAME | wc -l) -ge $NCORES ]; do
 			sleep 1s
 		done
