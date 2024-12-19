@@ -72,8 +72,8 @@ library(brms)
 gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
 data_dir = paste(gitrepo_path,"data", sep = "/")
 # load L3 subs as in L3 template
-L3_plain_df = read.csv(file = paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE)
-
+L3_plain_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE)
+participant_check_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = TRUE)
 ```
 
 # load behavior data
@@ -123,30 +123,6 @@ in_out_age_bi_df = rej_rate_L3_df %>%
          young, old,
          in_out_young, in_out_old)
 write.csv(in_out_age_bi_df, paste(data_dir, "in_out_age_rej.csv", sep = "/"),
-          row.names = FALSE)
-```
-
-### in_computer_age_bi_df
-```{r}
-in_computer_age_bi_df = rej_rate_L3_df %>% 
-  mutate(in_computer_young = in_computer_demean*young,
-         in_computer_old = in_computer_demean*old) %>% 
-  select(subjID, ismale, tsnr, fd_mean, RT, 
-         young, old,
-         in_computer_young, in_computer_old)
-write.csv(in_computer_age_bi_df, paste(data_dir, "in_computer_age_rej.csv", sep = "/"),
-          row.names = FALSE)
-```
-
-### out_computer_age_bi_df
-```{r}
-out_computer_age_bi_df = rej_rate_L3_df %>% 
-  mutate(out_computer_young = out_computer_demean*young,
-         out_computer_old = out_computer_demean*old) %>% 
-  select(subjID, ismale, tsnr, fd_mean, RT, 
-         young, old,
-         out_computer_young, out_computer_old)
-write.csv(out_computer_age_bi_df, paste(data_dir, "out_computer_age_rej.csv", sep = "/"),
           row.names = FALSE)
 ```
 
@@ -253,7 +229,7 @@ sensitivity_df = merge(L3_plain_df, slope_fair_sense_wide_df, by.x = "subjID")
 norm_df =   merge(L3_plain_df, intercept_5_fair_sense_wide_df, by.x = "subjID")
 ```
 
-### fairness sensitivity for L3
+### sensitivity
 ```{r}
 sensitivity_df = sensitivity_df %>% 
   mutate(
