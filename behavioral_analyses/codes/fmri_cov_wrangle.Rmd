@@ -72,8 +72,8 @@ library(brms)
 gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
 data_dir = paste(gitrepo_path,"data", sep = "/")
 # load L3 subs as in L3 template
-L3_plain_df = read.csv(file = paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE)
-
+L3_plain_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE)
+participant_check_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = TRUE)
 ```
 
 # load behavior data
@@ -229,7 +229,7 @@ sensitivity_df = merge(L3_plain_df, slope_fair_sense_wide_df, by.x = "subjID")
 norm_df =   merge(L3_plain_df, intercept_5_fair_sense_wide_df, by.x = "subjID")
 ```
 
-### fairness sensitivity for L3
+### sensitivity
 ```{r}
 sensitivity_df = sensitivity_df %>% 
   mutate(

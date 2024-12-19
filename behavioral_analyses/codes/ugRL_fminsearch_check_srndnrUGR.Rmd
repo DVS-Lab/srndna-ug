@@ -65,6 +65,7 @@ library(rjson)
 library(readr)
 library(hBayesDM)
 library(brms)
+library(e1071)
 ```
 
 # dirs
