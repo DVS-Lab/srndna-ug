@@ -25,7 +25,7 @@ trim_for_skewness_fun <- function(raw_vector) {
   while (TRUE) {
     trimmed_vector <- sorted_vector[lower_bound:upper_bound]
     
-    # current_skewness <- skewness(trimmed_vector)
+    current_skewness <- skewness(trimmed_vector)
     
     if (current_skewness > target_skew) {
       distance_skewness_target = abs(current_skewness - target_skew)
@@ -36,11 +36,13 @@ trim_for_skewness_fun <- function(raw_vector) {
     # current_kurtosis = kurtosis(trimmed_vector)
     # print(sprintf("skewness = %.2f, kurtosis = %.2f",
     #               current_skewness, current_kurtosis))
+    print(sprintf("skewness = %.2f",
+                  current_skewness))
     
     if (distance_skewness_target <= tolerance) {
       break
     }
-    # first trim skewness
+    # trim skewness
     ###
     if (current_skewness < -target_skew) {
       lower_bound <- lower_bound + trim_step
@@ -57,7 +59,6 @@ trim_for_skewness_fun <- function(raw_vector) {
     }
   }
   # histogram(trimmed_vector)
-  # print(sprintf("skewness = %.2f, kurtosis = %.2f",
-  #               current_skewness, current_kurtosis))
+
   return(median(trimmed_vector))
 }

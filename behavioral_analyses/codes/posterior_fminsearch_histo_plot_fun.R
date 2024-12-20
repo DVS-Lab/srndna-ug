@@ -1,5 +1,5 @@
 posterior_fminsearch_histo_plot_fun = 
-  function(sub_i_name, sub_i_fit, params_df, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir) {
+  function(sub_i_name, sub_i_fit, thresh_type, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir) {
     # ### for testing
     # param_range = c(50, 10, 1) # alpha, tau, epsilon
     # sub_i_fit = 
@@ -81,6 +81,6 @@ posterior_fminsearch_histo_plot_fun =
                            # ggarrange(pri_all_alpha, pri_all_tau, pri_all_ep, pri_all_norm, nrow = 1, ncol = 4),
                            nrow = 2, ncol = 1, heights = h_histo, widths = w_histo)
     
-    ggsave(paste(figures_dir, fig_folder, paste(sub_i_name, fig_folder, "histo.png", sep = "_"), 
+    ggsave(paste(figures_dir, fig_folder, paste(sub_i_name, fig_folder, thresh_type, "histo.png", sep = "_"), 
                  sep = "/"), p_post_pri, width = w_histo, height = h_histo)
   }

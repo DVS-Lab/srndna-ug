@@ -107,17 +107,16 @@ h_corr = 7
 
 h_histo = 5
 w_histo = 10
-bin_N0 = 30
+bin_N = 30
 bin_N_scaled = 30
 ```
 
 # computer 
-## min negLL+1
 ```{r}
 set.seed(123)
 
 cvs_suff = "_alphaRANDtauRANDnorm0informedUPDATED_ugrRL_fminsearch_computer.csv"
-fig_folder = "ugRL_fminsearch_negLLminPLUSone"
+fig_folder = "ugRL_fminsearch"
 dir.create(file.path(figures_dir, fig_folder))
 plot_title = "min(negLL) + 1"
 
@@ -129,49 +128,44 @@ for (i in 1:nrow(participants_df)) {
   sub_i_fit_all = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% na.omit()
   sub_i_fit = sub_i_fit_all %>% 
     filter(exitflag == 1) %>% 
-    # filter(negLL <= quantile(negLL, probs = 1000/nrow(.))) %>%
-    filter(negLL <= (min(negLL)+1)) %>%
-    select(negLL, prior_names, posterior_names)
+    select(c("negLL", prior_names, posterior_names))
   
+  min_negLL = min(sub_i_fit$negLL)
   
+  thresh_negLL = min_negLL
+  # thresh_type = "negLLmin"
+  sub_i_fit = sub_i_fit[sub_i_fit$negLL == thresh_negLL, ]
+  N_plot = nrow(sub_i_fit)
   
-  # generate 1000 samples from the remaining rows using bootstrapping
-  random_1000 <- sample(1:nrow(sub_i_fit), size = 1000, replace = TRUE)
-  sub_i_fit = sub_i_fit[random_1000,]
+  while (N_plot == 1) {
+    thresh_negLL = thresh_negLL+0.5
+    
+    sub_i_fit = sub_i_fit[sub_i_fit$negLL == thresh_negLL, ]
+    N_plot = nrow(sub_i_fit)
+  }
+  thresh_type = "negLLmin_flex"
   
-  # # calculate param means and medians
-  # mean_alpha = mean(sub_i_fit$alpha_i)
-  # median_alpha = mean(sub_i_fit$alpha_i)
+  # thresh_negLL = min_negLL+0.5
+  # thresh_type = "negLLminPLUS0p5"
+  sub_i_fit = sub_i_fit[sub_i_fit$negLL <= thresh_negLL, ]
+  N_plot = nrow(sub_i_fit)
   # 
-  # mean_tau = mean(sub_i_fit$tau_i)
-  # median_tau = mean(sub_i_fit$tau_i)
-  # 
-  # mean_epsilon = mean(sub_i_fit$epsilon_i)
-  # median_epsilon = mean(sub_i_fit$epsilon_i)
+  # thresh_negLL = min_negLL+1
+  # thresh_type = "negLLminPLUSone"
+  # sub_i_fit = sub_i_fit[sub_i_fit$negLL <= thresh_negLL, ]
+  # N_plot = nrow(sub_i_fit)
   
-  params_df = c("type", "mean", "median")
-  # params_df = data.frame(type = c("alpha", "tau", "epsilon"),
-  #                        mean = c(mean_alpha, mean_tau, mean_epsilon),
-  #                        median = c(median_alpha, median_tau, median_epsilon))
-  # 
-  # bin_N = max(round(nrow(sub_i_fit)/bin_N0),5)
-  bin_N = 30
+  # # generate 1000 samples from the remaining rows using bootstrapping
+  # random_1000 <- sample(1:nrow(sub_i_fit), size = 1000, replace = TRUE)
+  # sub_i_fit = sub_i_fit[random_1000,]
   
   print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
   print(sub_i_csv)
   
-  posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit, params_df, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit, thresh_type, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
   
-  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+  # corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
 }
-
-## find the coordinate of cells that has NA in it
-# na_positions <- data.frame(
-#   row = which(is.na(sub_i_fit), arr.ind = TRUE)[,1],
-#   col = which(is.na(sub_i_fit), arr.ind = TRUE)[,2],
-#   row_name = rownames(sub_i_fit)[which(is.na(sub_i_fit), arr.ind = TRUE)[,1]],
-#   col_name = colnames(sub_i_fit)[which(is.na(sub_i_fit), arr.ind = TRUE)[,2]]
-# )
 ```
 
 ## min negLL+0.5
