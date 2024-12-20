@@ -83,6 +83,7 @@ source(paste(codes_dir, "posterior_fminsearch_histo_plot_fun.R", sep = "/"))
 source(paste(codes_dir, "corrMatrix_upper_fun.R", sep = "/"))
 source(paste(codes_dir, "corrMatrix_plot_fun.R", sep = "/"))
 source(paste(codes_dir, "bestie_extract_fun.R", sep = "/"))
+source(paste(codes_dir, "trim_for_skewness_fun.R", sep = "/"))
 ```
 
 # data prep
@@ -123,6 +124,53 @@ epsilon_esti_df = data.frame(subjID = participants_df$subjID,
                            ingroup = NA,
                            outgroup = NA)
 ```
+
+## min negLL+0.5
+```{r}
+set.seed(123)
+
+cvs_mid = "_alphaRANDtauRANDnorm0informedUPDATED_ugrRL_fminsearch_"
+fig_folder = "ugRL_fminsearch_negLLminPLUS0p5"
+dir.create(file.path(figures_dir, fig_folder))
+partner_types = c("computer", "ingroup", "outgroup")
+
+for (i in 1:nrow(participants_df)) {
+  # i = 2
+  sub_i_name = participants_df$subjID[i]
+  print(paste(i, sub_i_name, sep = "/"))
+  
+  for (t in 1:length(partner_types)) {
+    # t = 3
+    param_type_t = partner_types[t]
+    print(param_type_t)
+    
+    cvs_suff = paste(cvs_mid, param_type_t, ".csv", sep = "")
+    sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+    
+    sub_i_fit_all = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% na.omit()
+    sub_i_fit = sub_i_fit_all %>% 
+      filter(exitflag == 1) %>% 
+      # filter(negLL <= quantile(negLL, probs = 1000/nrow(.))) %>%
+      filter(negLL <= (min(negLL)+0.5)) %>%
+      select(negLL, prior_names, posterior_names)
+    
+    # # generate 2000 samples from the remaining rows using bootstrapping
+    # random_2000 <- sample(1:nrow(sub_i_fit), size = 2000, replace = TRUE)
+    # sub_i_fit = sub_i_fit[random_2000,]
+    
+    alpha_median_i_t = trim_for_skewness_fun(sub_i_fit$alpha_i)
+    epsilon_median_i_t = trim_for_skewness_fun(sub_i_fit$epsilon_i)
+    
+    alpha_esti_df[alpha_esti_df$subjID == sub_i_name,param_type_t] = alpha_median_i_t
+    epsilon_esti_df[epsilon_esti_df$subjID == sub_i_name, param_type_t] = epsilon_median_i_t
+  }
+}
+
+write.csv(alpha_esti_df, paste(fits_dir, "alpha_39_all.csv", sep = "/"))
+write.csv(epsilon_esti_df, paste(fits_dir, "epsilon_39_all.csv", sep = "/"))
+```
+
+
 
 ## min negLL+1
 ```{r}
