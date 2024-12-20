@@ -95,7 +95,7 @@ posterior_names = c('alpha_i', 'tau_i', 'epsilon_i')
 prior_names = c('alpha0', 'tau0', 'epsilon0', 'norm0')
 
 norm0_df = read.csv(file = paste(fits_dir, "sub_include_norm0_guess.csv", sep = "/"), 
-                      header = TRUE)
+                    header = TRUE)
 # choice_all_df = read.csv(paste(data_dir, "all_clean_filtered_df.csv", sep = "/"), header = T)
 # computer_df = read.table(paste(data_dir, "computer_filtered.txt", sep = "/"), sep = "\t", header = T)
 ```
@@ -109,6 +109,9 @@ h_histo = 5
 w_histo = 10
 bin_N = 30
 bin_N_scaled = 30
+
+thresh_type = "negLLmin_flex"
+plot_title = "min(negLL) flexible"
 ```
 
 # computer 
@@ -116,39 +119,54 @@ bin_N_scaled = 30
 set.seed(123)
 
 cvs_suff = "_alphaRANDtauRANDnorm0informedUPDATED_ugrRL_fminsearch_computer.csv"
-fig_folder = "ugRL_fminsearch"
+fig_folder = "ugRL_fminsearch_computer"
 dir.create(file.path(figures_dir, fig_folder))
-plot_title = "min(negLL) + 1"
+
 
 for (i in 1:nrow(participants_df)) {
-  # i = 1
+  # i = 3
   sub_i_name = participants_df$subjID[i]
   sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
   
   sub_i_fit_all = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% na.omit()
-  sub_i_fit = sub_i_fit_all %>% 
+  sub_i_fit_all = sub_i_fit_all %>% 
     filter(exitflag == 1) %>% 
     select(c("negLL", prior_names, posterior_names))
   
-  min_negLL = min(sub_i_fit$negLL)
+  # set lowest negLL threshold
+  min_negLL = min(sub_i_fit_all$negLL)
   
+  # select rows based on negLL
   thresh_negLL = min_negLL
-  # thresh_type = "negLLmin"
-  sub_i_fit = sub_i_fit[sub_i_fit$negLL == thresh_negLL, ]
+  sub_i_fit = sub_i_fit_all[sub_i_fit_all$negLL == thresh_negLL, ]
   N_plot = nrow(sub_i_fit)
   
-  while (N_plot == 1) {
-    thresh_negLL = thresh_negLL+0.5
-    
-    sub_i_fit = sub_i_fit[sub_i_fit$negLL == thresh_negLL, ]
+  # increase negLL threshold if sample size is smaller than 5000
+  while (N_plot <= 1000 & thresh_negLL < 1) {
+    thresh_negLL = thresh_negLL+0.1
+    if (thresh_negLL > 1) {
+      break
+    }
+    sub_i_fit = sub_i_fit_all[sub_i_fit_all$negLL <= thresh_negLL, ]
     N_plot = nrow(sub_i_fit)
+    if (thresh_negLL > 1) {
+      break
+    }
   }
-  thresh_type = "negLLmin_flex"
+  
+  # reduce the size of sub_i_fit if there're more than 5000 or fewer than 3000 rows after negLL filtering
+  if (N_plot > 5000 | N_plot < 3000) {
+    N_sub_i_fit = nrow(sub_i_fit)
+    random_5000 <- sample(1:N_sub_i_fit, size = 5000, replace = TRUE)
+    sub_i_fit = sub_i_fit[random_5000,]
+  }
+  
+  
   
   # thresh_negLL = min_negLL+0.5
   # thresh_type = "negLLminPLUS0p5"
-  sub_i_fit = sub_i_fit[sub_i_fit$negLL <= thresh_negLL, ]
-  N_plot = nrow(sub_i_fit)
+  # sub_i_fit = sub_i_fit[sub_i_fit$negLL <= thresh_negLL, ]
+  # N_plot = nrow(sub_i_fit)
   # 
   # thresh_negLL = min_negLL+1
   # thresh_type = "negLLminPLUSone"
@@ -164,70 +182,152 @@ for (i in 1:nrow(participants_df)) {
   
   posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit, thresh_type, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
   
-  # corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+  # if (N_plot >= 4) {
+  #   corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+  # }
 }
 ```
 
-## min negLL+0.5
+# ingroup 
 ```{r}
 set.seed(123)
 
-cvs_suff = "_alphaRANDtauRANDnorm0informedUPDATED_ugrRL_fminsearch_computer.csv"
-fig_folder = "ugRL_fminsearch_negLLminPLUS"
+cvs_suff = "_alphaRANDtauRANDnorm0informedUPDATED_ugrRL_fminsearch_ingroup.csv"
+fig_folder = "ugRL_fminsearch_ingroup"
 dir.create(file.path(figures_dir, fig_folder))
-plot_title = "min(negLL) + 0.5"
+plot_title = "min(negLL) flexible"
 
 for (i in 1:nrow(participants_df)) {
-  i = 3
+  # i = 3
   sub_i_name = participants_df$subjID[i]
-  sub_i_name
   sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
   
   sub_i_fit_all = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% na.omit()
-  sub_i_fit = sub_i_fit_all %>% 
+  sub_i_fit_all = sub_i_fit_all %>% 
     filter(exitflag == 1) %>% 
-    # filter(negLL <= quantile(negLL, probs = 1000/nrow(.))) %>%
-    filter(negLL <= (min(negLL)+0.5)) %>%
-    select(negLL, prior_names, posterior_names)
+    select(c("negLL", prior_names, posterior_names))
+  
+  # select rows based on negLL
+  min_negLL = min(sub_i_fit_all$negLL)
+  
+  thresh_negLL = min_negLL
+  sub_i_fit = sub_i_fit_all[sub_i_fit_all$negLL == thresh_negLL, ]
+  N_plot = nrow(sub_i_fit)
+  
+  # increase negLL threshold if sample size is smaller than 5000
+  while (N_plot <= 1000) {
+    sub_i_fit = sub_i_fit_all[sub_i_fit_all$negLL <= thresh_negLL, ]
+    N_plot = nrow(sub_i_fit)
+    thresh_negLL = thresh_negLL+0.2
+    if (thresh_negLL > 1) {
+      break
+    }
+  }
+  
+  # reduce the size of sub_i_fit if there're more than 5000 or fewer than 3000 rows after negLL filtering
+  if (N_plot > 5000 | N_plot < 3000) {
+    N_sub_i_fit = nrow(sub_i_fit)
+    random_5000 <- sample(1:N_sub_i_fit, size = 5000, replace = TRUE)
+    sub_i_fit = sub_i_fit[random_5000,]
+  }
   
   
   
-  # generate 1000 samples from the remaining rows using bootstrapping
-  random_2000 <- sample(1:nrow(sub_i_fit), size = 2000, replace = TRUE)
-  sub_i_fit = sub_i_fit[random_2000,]
-  
-  # # calculate param means and medians
-  # mean_alpha = mean(sub_i_fit$alpha_i)
-  # median_alpha = mean(sub_i_fit$alpha_i)
+  # thresh_negLL = min_negLL+0.5
+  # thresh_type = "negLLminPLUS0p5"
+  # sub_i_fit = sub_i_fit[sub_i_fit$negLL <= thresh_negLL, ]
+  # N_plot = nrow(sub_i_fit)
   # 
-  # mean_tau = mean(sub_i_fit$tau_i)
-  # median_tau = mean(sub_i_fit$tau_i)
-  # 
-  # mean_epsilon = mean(sub_i_fit$epsilon_i)
-  # median_epsilon = mean(sub_i_fit$epsilon_i)
+  # thresh_negLL = min_negLL+1
+  # thresh_type = "negLLminPLUSone"
+  # sub_i_fit = sub_i_fit[sub_i_fit$negLL <= thresh_negLL, ]
+  # N_plot = nrow(sub_i_fit)
   
-  params_df = c("type", "mean", "median")
-  # params_df = data.frame(type = c("alpha", "tau", "epsilon"),
-  #                        mean = c(mean_alpha, mean_tau, mean_epsilon),
-  #                        median = c(median_alpha, median_tau, median_epsilon))
-  # 
-  # bin_N = max(round(nrow(sub_i_fit)/bin_N0),5)
-  bin_N = 30
+  # # generate 1000 samples from the remaining rows using bootstrapping
+  # random_1000 <- sample(1:nrow(sub_i_fit), size = 1000, replace = TRUE)
+  # sub_i_fit = sub_i_fit[random_1000,]
   
   print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
   print(sub_i_csv)
   
-  posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit, params_df, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit, thresh_type, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
   
-  corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+  # if (N_plot >= 4) {
+  #   corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+  # }
 }
-
-## find the coordinate of cells that has NA in it
-# na_positions <- data.frame(
-#   row = which(is.na(sub_i_fit), arr.ind = TRUE)[,1],
-#   col = which(is.na(sub_i_fit), arr.ind = TRUE)[,2],
-#   row_name = rownames(sub_i_fit)[which(is.na(sub_i_fit), arr.ind = TRUE)[,1]],
-#   col_name = colnames(sub_i_fit)[which(is.na(sub_i_fit), arr.ind = TRUE)[,2]]
-# )
 ```
+
+
+# outgroup 
+```{r}
+set.seed(123)
+
+cvs_suff = "_alphaRANDtauRANDnorm0informedUPDATED_ugrRL_fminsearch_outgroup.csv"
+fig_folder = "ugRL_fminsearch_outgroup"
+dir.create(file.path(figures_dir, fig_folder))
+plot_title = "min(negLL) flexible"
+
+for (i in 1:nrow(participants_df)) {
+  # i = 3
+  sub_i_name = participants_df$subjID[i]
+  sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
+  
+  sub_i_fit_all = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% na.omit()
+  sub_i_fit_all = sub_i_fit_all %>% 
+    filter(exitflag == 1) %>% 
+    select(c("negLL", prior_names, posterior_names))
+  
+  # select rows based on negLL
+  min_negLL = min(sub_i_fit_all$negLL)
+  
+  thresh_negLL = min_negLL
+  sub_i_fit = sub_i_fit_all[sub_i_fit_all$negLL == thresh_negLL, ]
+  N_plot = nrow(sub_i_fit)
+  
+  # increase negLL threshold if sample size is smaller than 5000
+  while (N_plot <= 1000) {
+    sub_i_fit = sub_i_fit_all[sub_i_fit_all$negLL <= thresh_negLL, ]
+    N_plot = nrow(sub_i_fit)
+    thresh_negLL = thresh_negLL+0.2
+    if (thresh_negLL > 1) {
+      break
+    }
+  }
+  
+  # reduce the size of sub_i_fit if there're more than 5000 or fewer than 3000 rows after negLL filtering
+  if (N_plot > 5000 | N_plot < 3000) {
+    N_sub_i_fit = nrow(sub_i_fit)
+    random_5000 <- sample(1:N_sub_i_fit, size = 5000, replace = TRUE)
+    sub_i_fit = sub_i_fit[random_5000,]
+  }
+  
+  # thresh_negLL = min_negLL+0.5
+  # thresh_type = "negLLminPLUS0p5"
+  # sub_i_fit = sub_i_fit[sub_i_fit$negLL <= thresh_negLL, ]
+  # N_plot = nrow(sub_i_fit)
+  # 
+  # thresh_negLL = min_negLL+1
+  # thresh_type = "negLLminPLUSone"
+  # sub_i_fit = sub_i_fit[sub_i_fit$negLL <= thresh_negLL, ]
+  # N_plot = nrow(sub_i_fit)
+  
+  # # generate 1000 samples from the remaining rows using bootstrapping
+  # random_1000 <- sample(1:nrow(sub_i_fit), size = 1000, replace = TRUE)
+  # sub_i_fit = sub_i_fit[random_1000,]
+  
+  print(paste(i, sub_i_name, nrow(sub_i_fit), sep = "/"))
+  print(sub_i_csv)
+  
+  posterior_fminsearch_histo_plot_fun(sub_i_name, sub_i_fit, thresh_type, cvs_suff, fig_folder, w_histo, h_histo, bin_N, figures_dir)
+  
+  # if (N_plot >= 4) {
+  #   corrMatrix_plot_fun(sub_i_name, sub_i_fit, plot_title, w_corr, h_corr, figures_dir, fig_folder)
+  # }
+}
+```
+
+
+
+
 
