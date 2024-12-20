@@ -1,14 +1,15 @@
 # Function to trim for target kurtosis
-trim_for_kurtosis <- function(raw_vector, 
-                              target_kurtosis = 1.8, target_skew = 0.5,
-                              tolerance = 0.05, trim_step = 1) {
+trim_for_skewness_fun <- function(raw_vector) {
   ### for testing
   # raw_vector = sub_i_fit$alpha_i
-  raw_vector = sub_i_fit$epsilon_i
-  target_kurtosis = 0.1
-  target_skew = 0.2
-  tolerance = 0.05
-  trim_step = 1
+  # raw_vector = sub_i_fit$alpha_i
+  # raw_vector = sub_i_fit$epsilon_i
+  ###
+  # target_kurtosis = 0
+  target_skew = 0
+  # target_skew = 0
+  tolerance = 0.001
+  trim_step_min = 1
   ###
   
   sorted_vector = sort(raw_vector)
@@ -49,12 +50,7 @@ trim_for_kurtosis <- function(raw_vector,
     }
     ###
     if (lower_bound >= upper_bound) break
-    
-    ####### decrease kurtosis, to continue!
-    
-    
-    
   }
   histogram(trimmed_vector)
-  return(trimmed_vector)
+  return(median(trimmed_vector))
 }

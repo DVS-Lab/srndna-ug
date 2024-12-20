@@ -184,8 +184,9 @@ dir.create(file.path(figures_dir, fig_folder))
 plot_title = "min(negLL) + 0.5"
 
 for (i in 1:nrow(participants_df)) {
-  i = 4
+  i = 3
   sub_i_name = participants_df$subjID[i]
+  sub_i_name
   sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
   
   sub_i_fit_all = read.csv(paste(fits_dir, sub_i_csv, sep = "/"), header = T) %>% na.omit()
@@ -198,8 +199,8 @@ for (i in 1:nrow(participants_df)) {
   
   
   # generate 1000 samples from the remaining rows using bootstrapping
-  random_1000 <- sample(1:nrow(sub_i_fit), size = 1000, replace = TRUE)
-  sub_i_fit = sub_i_fit[random_1000,]
+  random_2000 <- sample(1:nrow(sub_i_fit), size = 2000, replace = TRUE)
+  sub_i_fit = sub_i_fit[random_2000,]
   
   # # calculate param means and medians
   # mean_alpha = mean(sub_i_fit$alpha_i)
