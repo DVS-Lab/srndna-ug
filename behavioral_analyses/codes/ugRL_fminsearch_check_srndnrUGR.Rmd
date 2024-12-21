@@ -89,8 +89,9 @@ source(paste(codes_dir, "corrMatrix_plot_fun.R", sep = "/"))
 ```{r}
 # load sub list
 participant_name = "sub_39.csv"
-participants_df = read.csv(file = paste(data_dir, participant_name, sep = "/"), header = TRUE)
-
+participants_df = 
+  read.csv(file = paste(data_dir, participant_name, sep = "/"), header = TRUE)
+participants_df$subjID = sort(participants_df$subjID)
 posterior_names = c('alpha_i', 'tau_i', 'epsilon_i')
 prior_names = c('alpha0', 'tau0', 'epsilon0', 'norm0')
 
@@ -124,7 +125,7 @@ dir.create(file.path(figures_dir, fig_folder))
 
 
 for (i in 1:nrow(participants_df)) {
-  # i = 3
+ # i = 1
   sub_i_name = participants_df$subjID[i]
   sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
   
@@ -142,26 +143,44 @@ for (i in 1:nrow(participants_df)) {
   N_plot = nrow(sub_i_fit)
   
   # increase negLL threshold if sample size is smaller than 5000
-  while (N_plot <= 1000 & thresh_negLL < 1) {
+  while (N_plot <= 5000 & thresh_negLL < (min_negLL + 1)) {
     thresh_negLL = thresh_negLL+0.1
-    if (thresh_negLL > 1) {
+    if (thresh_negLL > (min_negLL + 1)) {
       break
     }
     sub_i_fit = sub_i_fit_all[sub_i_fit_all$negLL <= thresh_negLL, ]
     N_plot = nrow(sub_i_fit)
-    if (thresh_negLL > 1) {
-      break
-    }
+    # print(c(N_plot, thresh_negLL))
   }
   
-  # reduce the size of sub_i_fit if there're more than 5000 or fewer than 3000 rows after negLL filtering
-  if (N_plot > 5000 | N_plot < 3000) {
+  # trim the size of sub_i_fit if nrow is not 5000 fter negLL filtering
+  if (N_plot != 5000) {
     N_sub_i_fit = nrow(sub_i_fit)
     random_5000 <- sample(1:N_sub_i_fit, size = 5000, replace = TRUE)
     sub_i_fit = sub_i_fit[random_5000,]
   }
   
-  
+  # trim extreme values based on kurtosis
+  while (kurtosis(sub_i_fit$alpha_i) > 3) { # trim tails based on kurtosis/extreme values
+    alpha_i_current = sub_i_fit$alpha_i
+    alpha_lower = quantile(alpha_i_current, probs = 0.1)
+    alpha_upper = quantile(alpha_i_current, probs = 0.9)
+    if (skewness(sub_i_fit$alpha_i) < 0) { # longer negative tail
+      sub_i_fit = sub_i_fit %>% 
+      filter(alpha_i > alpha_lower) # trim longer tail
+    } else if (skewness(sub_i_fit$alpha_i) > 0) { # longer positive tail
+      sub_i_fit = sub_i_fit %>% 
+      filter(alpha_i < alpha_upper) # trim longer tail
+    } else { # trim both tails
+    sub_i_fit = sub_i_fit %>% 
+      filter(alpha_i < alpha_upper*0.5,
+             alpha_i > alpha_lower*0.5)
+    }
+    # re-bootstrap to turn sample size back up to 5000
+    N_sub_i_fit = nrow(sub_i_fit)
+    random_5000 <- sample(1:N_sub_i_fit, size = 5000, replace = TRUE)
+    sub_i_fit = sub_i_fit[random_5000,]
+  }
   
   # thresh_negLL = min_negLL+0.5
   # thresh_type = "negLLminPLUS0p5"
@@ -195,10 +214,10 @@ set.seed(123)
 cvs_suff = "_alphaRANDtauRANDnorm0informedUPDATED_ugrRL_fminsearch_ingroup.csv"
 fig_folder = "ugRL_fminsearch_ingroup"
 dir.create(file.path(figures_dir, fig_folder))
-plot_title = "min(negLL) flexible"
+
 
 for (i in 1:nrow(participants_df)) {
-  # i = 3
+#  i = 1
   sub_i_name = participants_df$subjID[i]
   sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
   
@@ -207,31 +226,35 @@ for (i in 1:nrow(participants_df)) {
     filter(exitflag == 1) %>% 
     select(c("negLL", prior_names, posterior_names))
   
-  # select rows based on negLL
+  # set lowest negLL threshold
   min_negLL = min(sub_i_fit_all$negLL)
   
+  # select rows based on negLL
   thresh_negLL = min_negLL
   sub_i_fit = sub_i_fit_all[sub_i_fit_all$negLL == thresh_negLL, ]
   N_plot = nrow(sub_i_fit)
   
-  # increase negLL threshold if sample size is smaller than 5000
-  while (N_plot <= 1000) {
-    sub_i_fit = sub_i_fit_all[sub_i_fit_all$negLL <= thresh_negLL, ]
-    N_plot = nrow(sub_i_fit)
-    thresh_negLL = thresh_negLL+0.2
-    if (thresh_negLL > 1) {
-      break
+  # trim extreme values based on kurtosis
+  while (kurtosis(sub_i_fit$alpha_i) > 3) { # trim tails based on kurtosis/extreme values
+    alpha_i_current = sub_i_fit$alpha_i
+    alpha_lower = quantile(alpha_i_current, probs = 0.1)
+    alpha_upper = quantile(alpha_i_current, probs = 0.9)
+    if (skewness(sub_i_fit$alpha_i) < 0) { # longer negative tail
+      sub_i_fit = sub_i_fit %>% 
+      filter(alpha_i > alpha_lower) # trim longer tail
+    } else if (skewness(sub_i_fit$alpha_i) > 0) { # longer positive tail
+      sub_i_fit = sub_i_fit %>% 
+      filter(alpha_i < alpha_upper) # trim longer tail
+    } else { # trim both tails
+    sub_i_fit = sub_i_fit %>% 
+      filter(alpha_i < alpha_upper*0.5,
+             alpha_i > alpha_lower*0.5)
     }
-  }
-  
-  # reduce the size of sub_i_fit if there're more than 5000 or fewer than 3000 rows after negLL filtering
-  if (N_plot > 5000 | N_plot < 3000) {
+    # re-bootstrap to turn sample size back up to 5000
     N_sub_i_fit = nrow(sub_i_fit)
     random_5000 <- sample(1:N_sub_i_fit, size = 5000, replace = TRUE)
     sub_i_fit = sub_i_fit[random_5000,]
   }
-  
-  
   
   # thresh_negLL = min_negLL+0.5
   # thresh_type = "negLLminPLUS0p5"
@@ -266,10 +289,10 @@ set.seed(123)
 cvs_suff = "_alphaRANDtauRANDnorm0informedUPDATED_ugrRL_fminsearch_outgroup.csv"
 fig_folder = "ugRL_fminsearch_outgroup"
 dir.create(file.path(figures_dir, fig_folder))
-plot_title = "min(negLL) flexible"
+
 
 for (i in 1:nrow(participants_df)) {
-  # i = 3
+#  i = 1
   sub_i_name = participants_df$subjID[i]
   sub_i_csv = paste(sub_i_name, cvs_suff, sep = "")
   
@@ -278,25 +301,31 @@ for (i in 1:nrow(participants_df)) {
     filter(exitflag == 1) %>% 
     select(c("negLL", prior_names, posterior_names))
   
-  # select rows based on negLL
+  # set lowest negLL threshold
   min_negLL = min(sub_i_fit_all$negLL)
   
+  # select rows based on negLL
   thresh_negLL = min_negLL
   sub_i_fit = sub_i_fit_all[sub_i_fit_all$negLL == thresh_negLL, ]
   N_plot = nrow(sub_i_fit)
   
-  # increase negLL threshold if sample size is smaller than 5000
-  while (N_plot <= 1000) {
-    sub_i_fit = sub_i_fit_all[sub_i_fit_all$negLL <= thresh_negLL, ]
-    N_plot = nrow(sub_i_fit)
-    thresh_negLL = thresh_negLL+0.2
-    if (thresh_negLL > 1) {
-      break
+  # trim extreme values based on kurtosis
+  while (kurtosis(sub_i_fit$alpha_i) > 3) { # trim tails based on kurtosis/extreme values
+    alpha_i_current = sub_i_fit$alpha_i
+    alpha_lower = quantile(alpha_i_current, probs = 0.1)
+    alpha_upper = quantile(alpha_i_current, probs = 0.9)
+    if (skewness(sub_i_fit$alpha_i) < 0) { # longer negative tail
+      sub_i_fit = sub_i_fit %>% 
+      filter(alpha_i > alpha_lower) # trim longer tail
+    } else if (skewness(sub_i_fit$alpha_i) > 0) { # longer positive tail
+      sub_i_fit = sub_i_fit %>% 
+      filter(alpha_i < alpha_upper) # trim longer tail
+    } else { # trim both tails
+    sub_i_fit = sub_i_fit %>% 
+      filter(alpha_i < alpha_upper*0.5,
+             alpha_i > alpha_lower*0.5)
     }
-  }
-  
-  # reduce the size of sub_i_fit if there're more than 5000 or fewer than 3000 rows after negLL filtering
-  if (N_plot > 5000 | N_plot < 3000) {
+    # re-bootstrap to turn sample size back up to 5000
     N_sub_i_fit = nrow(sub_i_fit)
     random_5000 <- sample(1:N_sub_i_fit, size = 5000, replace = TRUE)
     sub_i_fit = sub_i_fit[random_5000,]

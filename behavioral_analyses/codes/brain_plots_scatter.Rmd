@@ -1,7 +1,7 @@
 ---
 title: "behavior_hypotheses_tests_srndnaUGR"
 author: "Jen Yang"
-date: "2024-11-12, last modified 2024-11-12"
+date: "2024-11-12, last modified 2024-12-20"
 output: 
   html_document:
     code_folding: hide
@@ -86,17 +86,19 @@ ROI_mean_name = "imaging_plots_SANS"
 data_dir = paste(gitrepo_path, ROI_mean_name, sep = "/")
 figure_dir = paste(gitrepo_path,"behavioral_analyses/figures/SANS", sep = "/")
 
-list_fmri_df = read.csv(paste(gitrepo_path, "behavioral_analyses/data", "participant_fmri.csv", sep = "/"),
-                          header = T) %>% 
-  mutate(age_bi = case_when(age <= 36 ~ "younger",
-                            age > 36 ~ "older")) %>% 
-  select(participant_id, age_bi)
+list_fmri_df = read.csv(paste(gitrepo_path, "behavioral_analyses/data", "participant_L3_47.csv", sep = "/"),
+                          header = T) %>% select(subjID)
 
-participant_wide_df = read.csv(paste(gitrepo_path, "behavioral_analyses/data", "participant_wide.csv", sep = "/")) %>% 
-  select(-c("age", "sex", "trial_total", "Include"))
+participant_check_df = read.csv(paste(gitrepo_path, "behavioral_analyses/data", "participant_check.csv", sep = "/")) %>% 
+  mutate(subjID = participant_id) %>% 
+  select(c("subjID","age", "sex"))
+
+participant_demo_df = merge(list_fmri_df, participant_check_df, by.x = "subjID") %>% 
+  mutate(age_bi = case_when(age <= 36 ~ "younger",
+                            age > 36 ~ "older"))
 ```
 
-## plot font setup
+# plot font setup
 ```{r}
 # my_colors <- RColorBrewer::brewer.pal(9, "Blues")[c(5,8)]
 axis_title = 16
@@ -110,6 +112,87 @@ fig_color = "#117733"
 w = 5
 h = 4
 ```
+
+# rejection rate per partner
+```{r}
+computer_name = "act_cope7_con2_1_precueus_type-act_cope-02.txt"
+in_name = "act_cope7_con2_1_precueus_type-act_cope-04.txt"
+out_name = "act_cope7_con2_1_precueus_type-act_cope-06.txt"
+
+computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(subjID = list_fmri_df$subjID,
+         type = "computer",
+         age_bi = participant_demo_df$age_bi,
+         V1_computer = V1) %>% 
+  select(subjID, age_bi, V1_computer)
+
+in_df = read.table(paste(data_dir,in_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(subjID = list_fmri_df$subjID,
+         type = "ingroup",
+         V1_ingroup = V1) %>% 
+  select(V1_ingroup)
+
+out_df = read.table(paste(data_dir,out_name,sep = '/'),sep=" ",header=F) %>% 
+  mutate(subjID = list_fmri_df$subjID,
+         type = "outgroup",
+         V1_outgroup = V1) %>% 
+  select(V1_outgroup)
+
+all_brain_df = cbind(computer_df,
+                     in_df, out_df)
+
+data_plot_df = all_brain_df %>% 
+  merge(., rej_rates_df, by.x = "subjID") %>% 
+  mutate(brain_contrast = V1_ingroup - V1_outgroup,
+         rej_contrast = as.numeric(ingroup_rej_rate) - as.numeric(outgroup_rej_rate),
+         age_bi = as.factor(age_bi)) %>% 
+  select(subjID, age_bi, brain_contrast, rej_contrast)
+
+data_plot_df$age_bi = relevel(data_plot_df$age_bi, ref = "younger")
+```
+
+### plot
+```{r}
+### setup
+x_label = "Rejection Rate, ingroup > outgroup"
+y_label = "Activation, ingroup > outgroup\n(fairness modulated)"
+brain_name = "act_cope7_con2_1_precueus"
+
+# group_summary <- data_plot_df %>%
+#   group_by(type, age_bi) %>%
+#   summarise(mean = mean(V1), se = sd(V1)/sqrt(nrow(list_fmri_df)),
+#             .groups = "keep")
+
+p_scatter =
+  ggplot(data_plot_df, aes(rej_contrast, brain_contrast, 
+                           color = age_bi)) + 
+  geom_point(alpha = 0.6, size = 1.5) +
+  geom_smooth(formula = "y~x", method = "lm", 
+              se = TRUE,
+              linetype = "solid",
+              linewidth = 2, 
+              alpha = 0.2) +
+  labs(x = x_label, y = y_label, color = "Age Group") +
+  # coord_cartesian(xlim=c(-1, 2)) +
+  # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
+  # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+# legend.position="bottom left", legend.box = "horizontal")
+# legend.position="none")
+
+ggsave(paste(figure_dir, paste(brain_name, "scatter.png", sep = "_"), 
+             sep = "/"), p_scatter, width = w, height = h)
+```
+
+
+
+
+
+
 
 # alpha (envy)
 ## in-out_alpha_ageBI_act
@@ -142,7 +225,7 @@ all_brain_df = cbind(computer_df,
                      in_df, out_df)
 
 data_plot_df = all_brain_df %>% 
-  merge(., participant_wide_df, by.x = "participant_id") %>% 
+  merge(., participant_check_df, by.x = "participant_id") %>% 
   mutate(brain_contrast = V1_ingroup - V1_outgroup,
          alpha_contrast = ingroup_alpha - outgroup_alpha,
          age_bi = as.factor(age_bi)) %>% 
@@ -218,7 +301,7 @@ all_brain_df = cbind(computer_df,
                      in_df, out_df)
 
 data_plot_df = all_brain_df %>% 
-  merge(., participant_wide_df, by.x = "participant_id") %>% 
+  merge(., participant_check_df, by.x = "participant_id") %>% 
   mutate(brain_contrast = V1_ingroup - V1_outgroup,
          alpha_contrast = ingroup_alpha - outgroup_alpha,
          age_bi = as.factor(age_bi)) %>% 
@@ -295,7 +378,7 @@ all_brain_df = cbind(computer_df,
                      in_df, out_df)
 
 data_plot_df = all_brain_df %>% 
-  merge(., participant_wide_df, by.x = "participant_id") %>% 
+  merge(., participant_check_df, by.x = "participant_id") %>% 
   mutate(brain_contrast = V1_ingroup + V1_outgroup - 2*V1_computer,
          epsilon_contrast = human_epsilon - computer_epsilon,
          age_bi = as.factor(age_bi)) %>% 
@@ -371,7 +454,7 @@ all_brain_df = cbind(computer_df,
                      in_df, out_df)
 
 data_plot_df = all_brain_df %>% 
-  merge(., participant_wide_df, by.x = "participant_id") %>% 
+  merge(., participant_check_df, by.x = "participant_id") %>% 
   mutate(brain_contrast = V1_ingroup + V1_outgroup - 2*V1_computer,
          epsilon_contrast = human_epsilon - computer_epsilon,
          age_bi = as.factor(age_bi)) %>% 
@@ -447,7 +530,7 @@ all_brain_df = cbind(computer_df,
                      in_df, out_df)
 
 data_plot_df = all_brain_df %>% 
-  merge(., participant_wide_df, by.x = "participant_id") %>% 
+  merge(., participant_check_df, by.x = "participant_id") %>% 
   mutate(brain_contrast = V1_ingroup - V1_outgroup,
          epsilon_contrast = ingroup_epsilon - outgroup_epsilon,
          age_bi = as.factor(age_bi)) %>% 
