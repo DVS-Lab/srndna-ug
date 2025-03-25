@@ -1,0 +1,160 @@
+---
+title: "filter subs based on fd_mean and tsnr"
+author: "Jen Yang"
+date: "2025-03-26, last modified 2025-03-26"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    hightlight: zenburn
+    toc_depth: 6
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+# Load libraries
+```{r libraries, message=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(interactions)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+# library(raincloudplots)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(ggpubr)
+library(lubridate)
+library(readxl)
+library(gridExtra)
+library(scales)
+library(rstudioapi)
+library(jsonlite)
+library(rjson)
+library(readr)
+library(hBayesDM)
+library(brms)
+library(tidyr)
+```
+
+# load functions
+```{r}
+w = 8
+h = 3
+```
+
+
+# set dir and load data
+```{r}
+gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
+
+data_dir = paste(gitrepo_path,"data", sep = "/")
+codes_dir = paste(gitrepo_path, "codes", sep = "/")
+fit_dir = paste(gitrepo_path,"fits", sep = "/")
+figure_dir = paste(gitrepo_path,"figures", sep = "/")
+
+L3_template_df = read.csv(paste(data_dir, "L3_template_n47_ultimatum_twogroup_wCovs.csv", sep = "/"), header = TRUE)
+```
+
+# find interquantile ranges
+```{r}
+tsnrIQR_value <- quantile(L3_template_df$tsnr, 0.75) - quantile(L3_template_df$tsnr, 0.25)
+
+
+tsnr_Q1 <- quantile(L3_template_df$tsnr, 0.25)
+tsnr_Q3 <- quantile(L3_template_df$tsnr, 0.75)
+tsnrIQR = tsnr_Q3 - tsnr_Q1
+
+lower_bound <- Q1 - 1.5 * IQR_value
+upper_bound <- Q3 + 1.5 * IQR_value
+
+# Print the result
+print(paste("The interquartile range is:", IQR_value))
+```
+
+```{r}
+rej_df_colnames = c("subjID", "computer_rej_rate", "ingroup_rej_rate", "outgroup_rej_rate")
+rej_rates_df = data.frame(matrix(nrow = nrow(participant_df), ncol = length(rej_df_colnames)))
+colnames(rej_rates_df) = rej_df_colnames
+```
+
+# rejection rate calculation, proxy for norm
+```{r}
+for (i in 1:nrow(participant_df)) {
+  # i = 1 # for testing
+  # i = 3
+  sub_i = participant_df$subjID[i]
+  
+  computer_i_df = computer_df %>% filter(subjID == sub_i)
+  computer_rej_rate_i = 1-sum(computer_i_df$accept)/nrow(computer_i_df)
+  
+  ingroup_i_df = ingroup_df %>% filter(subjID == sub_i)
+  ingroup_rej_rate_i = 1-sum(ingroup_i_df$accept)/nrow(ingroup_i_df)
+  
+  outgroup_i_df = outgroup_df %>% filter(subjID == sub_i)
+  outgroup_rej_rate_i = 1-sum(outgroup_i_df$accept)/nrow(outgroup_i_df)
+  
+  rej_rates_df[i,] = c(sub_i, computer_rej_rate_i, ingroup_rej_rate_i, outgroup_rej_rate_i)
+}
+
+# write.csv(rej_rates_df, paste(data_dir, "rej_rate_partner_50.csv", sep = "/"), row.names = FALSE)ß
+```
+
+# test for age effect
+```{r}
+# Reshape from wide to long
+rej_rates_df_demo = merge(rej_rates_df, demo_df[,c("subjID", "age")], by.x = "subjID")
+
+rej_rates_df_long <- pivot_longer(
+    data = rej_rates_df_demo,
+    cols = c("computer_rej_rate", "ingroup_rej_rate", "outgroup_rej_rate"),     # columns to reshape
+    names_to = "partner",       # name of the new condition column
+    values_to = "rej_rate"        # name of the new response column
+)
+
+rej_rates_df_long = rej_rates_df_long %>% 
+  mutate(partner = as.factor(partner),
+         partner = relevel(partner, ref = "outgroup_rej_rate"))
+
+rej_REPanova <- aov(rej_rate ~ age * partner + Error(subjID/partner), data = rej_rates_df_long)
+
+# View results
+summary(rej_REPanova)
+```
+
+
+
+
+
+
