@@ -68,13 +68,6 @@ library(brms)
 library(tidyr)
 ```
 
-# load functions
-```{r}
-w = 8
-h = 3
-```
-
-
 # set dir and load data
 ```{r}
 gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
@@ -88,69 +81,42 @@ L3_template_df = read.csv(paste(data_dir, "L3_template_n47_ultimatum_twogroup_wC
 ```
 
 # find interquantile ranges
+## tsnr
 ```{r}
-tsnrIQR_value <- quantile(L3_template_df$tsnr, 0.75) - quantile(L3_template_df$tsnr, 0.25)
-
-
 tsnr_Q1 <- quantile(L3_template_df$tsnr, 0.25)
 tsnr_Q3 <- quantile(L3_template_df$tsnr, 0.75)
 tsnrIQR = tsnr_Q3 - tsnr_Q1
 
-lower_bound <- Q1 - 1.5 * IQR_value
-upper_bound <- Q3 + 1.5 * IQR_value
+tsnr_lower_bound <- tsnr_Q1 - 1.5 * tsnrIQR
+print(tsnr_lower_bound)
+tsnr_upper_bound <- tsnr_Q3 + 1.5 * tsnrIQR
+print(tsnr_upper_bound)
 
-# Print the result
-print(paste("The interquartile range is:", IQR_value))
+L3_template_df = L3_template_df %>% 
+  mutate(tsnr_is_outlier = tsnr < tsnr_lower_bound | tsnr_upper_bound > tsnr_upper_bound)
+```
+
+## fd_mean
+```{r}
+fd_mean_Q1 <- quantile(L3_template_df$fd_mean, 0.25)
+fd_mean_Q3 <- quantile(L3_template_df$fd_mean, 0.75)
+fd_meanIQR = fd_mean_Q3 - fd_mean_Q1
+
+fd_mean_lower_bound <- fd_mean_Q1 - 1.5 * fd_meanIQR
+print(fd_mean_lower_bound)
+fd_mean_upper_bound <- fd_mean_Q3 + 1.5 * fd_meanIQR
+print(fd_mean_upper_bound)
+
+L3_template_df = L3_template_df %>% 
+  mutate(fd_is_outlier = fd_mean < fd_mean_lower_bound | fd_mean_upper_bound > fd_mean_upper_bound)
 ```
 
 ```{r}
-rej_df_colnames = c("subjID", "computer_rej_rate", "ingroup_rej_rate", "outgroup_rej_rate")
-rej_rates_df = data.frame(matrix(nrow = nrow(participant_df), ncol = length(rej_df_colnames)))
-colnames(rej_rates_df) = rej_df_colnames
-```
+N_tsnr_outlier = sum(L3_template_df$tsnr_is_outlier)
+print(N_tsnr_outlier)
 
-# rejection rate calculation, proxy for norm
-```{r}
-for (i in 1:nrow(participant_df)) {
-  # i = 1 # for testing
-  # i = 3
-  sub_i = participant_df$subjID[i]
-  
-  computer_i_df = computer_df %>% filter(subjID == sub_i)
-  computer_rej_rate_i = 1-sum(computer_i_df$accept)/nrow(computer_i_df)
-  
-  ingroup_i_df = ingroup_df %>% filter(subjID == sub_i)
-  ingroup_rej_rate_i = 1-sum(ingroup_i_df$accept)/nrow(ingroup_i_df)
-  
-  outgroup_i_df = outgroup_df %>% filter(subjID == sub_i)
-  outgroup_rej_rate_i = 1-sum(outgroup_i_df$accept)/nrow(outgroup_i_df)
-  
-  rej_rates_df[i,] = c(sub_i, computer_rej_rate_i, ingroup_rej_rate_i, outgroup_rej_rate_i)
-}
-
-# write.csv(rej_rates_df, paste(data_dir, "rej_rate_partner_50.csv", sep = "/"), row.names = FALSE)ß
-```
-
-# test for age effect
-```{r}
-# Reshape from wide to long
-rej_rates_df_demo = merge(rej_rates_df, demo_df[,c("subjID", "age")], by.x = "subjID")
-
-rej_rates_df_long <- pivot_longer(
-    data = rej_rates_df_demo,
-    cols = c("computer_rej_rate", "ingroup_rej_rate", "outgroup_rej_rate"),     # columns to reshape
-    names_to = "partner",       # name of the new condition column
-    values_to = "rej_rate"        # name of the new response column
-)
-
-rej_rates_df_long = rej_rates_df_long %>% 
-  mutate(partner = as.factor(partner),
-         partner = relevel(partner, ref = "outgroup_rej_rate"))
-
-rej_REPanova <- aov(rej_rate ~ age * partner + Error(subjID/partner), data = rej_rates_df_long)
-
-# View results
-summary(rej_REPanova)
+N_fd_outlier = sum(L3_template_df$fd_is_outlier)
+print(N_fd_outlier)
 ```
 
 
