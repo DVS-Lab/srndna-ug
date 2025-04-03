@@ -79,6 +79,7 @@ library(ez)
 library(afex)
 library(oro.nifti)
 library(neurobase)
+library(abind)
 
 ```
 
@@ -90,6 +91,7 @@ data_dir = paste(gitrepo_path,"data", sep = "/")
 codes_dir = paste(gitrepo_path, "codes", sep = "/")
 fit_dir = paste(gitrepo_path,"fits", sep = "/")
 figure_dir = paste(gitrepo_path,"figures", sep = "/")
+mask_dir = "/Users/momocco/Documents/GitHub/srndna-ug/masks_neurosynth"
 
 image_dir = "/Users/momocco/Documents/SRNDNA_UG_SingleTrial/derivatives/single_trials"
 
@@ -103,312 +105,56 @@ sublist_df = read.csv(paste(data_dir, sublist_name, sep = "/"), header = TRUE) %
   select(subjID)
 ```
 
-# load behavioral data
+# behavioral data and ROI names
 ```{r}
 trials_name = "all_trials.csv"
 trials_all_df = read.csv(paste(data_dir, trials_name, sep = "/"), header = TRUE)
+trials_brains_all_df = trials_all_df
+
+ROI_names = c("anteriorinsula", "dacc", "VS", "vmpfc")
+trials_brains_all_df[ROI_names] = NA
+
+ROI_nii_names = c(sprintf("bi_nanRemoved_resliced_%s_sphere5_mask.nii.gz", 
+                          ROI_names))
 ```
 
-
-# load image
+# load ROIs
 ```{r}
-# Load the NIFTI file
-subID = sublist_df$subjID[1]
-N_trials_subID = sum(trials_all_df$subjID == subID & trials_all_df$run == 1)
-print(N_trials_subID)
 
-image_name = paste(subID, singletrial_name, sep = "_")
-image <- readNIfTI(paste(image_dir, subID, image_name, sep = "/"), reorient = FALSE)
-image_dims <- dim(image)
-print(image_dims)
+sub_s = 1
+run_r = 1
+subID_s = sublist_df$subjID[sub_s]
+N_trials_subID_r = sum(trials_all_df$subjID == subID_s & trials_all_df$run == run_r)
+
+# Load the single trial NIFTI file
+single_name = paste(subID_s, singletrial_name, sep = "_")
+single_nii <- readNIfTI(paste(image_dir, subID_s, image_name, sep = "/"), reorient = FALSE)
+
+# extract ROI mean, loop through each sub and each ROI within a sub
+brain_b = 1
+single_df = single_nii[,,,] # extract first volumne
+# check if dimensions match. 
+if (single_dims[4] == N_trials_subID_r) { # if match, proceed to extract ROI means
+  # dot product between 3D matrices along the 4th dimension, then sum, then divide by ROI size to get the mean
+  
+  # load ROI
+  ROI_i = 1
+
+  ROI_img = readNIfTI(paste(mask_dir, ROI_nii_names[ROI_i], sep = "/"), reorient = FALSE) # load image
+  ROI_df = ROI_img[,,] # make dataframe
+  
+  ROImean_vector <- sapply(
+    1:single_dims[4], function(t) {
+      sum(single_df[,,,t] * antInsula_img)/sum(antInsula_df==1)
+    }
+  )
+  # add brain ROI mean to the end of behavior dataframe
+  trials_brains_all_df[trials_brains_all_df$subjID == subID_s, ROI_names[ROI_i]] = ROImean_vector
+} else { # if dimensions don't match, print a message
+  print(paste(subID_s, 
+              sprintf("total brain trial %d and total behavior trial %d don't match.", 
+                      single_dims[4], N_trials_subID_r), # show brain and behavior trial numbers
+              sep = " "))
+}
 ```
 
-
-
-# load and prepare data
-```{r}
-# load subs
-all_trials_df = read.csv(paste(data_dir, "all_trials.csv", sep = "/"), header = TRUE)
-colnames(all_trials_df)[colnames(all_trials_df) == "subjID"] <- "participant_id"
-indiv_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = TRUE)  %>%
-  mutate(age_bi = case_when(age <= 36 ~ "younger",
-                            age > 36 ~ "older"))
-
-all_trials_df = merge(all_trials_df, indiv_df, by.x = "participant_id", by.y = "participant_id")
-
-## add a categorical variable that differentiate three groups
-all_trials_df = all_trials_df %>% 
-  mutate(group_tri = as.factor(case_when(human == 0 ~ 0, # computer
-                               human == 1 & ingroup == 0 ~ 1, # outgroup
-                               human == 1 & ingroup == 1 ~ 2))) # ingroup
-all_trials_df$group_tri = relevel(all_trials_df$group_tri, ref = "0")
-all_trials_df$age_bi = relevel(as.factor(all_trials_df$age_bi), ref = "younger")
-
-all_trials_df = all_trials_df %>% 
-  mutate(age_bi_dummy = case_when(age_bi == "younger" ~ 0,
-                                  age_bi == "older" ~ 1)
-         )
-```
-
-# prereg 1 analyses
-## P1 H1.1
-H1.1: All participants will reject more unfair offers from human partners as compared to computer partners; this effect will be stronger in younger adults.
-
-Result: only offer/fairness is related to acceptance
-```{r}
-## full model, won't converge
-# model_fit <- glmer(accept ~ offer * human * age_bi + sex +
-#                      (1 + offer * human | participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-# 
-
-## won't converge
-# model_fit <- glmer(accept ~ offer * human * age_bi + sex +
-#                      (1 + offer * human || participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model_fit <- glmer(accept ~ offer * human + age_bi + sex +
-#                      (1 + offer * human || participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model_fit <- glmer(accept ~ offer * human + age_bi + sex +
-#                      (1 + offer + human || participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model_fit <- glmer(accept ~ offer * human * age_bi + sex +
-#                      (1 + offer + human || participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model_fit <- glmer(accept ~ offer * human * age_bi + sex + 
-#                      (1 + offer || participant_id),
-#                             data = all_trials_df,
-#                            family = binomial)
-
-## won't converge
-# model_fit <- glmer(accept ~ offer * human * age_bi + sex + 
-#                      (1 + human || participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model1.1_fit <- glmer(accept ~ offer * human * age_bi + sex +
-#                      (1 | participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-# summary(model1.1_fit)
-
-## won't converge
-# model1.1_2_fit <- glmer(accept ~ offer * human * age_bi_dummy + sex - offer : human : age_bi_dummy +
-#                      (1 + age_bi_dummy | participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## converged, SIG offer:age_bi effect, NO no offer * human effect or age * human
-model1.1_2_fit <- glmer(accept ~ offer * human * age_bi + sex - offer : human : age_bi +
-                     (1 | participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-summary(model1.1_2_fit)
-```
-
-## P1 H1.2
-H1.2: Within social conditions, younger adults will show increased rates of acceptance when interacting with younger vs. older partners; older adults’ rates of acceptance will not differ between partners.
-
-```{r}
-## full model, won't converge
-# model1.2_fit <- glmer(accept ~ offer * ingroup * age_bi +
-#                      (1 + offer * ingroup | participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model_fit <- glmer(accept ~ offer * ingroup * age_bi + sex +
-#                      (1 + offer * ingroup || participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model1.2_fit <- glmer(accept ~ offer * ingroup * age_bi +
-#                      (1 + offer + ingroup || participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model_fit <- glmer(accept ~ offer * ingroup + age_bi + sex +
-#                      (1 + offer + ingroup || participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model_fit <- glmer(accept ~ offer * ingroup * age_bi + sex +
-#                      (1 + offer || participant_id),
-#                             data = all_trials_df,
-#                            family = binomial)
-
-## won't converge
-# model_fit <- glmer(accept ~ offer * ingroup * age_bi + sex +
-#                      (1 + ingroup || participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## converged, no sig offer * ingroup * age_bi
-model1.2_fit <- glmer(accept ~ offer * ingroup * age_bi +
-                     (1 | participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-summary(model1.2_fit)
-
-## converged, SIG offer:age_biyounger
-model1.2_1_fit <- glmer(accept ~ offer * ingroup * age_bi - offer : ingroup : age_bi +
-                     (1 | participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-summary(model1.2_1_fit)
-
-model1.2_2_fit <- glmer(accept ~ offer * age_bi + ingroup * age_bi +
-                     (1 | participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-summary(model1.2_2_fit)
-```
-## P1 additional H1.3
-suspected group effect of computer vs ingroup vs outgroup based on H1.1 and H1.2 results
-H1.2 has sig offer*age interaction but H1.1 doesn't
-```{r}
-## won't converge 
-# model1.3_fit <- glmer(accept ~ offer * group_tri * age_bi +
-#                      (1 + offer + group_tri || participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## converged, no sig offer * group_tri * age_bi
-model1.3_fit <- glmer(accept ~ offer * group_tri * age_bi + sex +
-                     (1 | participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-summary(model1.3_fit)
-
-## converged, SIG offer:age_biolder
-model1.3_1_fit <- glmer(accept ~ offer * group_tri + sex +
-                          offer * age_bi +
-                          age_bi * group_tri +
-                     (1 | participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-
-summary(model1.3_1_fit)
-
-## converged, SIG offer:age_biolder
-model1.3_1_fit <- glmer(accept ~  offer * age_bi + sex +
-                     (1 | participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-
-summary(model1.3_1_fit)
-
-## won't converge
-# model1.3_1_fit <- glmer(accept ~ offer * group_tri + 
-#                           offer * age_bi + 
-#                           age_bi * group_tri +
-#                      (1 + offer + group_tri| participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model1.3_1_fit <- glmer(accept ~ offer * group_tri + 
-#                           offer * age_bi + 
-#                      (1 + offer + group_tri| participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## converged, SIG offer * age
-model1.3_1_fit <- glmer(accept ~ offer * group_tri +
-                          offer * age_bi +
-                     (1 | participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-summary(model1.3_1_fit)
-
-## won't converge
-model1.3_2_fit <- glmer(accept ~ offer + group_tri + age_bi +
-                     (1 + age_bi|participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-summary(model1.3_2_fit)
-```
-
-# prereg 2 analyses
-## P2 BH3
-
-
-
-# alpha ~ age_bi * human/computer, not sig
-```{r}
-all_trials_df = indiv_df %>% 
-  select(participant_id, age_bi, computer_alpha, human_alpha) %>% 
-  melt(., id.vars = c("participant_id","age_bi"), variable.name = "alpha_group") %>% 
-  mutate(alpha = as.factor(alpha_group))
-
-model_fit <- lmer(value ~ alpha * age_bi + (1 | participant_id),
-                      data = all_trials_df)
-summary(model_fit)
-```
-
-# alpha ~ age_bi * ingroup/outgroup, not sig
-```{r}
-all_trials_df = indiv_df %>% 
-  select(participant_id, age_bi, ingroup_alpha, outgroup_alpha) %>% 
-  melt(., id.vars = c("participant_id","age_bi"), variable.name = "alpha_group") %>% 
-  mutate(alpha = as.factor(alpha_group))
-
-model_fit <- lmer(value ~ alpha_group * age_bi + (1 | participant_id),
-                      data = all_trials_df)
-summary(model_fit)
-```
-
-# epsilon ~ age_bi * human/computer, not sig
-```{r}
-all_trials_df = indiv_df %>% 
-  select(participant_id, age_bi, age_bi, computer_epsilon, human_epsilon) %>% 
-  melt(., id.vars = c("participant_id","age_bi"), variable.name = "epsilon_group") %>% 
-  mutate(epsilon = as.factor(epsilon_group)) %>% 
-  within(epsilon_group <- relevel(epsilon_group, ref = "computer_epsilon"))
-
-model_fit <- lmer(value ~ epsilon * age_bi + (1 | participant_id),
-                  data = all_trials_df)
-summary(model_fit)
-
-model_fit <- lmer(value ~ epsilon * age_bi + (1 | participant_id),
-                  data = all_trials_df)
-summary(model_fit)
-
-model_1_fit <- lmer(value ~ epsilon + age_bi + (1 | participant_id),
-                  data = all_trials_df)
-summary(model_1_fit)
-```
-
-# epsilon ~ age_bi * ingroup/outgroup, group main sig
-```{r}
-all_trials_df = indiv_df %>% 
-  select(participant_id, age_bi, age_bi, ingroup_epsilon, outgroup_epsilon) %>% 
-  melt(., id.vars = c("participant_id", "age_bi"), variable.name = "epsilon_group") %>% 
-  mutate(epsilon = as.factor(epsilon_group)) %>% 
-  within(epsilon_group <- relevel(epsilon_group, ref = "outgroup_epsilon"))
-
-model_fit <- lmer(value ~ epsilon_group * age_bi + (1 | participant_id),
-                  data = all_trials_df)
-summary(model_fit)
-
-model_1_fit <- lmer(value ~ epsilon_group + age_bi + (1 | participant_id),
-                  data = all_trials_df)
-summary(model_1_fit)
-```
