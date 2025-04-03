@@ -1,7 +1,7 @@
 ---
 title: "data_wrangle_srndnaUGR"
 author: "Jen Yang"
-date: "2024-11-1, last modified 2024-11-1"
+date: "2024-11-1, last modified 2024-04-02"
 output: 
   html_document:
     code_folding: hide
@@ -12,6 +12,8 @@ output:
     hightlight: zenburn
     toc_depth: 6
 ---
+
+<!-- this code extracts behabior data the data paper folder -->
 
 ```{r clean, include=FALSE}
 # clean environment
@@ -83,6 +85,7 @@ bids_dir = "/Users/momocco/Documents/GitHub/srndna-datapaper/bids"
 ```{r}
 # load sub list
 participants_tsv = "participants.tsv"
+
 participants_df = read.table(file = paste(bids_dir, participants_tsv, sep = "/"), sep = '\t', header = TRUE)
 participants_df$trial_total = 0
 sublist = participants_df$participant_id
@@ -97,12 +100,13 @@ all_col_names = c("onset", "duration", "trial_type",
                   "response_time", "Offer", 
                   "block_type", "subjID", "run")
 
+# create empty dataframe
 all_long_df = data.frame(matrix(ncol = length(all_col_names), nrow = 0))
 colnames(all_long_df) = all_col_names
 
-
 block_col_names = c("onset", "block_type", "BlockNum", "BlockTrial", "BlockInclude", "run", "subID")
 
+# create empty dataframe
 block_long_df = data.frame(matrix(ncol = length(block_col_names), nrow = 0))
 colnames(block_long_df) = block_col_names
 
@@ -126,6 +130,8 @@ decision_partner_types = c("event_accept_outgroup", "event_reject_outgroup",
 block_types = c("block_outgroup_fair", "block_outgroup_unfair",
                 "block_ingroup_fair", "block_ingroup_unfair",
                 "block_computer_fair", "block_computer_unfair")
+
+
 ```
 
 # extract behavior
@@ -215,7 +221,7 @@ all_clean_df = all_long_df %>%
                               grepl("outgroup", .$trial_type, fixed = TRUE)),
          ingroup = as.numeric(grepl("ingroup", .$trial_type, fixed = TRUE)),
          block_fair = as.numeric(grepl("_fair", .$block_type, fixed = TRUE))) %>% 
-  select(subjID, offer, accept, response_time, human, ingroup, block_fair) %>% 
+  select(subjID, offer, accept, response_time, human, ingroup, block_fair, run) %>% 
   mutate(response_time = as.numeric(response_time)-1)
 
 sum(all_clean_df$response_time <0.2)

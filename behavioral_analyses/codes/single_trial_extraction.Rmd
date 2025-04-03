@@ -77,6 +77,9 @@ library(effects)
 library(lmerTest)
 library(ez)
 library(afex)
+library(oro.nifti)
+library(neurobase)
+
 ```
 
 # load tsv and prolific raw data
@@ -87,7 +90,39 @@ data_dir = paste(gitrepo_path,"data", sep = "/")
 codes_dir = paste(gitrepo_path, "codes", sep = "/")
 fit_dir = paste(gitrepo_path,"fits", sep = "/")
 figure_dir = paste(gitrepo_path,"figures", sep = "/")
+
+image_dir = "/Users/momocco/Documents/SRNDNA_UG_SingleTrial/derivatives/single_trials"
+
+singletrial_name = "task-ultimatum_run-01_singletrial-Act.nii.gz"
 ```
+
+# load subject list
+```{r}
+sublist_name = "participant_L3_47.csv"
+sublist_df = read.csv(paste(data_dir, sublist_name, sep = "/"), header = TRUE) %>% 
+  select(subjID)
+```
+
+# load behavioral data
+```{r}
+trials_name = "all_trials.csv"
+trials_all_df = read.csv(paste(data_dir, trials_name, sep = "/"), header = TRUE)
+```
+
+
+# load image
+```{r}
+# Load the NIFTI file
+subID = sublist_df$subjID[1]
+N_subID = sum(trials_all_df$subjID == subID)
+
+image_name = paste(subID, singletrial_name, sep = "_")
+image <- readNIfTI(paste(image_dir, subID, image_name, sep = "/"), reorient = FALSE)
+image_dims <- dim(image)
+print(image_dims)
+```
+
+
 
 # load and prepare data
 ```{r}
