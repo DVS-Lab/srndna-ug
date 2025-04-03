@@ -114,7 +114,8 @@ trials_all_df = read.csv(paste(data_dir, trials_name, sep = "/"), header = TRUE)
 ```{r}
 # Load the NIFTI file
 subID = sublist_df$subjID[1]
-N_subID = sum(trials_all_df$subjID == subID)
+N_trials_subID = sum(trials_all_df$subjID == subID & trials_all_df$run == 1)
+print(N_trials_subID)
 
 image_name = paste(subID, singletrial_name, sep = "_")
 image <- readNIfTI(paste(image_dir, subID, image_name, sep = "/"), reorient = FALSE)
