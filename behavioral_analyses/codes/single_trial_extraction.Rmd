@@ -118,43 +118,45 @@ ROI_nii_names = c(sprintf("bi_nanRemoved_resliced_%s_sphere5_mask.nii.gz",
                           ROI_names))
 ```
 
-# load ROIs
+# extract ROI means
 ```{r}
-
-sub_s = 1
-run_r = 1
-subID_s = sublist_df$subjID[sub_s]
-N_trials_subID_r = sum(trials_all_df$subjID == subID_s & trials_all_df$run == run_r)
-
-# Load the single trial NIFTI file
-single_name = paste(subID_s, singletrial_name, sep = "_")
-single_nii <- readNIfTI(paste(image_dir, subID_s, image_name, sep = "/"), reorient = FALSE)
-
-# extract ROI mean, loop through each sub and each ROI within a sub
-brain_b = 1
-single_df = single_nii[,,,] # extract first volumne
-# check if dimensions match. 
-if (single_dims[4] == N_trials_subID_r) { # if match, proceed to extract ROI means
-  # dot product between 3D matrices along the 4th dimension, then sum, then divide by ROI size to get the mean
-  
-  # load ROI
-  ROI_i = 1
-
-  ROI_img = readNIfTI(paste(mask_dir, ROI_nii_names[ROI_i], sep = "/"), reorient = FALSE) # load image
-  ROI_df = ROI_img[,,] # make dataframe
-  
-  ROImean_vector <- sapply(
-    1:single_dims[4], function(t) {
-      sum(single_df[,,,t] * antInsula_img)/sum(antInsula_df==1)
+for (sub_s in 1:nrow(sublist_df)) {
+  # sub_s = 1 ### for testing
+  subID_s = sublist_df$subjID[sub_s]
+  for (run_r in 1:2) {
+    # run_r = 1 ### for testing
+    N_trials_subID_r = sum(trials_all_df$subjID == subID_s & trials_all_df$run == run_r)
+    
+    # Load the single trial NIFTI file
+    single_name = paste(subID_s, singletrial_name, sep = "_")
+    single_nii <- readNIfTI(paste(image_dir, subID_s, single_name, sep = "/"), reorient = FALSE)
+    single_dims = dim(single_nii)
+    single_df = single_nii[,,,] # 4D dataframe
+    # check if dimensions match
+    if (single_dims[4] == N_trials_subID_r) { # if match, proceed to extract ROI means
+      # dot product between 3D matrices along the 4th dimension, then sum, then divide by ROI size to get the mean
+      
+      # extract ROI mean, loop through each sub and each ROI within a sub
+      for (ROI_i in 1:length(ROI_names)) {
+        # ROI_i = 1 ### for testing
+        ROI_img = readNIfTI(paste(mask_dir, ROI_nii_names[ROI_i], sep = "/"), reorient = FALSE) # load image
+        ROI_df = ROI_img[,,] # make 3D dataframe
+        
+        ROImean_vector <- sapply(
+          1:single_dims[4], function(t) {
+            sum(single_df[,,,t] * ROI_df)/sum(ROI_df==1)
+          }
+        )
+        # add brain ROI mean to the end of behavior dataframe
+        trials_brains_all_df[trials_brains_all_df$subjID == subID_s, ROI_names[ROI_i]] = ROImean_vector
+      }
+    } else { # if dimensions don't match, print a message
+      print(paste(subID_s, 
+                  sprintf("total brain trial %d and total behavior trial %d don't match.", 
+                          single_dims[4], N_trials_subID_r), # show brain and behavior trial numbers
+                  sep = " "))
     }
-  )
-  # add brain ROI mean to the end of behavior dataframe
-  trials_brains_all_df[trials_brains_all_df$subjID == subID_s, ROI_names[ROI_i]] = ROImean_vector
-} else { # if dimensions don't match, print a message
-  print(paste(subID_s, 
-              sprintf("total brain trial %d and total behavior trial %d don't match.", 
-                      single_dims[4], N_trials_subID_r), # show brain and behavior trial numbers
-              sep = " "))
+  }
 }
 ```
 
