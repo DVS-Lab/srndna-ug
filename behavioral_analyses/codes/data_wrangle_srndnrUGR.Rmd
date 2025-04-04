@@ -152,12 +152,12 @@ for (i in 1:nrow(participants_df)) {
     # j = 1
     # print(j)
     event_run_ij = paste(sub_name,sprintf("_task-ultimatum_run-0%d_events.tsv", j), sep = "")
-    event_run_ij_df = read.table(file = paste(bids_dir, 
-                                              sublist[i], "func", event_run_ij, sep = '/'), header = TRUE) %>% 
+    event_run_ij_df = 
+      read.table(file = paste(bids_dir, sublist[i], "func", event_run_ij, sep = '/'), header = TRUE) %>% 
       select(all_of(col_unify_names))
     
     # extract trial type info per sub
-    decision_partner_types_rows = event_run_ij_df$trial_type %in% decision_partner_types
+    decision_partner_types_rows = event_run_ij_df$trial_type %in% decision_partner_types[1:length(decision_partner_types)-1] # exclude missed trials
     decision_partner_df = event_run_ij_df[decision_partner_types_rows,]
     decision_partner_df$block_type = NA
     decision_partner_df$run = j
@@ -207,8 +207,8 @@ for (i in 1:nrow(participants_df)) {
     block_long_df = rbind(block_long_df, block_df_clean)
     decision_partner_df$subjID = sub_name
     
-    ## remove missed trials
-    decision_partner_df = decision_partner_df[decision_partner_df$trial_type != "missed_trial",]
+    # ## remove missed trials
+    # decision_partner_df = decision_partner_df[decision_partner_df$trial_type != "missed_trial",]
     
     all_long_df = rbind(all_long_df, decision_partner_df)
     print(sprintf("run %d N trial = %d", j, nrow(decision_partner_df)))
@@ -221,12 +221,13 @@ for (i in 1:nrow(participants_df)) {
 all_clean_df = all_long_df %>% 
   mutate(offer = Offer,
          accept = as.numeric(grepl("accept", .$trial_type, fixed = TRUE)),
+         missed = as.numeric(grepl("missed", .$trial_type, fixed = TRUE)),
          human = as.numeric(grepl("ingroup", .$trial_type, fixed = TRUE) | 
                               grepl("outgroup", .$trial_type, fixed = TRUE)),
          ingroup = as.numeric(grepl("ingroup", .$trial_type, fixed = TRUE)),
-         block_fair = as.numeric(grepl("_fair", .$block_type, fixed = TRUE))) %>% 
-  select(subjID, offer, accept, response_time, human, ingroup, block_fair, run) %>% 
-  mutate(response_time = as.numeric(response_time)-1)
+         block_fair = as.numeric(grepl("_fair", .$block_type, fixed = TRUE)),
+         response_time = as.numeric(response_time)-1) %>% 
+  select(subjID, offer, missed, accept, response_time, human, ingroup, block_fair, run)
 
 sum(all_clean_df$response_time <0.2)
 
@@ -239,15 +240,19 @@ block_long_df = block_long_df %>%
   select(subID, run, block_type, BlockNum, BlockTrial, BlockInclude)
 ```
 
-# save cleaned data
+# save cleaned data, missed trials are included
 ```{r}
-write.csv(all_clean_df, paste(data_dir, "all_trials.csv", sep = "/"), row.names = FALSE)
-write.csv(block_long_df, paste(data_dir, "block_check", sep = "/"), row.names = FALSE)
+write.csv(all_clean_df, paste(data_dir, "all_trials_missedIncluded.csv", sep = "/"), row.names = FALSE)
+write.csv(block_long_df, paste(data_dir, "block_check.csv", sep = "/"), row.names = FALSE)
 write.csv(participants_df, paste(data_dir, "participant_check.csv", sep = "/"), row.names = FALSE)
 ```
 
 # create separate txt for each condition
 ```{r}
+# remove missed trials
+all_clean_df = all_clean_df[is.na(all_clean_df$response_time) == FALSE,]
+write.csv(all_clean_df, paste(data_dir, "all_trials.csv", sep = "/"), row.names = FALSE)
+
 computer_df = all_clean_df[all_clean_df$human == 0,]
 human_df = all_clean_df[all_clean_df$human == 1,]
 ingroup_df = human_df[human_df$ingroup == 1,]
