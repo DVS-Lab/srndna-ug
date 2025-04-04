@@ -107,7 +107,8 @@ sublist_df = read.csv(paste(data_dir, sublist_name, sep = "/"), header = TRUE) %
 
 # behavioral data and ROI names
 ```{r}
-trials_name = "all_trials.csv"
+# trials_name = "all_trials.csv"
+trials_name = "all_trials_missedIncluded.csv"
 trials_all_df = read.csv(paste(data_dir, trials_name, sep = "/"), header = TRUE)
 trials_brains_all_df = trials_all_df
 
@@ -126,59 +127,74 @@ dim_check_df = data.frame(matrix(NA, nrow = nrow(sublist_df)*2, ncol = length(di
 colnames(dim_check_df) = dim_check_col_names
 
 for (sub_s in 1:nrow(sublist_df)) {
-  # sub_s = 1 ### for testing
+  # sub_s = 2 ### for testing
   subID_s = sublist_df$subjID[sub_s]
   print(subID_s)
-  for (run_r in 1:2) {
-    # run_r = 2 ### for testing
+  if (subID_s == "sub-104") {
+    N_run = 1
+  } else {N_run = 2}
+  
+  for (run_r in 1:N_run) {
+    # run_r = 1 ### for testing
     dim_check_df$subjID[(sub_s-1)*2+run_r] = subID_s
     dim_check_df$run[(sub_s-1)*2+run_r] = run_r
     
+    # extract trial N from behavior data
     N_trials_subID_r = sum(trials_all_df$subjID == subID_s & trials_all_df$run == run_r)
-    
     dim_check_df$behavior_hit[(sub_s-1)*2+run_r] = N_trials_subID_r
+    
     # Load the single trial NIFTI file
     single_name = paste(subID_s, sprintf(singletrial_name, run_r), sep = "_")
-    print(single_name)
+    # print(single_name)
     single_nii <- readNIfTI(paste(image_dir, subID_s, single_name, sep = "/"), reorient = FALSE)
+    # extract image dimension
     single_dims = dim(single_nii)
-    print(single_dims)
+    # print(single_dims)
     dim_check_df$single_trial[(sub_s-1)*2+run_r] = single_dims[4]
-    single_df = single_nii[,,,] # 4D dataframe
-    # # check if dimensions match
-    # if (single_dims[4] == N_trials_subID_r) { # if match, proceed to extract ROI means
-    #   # dot product between 3D matrices along the 4th dimension, then sum, then divide by ROI size to get the mean
-    #   print(sprintf("%s run %d OK", subID_s, run_r))
-    #   # #####
-    #   # # extract ROI mean, loop through each sub and each ROI within a sub
-    #   # for (ROI_i in 1:length(ROI_names)) {
-    #   #   # ROI_i = 1 ### for testing
-    #   #   ROI_img = readNIfTI(paste(mask_dir, ROI_nii_names[ROI_i], sep = "/"), reorient = FALSE) # load image
-    #   #   ROI_df = ROI_img[,,] # make 3D dataframe
-    #   #   
-    #   #   ROImean_vector <- sapply(
-    #   #     1:single_dims[4], function(t) {
-    #   #       sum(single_df[,,,t] * ROI_df)/sum(ROI_df==1)
-    #   #     }
-    #   #   )
-    #   #   # add brain ROI mean to the end of behavior dataframe
-    #   #   trials_brains_all_df[trials_brains_all_df$subjID == subID_s, ROI_names[ROI_i]] = ROImean_vector
-    #   # }
-    #   # #####
-    # } else { # if dimensions don't match, print a message
-    #   print(paste(subID_s, 
-    #               sprintf("run %d total brain trial %d and total behavior trial %d don't match.", 
-    #                       run_r, single_dims[4], N_trials_subID_r), # show brain and behavior trial numbers
-    #               sep = " "))
-    # }
+    # check if dimensions match
+    
+    if (single_dims[4] == N_trials_subID_r) { # if match, proceed to extract ROI means
+      # dot product between 3D matrices along the 4th dimension, then sum, then divide by ROI size to get the mean
+      print(sprintf("%s run %d OK", subID_s, run_r))
+      single_df = single_nii[,,,] # 4D dataframe
+      
+      #######################################################################
+      ###### extract ROI mean, loop through each sub and each ROI within a sub
+      for (ROI_i in 1:length(ROI_names)) {
+        # ROI_i = 2 ### for testing
+        ROI_img = readNIfTI(paste(mask_dir, ROI_nii_names[ROI_i], sep = "/"), reorient = FALSE) # load image
+        ROI_df = ROI_img[,,] # make 3D dataframe
+
+        ROImean_vector <- sapply(
+          1:single_dims[4], function(t) {
+            sum(single_df[,,,t] * ROI_df)/sum(ROI_df==1)
+          }
+        )
+        # add brain ROI mean to the end of behavior dataframe
+        trials_brains_all_df[trials_brains_all_df$subjID == 
+                               subID_s & trials_brains_all_df$run == run_r,
+                             ROI_names[ROI_i]] = ROImean_vector
+      }
+      #######################################################################
+      
+    } else { # if dimensions don't match, print a message
+      print(paste(subID_s,
+                  sprintf("run %d total brain trial %d and total behavior trial %d don't match.",
+                          run_r, single_dims[4], N_trials_subID_r), # show brain and behavior trial numbers
+                  sep = " "))
+    }
   }
 }
 ```
 
 # save check dataframe
 ```{r}
-dim_check_df$match = dim_check_df$single_trial == dim_check_df$behavior_hit
-write.csv(dim_check_df, paste(data_dir, "singletrial_behavior_check.csv", sep = "/"), row.names = FALSE)
+# dim_check_df$match = dim_check_df$single_trial == dim_check_df$behavior_hit
+# write.csv(dim_check_df, paste(data_dir, "singletrial_behavior_check.csv", sep = "/"), row.names = FALSE)
 ```
 
+# save full data
+```{r}
+write.csv(trials_brains_all_df, paste(data_dir, "singletrial_behavior_all.csv", sep = "/"), row.names = FALSE)
+```
 

@@ -157,11 +157,21 @@ for (i in 1:nrow(participants_df)) {
       select(all_of(col_unify_names))
     
     # extract trial type info per sub
-    decision_partner_types_rows = event_run_ij_df$trial_type %in% decision_partner_types[1:length(decision_partner_types)-1] # exclude missed trials
+    decision_partner_types_rows = event_run_ij_df$trial_type %in% decision_partner_types 
+    decision_partner_types_rows_hitOnly = 
+      event_run_ij_df$trial_type %in% decision_partner_types[1:length(decision_partner_types)-1] # exclude missed trials
+    
     decision_partner_df = event_run_ij_df[decision_partner_types_rows,]
     decision_partner_df$block_type = NA
     decision_partner_df$run = j
-    participants_df$trial_total[i] = participants_df$trial_total[i] + sum(decision_partner_types_rows)
+    
+    decision_partner_hitOnly_df = event_run_ij_df[decision_partner_types_rows_hitOnly,]
+    decision_partner_hitOnly_df$block_type = NA
+    decision_partner_hitOnly_df$run = j
+    
+    # count total hit trials
+    participants_df$trial_total[i] = 
+      participants_df$trial_total[i] + sum(decision_partner_types_rows_hitOnly)
     
     # extract block info per sub
     block_types_rows = event_run_ij_df$trial_type %in% block_types
@@ -182,14 +192,20 @@ for (i in 1:nrow(participants_df)) {
       block_type_k = block_df$trial_type[k] # extract block type
       if (k < nrow(block_df)) {
       # find trial using block type
-      n_trials_k =  sum(decision_partner_df$onset >= block_df$onset[k] & 
-                          decision_partner_df$onset < block_df$onset[k+1])
-      # marking block type for each trial
+      n_trials_k =  sum(decision_partner_hitOnly_df$onset >= block_df$onset[k] & 
+                          decision_partner_hitOnly_df$onset < block_df$onset[k+1])
+      
+      # marking block type for each trial, including missed trials
       decision_partner_df$block_type[decision_partner_df$onset >= block_df$onset[k] & 
                           decision_partner_df$onset < block_df$onset[k+1]] = block_type_k
+      # marking block type for each hit trial
+      decision_partner_hitOnly_df$block_type[decision_partner_hitOnly_df$onset >= block_df$onset[k] & 
+                          decision_partner_hitOnly_df$onset < block_df$onset[k+1]] = block_type_k
+      
       } else {
-        n_trials_k = sum(decision_partner_df$onset >= block_df$onset[k])
-        decision_partner_df$block_type[decision_partner_df$onset >= block_df$onset[k]] = block_type_k
+        n_trials_k = sum(decision_partner_hitOnly_df$onset >= block_df$onset[k])
+        decision_partner_hitOnly_df$block_type[decision_partner_hitOnly_df$onset >= block_df$onset[k]] =
+          block_type_k
       }
       block_df$BlockTrial[k] = n_trials_k
       if (n_trials_k >= 4) {
@@ -200,18 +216,18 @@ for (i in 1:nrow(participants_df)) {
         # rename columns
         mutate(block_type = trial_type) %>% 
         select(onset, block_type, BlockNum, BlockTrial, BlockInclude)
-      
-      block_df_clean$run = j
-      block_df_clean$subID = sub_name
     }
+    block_df_clean$run = j
+    block_df_clean$subID = sub_name
     block_long_df = rbind(block_long_df, block_df_clean)
+    
     decision_partner_df$subjID = sub_name
     
     # ## remove missed trials
     # decision_partner_df = decision_partner_df[decision_partner_df$trial_type != "missed_trial",]
     
     all_long_df = rbind(all_long_df, decision_partner_df)
-    print(sprintf("run %d N trial = %d", j, nrow(decision_partner_df)))
+    print(sprintf("run %d N trial = %d", j, nrow(decision_partner_hitOnly_df)))
   }
 }
 ```
