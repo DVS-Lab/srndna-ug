@@ -125,7 +125,8 @@ decision_partner_types = c("event_accept_outgroup", "event_reject_outgroup",
                 "event_accept_computer_fair", "event_reject_computer_fair",
                 "event_accept_outgroup_unfair", "event_reject_outgroup_unfair",
                 "event_accept_ingroup_unfair", "event_reject_ingroup_unfair",
-                "event_accept_computer_unfair", "event_reject_computer_unfair")
+                "event_accept_computer_unfair", "event_reject_computer_unfair",
+                "missed_trial")
 
 block_types = c("block_outgroup_fair", "block_outgroup_unfair",
                 "block_ingroup_fair", "block_ingroup_unfair",
@@ -137,7 +138,7 @@ block_types = c("block_outgroup_fair", "block_outgroup_unfair",
 # extract behavior
 ```{r}
 for (i in 1:nrow(participants_df)) {
-  # i = 36 # for testing, to comment out
+  i = 5 # for testing, to comment out
   print(i)
   sub_name = sublist[i]
   print(sub_name)
@@ -210,6 +211,7 @@ for (i in 1:nrow(participants_df)) {
     
   }
 }
+all_long_df = all_long_df[all_long_df$trial_type != "missed_trial",]
 ```
 
 # recode and reorder

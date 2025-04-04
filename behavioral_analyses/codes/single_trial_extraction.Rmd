@@ -152,8 +152,8 @@ for (sub_s in 1:nrow(sublist_df)) {
       }
     } else { # if dimensions don't match, print a message
       print(paste(subID_s, 
-                  sprintf("total brain trial %d and total behavior trial %d don't match.", 
-                          single_dims[4], N_trials_subID_r), # show brain and behavior trial numbers
+                  sprintf("run %d total brain trial %d and total behavior trial %d don't match.", 
+                          run_r, single_dims[4], N_trials_subID_r), # show brain and behavior trial numbers
                   sep = " "))
     }
   }
