@@ -138,7 +138,7 @@ block_types = c("block_outgroup_fair", "block_outgroup_unfair",
 # extract behavior
 ```{r}
 for (i in 1:nrow(participants_df)) {
-  i = 5 # for testing, to comment out
+  # i = 5 # for testing, to comment out
   print(i)
   sub_name = sublist[i]
   print(sub_name)
@@ -207,11 +207,13 @@ for (i in 1:nrow(participants_df)) {
     block_long_df = rbind(block_long_df, block_df_clean)
     decision_partner_df$subjID = sub_name
     
-    all_long_df = rbind(all_long_df, decision_partner_df)
+    ## remove missed trials
+    decision_partner_df = decision_partner_df[decision_partner_df$trial_type != "missed_trial",]
     
+    all_long_df = rbind(all_long_df, decision_partner_df)
+    print(sprintf("run %d N trial = %d", j, nrow(decision_partner_df)))
   }
 }
-all_long_df = all_long_df[all_long_df$trial_type != "missed_trial",]
 ```
 
 # recode and reorder
@@ -264,9 +266,6 @@ write.table(outgroup_df, file = paste(data_dir, "outgroup.txt", sep = "/"),
             sep = "\t", row.names = FALSE, quote = FALSE)
 ```
 
-
-
-
 # check behaviors of each participant
 ```{r}
 col_names_choice_check = c("subjID", 
@@ -276,6 +275,7 @@ col_names_choice_check = c("subjID",
                            "outgroup_total", "outgroup_accept", "outgroup_reject")
 choice_check = data.frame(matrix(ncol = length(col_names_choice_check), nrow = nrow(participants_df)))
 colnames(choice_check) = col_names_choice_check
+
 for (i in 1:nrow(participants_df)) {
   sub_name = sublist[i]
   computer_total = nrow(computer_df[computer_df$subjID == sub_name, ])
@@ -350,7 +350,7 @@ outgroup_filtered_df = human_filtered_df[human_filtered_df$ingroup == 0,]
 ```{r}
 write.csv(all_clean_filtered_df, file = paste(data_dir, "all_clean_filtered_df.csv", sep = "/"), 
             row.names = FALSE)
-write.csv(sub_include, file = paste(data_dir, "sub_include.csv", sep = "/"), 
+write.csv(sub_include, file = paste(data_dir, "sub_include_behaviorVary.csv", sep = "/"), 
             row.names = FALSE)
 write.table(computer_filtered_df, file = paste(data_dir, "computer_filtered.txt", sep = "/"), 
             sep = "\t", row.names = FALSE, quote = FALSE)
