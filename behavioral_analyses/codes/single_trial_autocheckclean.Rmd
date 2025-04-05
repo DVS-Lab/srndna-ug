@@ -181,35 +181,10 @@ for (sub_s in 1:N_sub) {
     }
   }
 }
-
-# write.csv(trials_brains_all_df, paste(data_dir, "all_trials_brains.csv", sep = "/"), row.names = FALSE)
 ```
 
-# correct for autocorrelation
+
 ```{r}
-###########################################################
-      ############### correct for autocorrelation ###############
-      rho_auto <- start_value_rho(auto_m, plot = F)
-      # Add AR.start column to indicate start of time series
-      sub_r_df$AR.start <- c(TRUE, rep(FALSE, nrow(sub_r_df) - 1))
-      
-      # Apply AR(1) correction using bam()
-      auto_m_corrected <- bam(brain ~ 1, 
-                              data = sub_r_df, 
-                              rho = rho_auto, 
-                              AR.start = AR.start)
-      
-      
-      # Extract corrected residuals (autocorrelation-adjusted vector)
-      corrected_vector <- resid(auto_m_corrected)
-      
-      # Validate correction by checking autocorrelation in corrected residuals
-      acf_corrected <- acf(corrected_vector, lag.max = 1, plot = FALSE)
-      cat("Corrected lag-1 autocorrelation:", round(acf_corrected$acf[2], 3), "\n")
-      
-      # Extract corrected residuals (your adjusted vector)
-      corrected_vector <- resid(auto_m_corrected)
-      
-      ###########################################################
+write.csv(auto_station_check_df, paste(data_dir, "autocorrelation_check.csv", sep = "/"), row.names = FALSE)
+write.csv(trials_brains_all_df, paste(data_dir, "all_trials_brains.csv", sep = "/"), row.names = FALSE)
 ```
-

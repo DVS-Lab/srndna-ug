@@ -126,13 +126,12 @@ dim_check_col_names = c("subjID", "run", "single_trial", "behavior_hit")
 dim_check_df = data.frame(matrix(NA, nrow = nrow(sublist_df)*2, ncol = length(dim_check_col_names)))
 colnames(dim_check_df) = dim_check_col_names
 
+N_run = 2
+
 for (sub_s in 1:nrow(sublist_df)) {
   # sub_s = 2 ### for testing
   subID_s = sublist_df$subjID[sub_s]
   print(subID_s)
-  if (subID_s == "sub-104") {
-    N_run = 1
-  } else {N_run = 2}
   
   for (run_r in 1:N_run) {
     # run_r = 1 ### for testing
@@ -189,8 +188,8 @@ for (sub_s in 1:nrow(sublist_df)) {
 
 # save check dataframe
 ```{r}
-# dim_check_df$match = dim_check_df$single_trial == dim_check_df$behavior_hit
-# write.csv(dim_check_df, paste(data_dir, "singletrial_behavior_check.csv", sep = "/"), row.names = FALSE)
+dim_check_df$match = dim_check_df$single_trial == dim_check_df$behavior_hit
+write.csv(dim_check_df, paste(data_dir, "singletrial_behavior_check.csv", sep = "/"), row.names = FALSE)
 ```
 
 # save full data
