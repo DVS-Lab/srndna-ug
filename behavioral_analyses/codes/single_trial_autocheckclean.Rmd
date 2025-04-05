@@ -125,14 +125,12 @@ brain_names = c("anteriorinsula", "dacc", "VS", "vmpfc")
 
 auto_df_cols = c("subjID", "run", "missed", "brain")
 
+N_run = 2
+
 for (sub_s in 1:N_sub) {
   # sub_s = 1 ### for
   subID_s = sub_list[sub_s, "subjID"]
   print(subID_s)
-  N_run = 2
-  if (subID_s == "sub-104") {
-    N_run = 1
-  }
   
   # loop through runs
   for (run_r in 1:N_run) { 
@@ -188,3 +186,4 @@ for (sub_s in 1:N_sub) {
 write.csv(auto_station_check_df, paste(data_dir, "autocorrelation_check.csv", sep = "/"), row.names = FALSE)
 write.csv(trials_brains_all_df, paste(data_dir, "all_trials_brains.csv", sep = "/"), row.names = FALSE)
 ```
+
