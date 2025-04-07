@@ -1,7 +1,7 @@
 ---
 title: "behavior_hypotheses_tests_srndnaUGR"
 author: "Jen Yang"
-date: "2024-11-11, last modified 2024-11-11"
+date: "2024-11-11, last modified 2025-04-07"
 output: 
   html_document:
     code_folding: hide
@@ -77,7 +77,13 @@ library(effects)
 library(lmerTest)
 library(ez)
 library(afex)
+library(marginaleffects)
 ```
+
+```{r}
+set.seed(123)
+```
+
 
 # load tsv and prolific raw data
 ```{r}
@@ -92,7 +98,9 @@ figure_dir = paste(gitrepo_path,"figures", sep = "/")
 # load and prepare data
 ```{r}
 # load subs
-all_trials_df = read.csv(paste(data_dir, "all_trials.csv", sep = "/"), header = TRUE)
+all_trials_df = read.csv(paste(data_dir, "all_trials_brains.csv", sep = "/"), header = TRUE) %>% 
+  .[.$missed == 0,]
+
 colnames(all_trials_df)[colnames(all_trials_df) == "subjID"] <- "participant_id"
 indiv_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = TRUE)  %>%
   mutate(age_bi = case_when(age <= 36 ~ "younger",
@@ -100,12 +108,21 @@ indiv_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header 
 
 all_trials_df = merge(all_trials_df, indiv_df, by.x = "participant_id", by.y = "participant_id")
 
+sublist_final = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE)
+
+all_trials_df = all_trials_df[all_trials_df$participant_id %in% sublist_final$subjID,]
+
 ## add a categorical variable that differentiate three groups
 all_trials_df = all_trials_df %>% 
   mutate(group_tri = as.factor(case_when(human == 0 ~ 0, # computer
                                human == 1 & ingroup == 0 ~ 1, # outgroup
                                human == 1 & ingroup == 1 ~ 2))) # ingroup
-all_trials_df$group_tri = relevel(all_trials_df$group_tri, ref = "0")
+# all_trials_df$group_tri = relevel(all_trials_df$group_tri, ref = "0") # computer
+
+all_trials_df = all_trials_df %>% mutate(human = as.factor(human))
+
+all_trials_df$group_tri = relevel(all_trials_df$group_tri, ref = "1") # outgroup
+
 all_trials_df$age_bi = relevel(as.factor(all_trials_df$age_bi), ref = "younger")
 
 all_trials_df = all_trials_df %>% 
@@ -125,7 +142,7 @@ Result: only offer/fairness is related to acceptance
 #                      (1 + offer * human | participant_id),
 #                             data = all_trials_df,
 #                             family = binomial)
-# 
+#
 
 ## won't converge
 # model_fit <- glmer(accept ~ offer * human * age_bi + sex +
@@ -152,13 +169,13 @@ Result: only offer/fairness is related to acceptance
 #                             family = binomial)
 
 ## won't converge
-# model_fit <- glmer(accept ~ offer * human * age_bi + sex + 
+# model_fit <- glmer(accept ~ offer * human * age_bi + sex +
 #                      (1 + offer || participant_id),
 #                             data = all_trials_df,
 #                            family = binomial)
 
 ## won't converge
-# model_fit <- glmer(accept ~ offer * human * age_bi + sex + 
+# model_fit <- glmer(accept ~ offer * human * age_bi + sex +
 #                      (1 + human || participant_id),
 #                             data = all_trials_df,
 #                             family = binomial)
@@ -182,6 +199,22 @@ model1.1_2_fit <- glmer(accept ~ offer * human * age_bi + sex - offer : human : 
                             data = all_trials_df,
                             family = binomial)
 summary(model1.1_2_fit)
+
+## converged, not better than model1.1_2_fit
+# model1.1_21_fit <- glmer(accept ~ offer * human * age_bi + sex - offer : human : age_bi +
+#                      (1 | participant_id) + (1 | block_fair),
+#                             data = all_trials_df,
+#                             family = binomial)
+# summary(model1.1_21_fit)
+
+## converged, not better than model1.1_2_fit
+# model1.1_22_fit <- glmer(accept ~ offer * human * age_bi + sex - offer : human : age_bi +
+#                      (1 | participant_id) + (1|age_bi),
+#                             data = all_trials_df,
+#                             family = binomial)
+# summary(model1.1_22_fit)
+# 
+# anova(model1.1_2_fit,model1.1_22_fit,refit=F)
 ```
 
 ## P1 H1.2
@@ -231,6 +264,13 @@ model1.2_fit <- glmer(accept ~ offer * ingroup * age_bi +
                             family = binomial)
 summary(model1.2_fit)
 
+## failed to converge
+# model1.21_fit <- glmer(accept ~ offer * ingroup * age_bi +
+#                      (1 | participant_id) + (1 | block_fair),
+#                             data = all_trials_df,
+#                             family = binomial)
+# summary(model1.21_fit)
+
 ## converged, SIG offer:age_biyounger
 model1.2_1_fit <- glmer(accept ~ offer * ingroup * age_bi - offer : ingroup : age_bi +
                      (1 | participant_id),
@@ -238,12 +278,14 @@ model1.2_1_fit <- glmer(accept ~ offer * ingroup * age_bi - offer : ingroup : ag
                             family = binomial)
 summary(model1.2_1_fit)
 
+## converged, model1.2_1_fit simplified, SIG offer:age_biyounger
 model1.2_2_fit <- glmer(accept ~ offer * age_bi + ingroup * age_bi +
                      (1 | participant_id),
                             data = all_trials_df,
                             family = binomial)
 summary(model1.2_2_fit)
 ```
+
 ## P1 additional H1.3
 suspected group effect of computer vs ingroup vs outgroup based on H1.1 and H1.2 results
 H1.2 has sig offer*age interaction but H1.1 doesn't
@@ -254,22 +296,21 @@ H1.2 has sig offer*age interaction but H1.1 doesn't
 #                             data = all_trials_df,
 #                             family = binomial)
 
-## converged, no sig offer * group_tri * age_bi
-model1.3_fit <- glmer(accept ~ offer * group_tri * age_bi + sex +
-                     (1 | participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-summary(model1.3_fit)
+## won't converged, no sig offer * group_tri * age_bi
+# model1.3_fit <- glmer(accept ~ offer * group_tri * age_bi + sex +
+#                      (1 | participant_id),
+#                             data = all_trials_df,
+#                             family = binomial)
 
 ## converged, SIG offer:age_biolder
-model1.3_1_fit <- glmer(accept ~ offer * group_tri + sex +
+model1.3_fit <- glmer(accept ~ offer * group_tri + sex +
                           offer * age_bi +
                           age_bi * group_tri +
                      (1 | participant_id),
                             data = all_trials_df,
                             family = binomial)
 
-summary(model1.3_1_fit)
+summary(model1.3_fit)
 
 ## converged, SIG offer:age_biolder
 model1.3_1_fit <- glmer(accept ~  offer * age_bi + sex +
@@ -303,76 +344,638 @@ model1.3_1_fit <- glmer(accept ~ offer * group_tri +
 summary(model1.3_1_fit)
 
 ## won't converge
-model1.3_2_fit <- glmer(accept ~ offer + group_tri + age_bi +
-                     (1 + age_bi|participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-summary(model1.3_2_fit)
+# model1.3_2_fit <- glmer(accept ~ offer + group_tri + age_bi +
+#                      (1 + age_bi|participant_id),
+#                             data = all_trials_df,
+#                             family = binomial)
+# summary(model1.3_2_fit)
 ```
 
 # prereg 2 analyses
 ## P2 BH3
-
-
-
-# alpha ~ age_bi * human/computer, not sig
+BH3) Acceptance rates for an individual offer will vary according to its consistency with other offers in a given block rather than the objective dollar amount of the offer. That is, there will be an offer amount by block interaction, such that acceptance of higher, unfair offers will be greater in unfair blocks, and acceptance of lower, fair offers will be lower in fair blocks, as opposed to participants always rejecting unfair offers and always accepting fair offers.
 ```{r}
-all_trials_df = indiv_df %>% 
-  select(participant_id, age_bi, computer_alpha, human_alpha) %>% 
-  melt(., id.vars = c("participant_id","age_bi"), variable.name = "alpha_group") %>% 
-  mutate(alpha = as.factor(alpha_group))
+## full model, won't converge
+# model_P2_3_fit <- glmer(accept ~ offer * group_tri * age_bi * block_fair +
+#                      (1|participant_id),
+#                             data = all_trials_df,
+#                             family = binomial)
 
-model_fit <- lmer(value ~ alpha * age_bi + (1 | participant_id),
-                      data = all_trials_df)
-summary(model_fit)
+## won't converge
+# model_P2_3_fit <- glmer(
+#   accept ~ offer * group_tri * age_bi * block_fair - offer:group_tri:age_bi:block_fair +
+#                      (1|participant_id),
+#                             data = all_trials_df,
+#                             family = binomial)
+
+## won't converge
+# model_P2_3_fit <- glmer(accept ~ offer * age_bi * block_fair + group_tri +
+#                      (1|participant_id),
+#                             data = all_trials_df,
+#                             family = binomial)
+
+## won't converge
+# model_P2_3_fit <- glmer(accept ~ offer * age_bi * block_fair + group_tri * block_fair +
+#                      (1|participant_id),
+#                             data = all_trials_df,
+#                             family = binomial)
+
+## converged, block main sig
+model_P2_3_fit <- glmer(accept ~ offer * age_bi * block_fair + group_tri -
+                          offer:age_bi:block_fair +
+                     (1|participant_id),
+                            data = all_trials_df,
+                            family = binomial)
+
+
+summary(model_P2_3_fit)
+
+block_effect<-Effect("block_fair", model_P2_3_fit)
+data.frame(block_effect)
+avg_slopes(model=model_P2_3_fit,re.form=NA)
+
+## further simplified model based on sig above, all unnecessary non-sig removed
+model_P2_31_fit <- glmer(accept ~ offer * age_bi + block_fair +
+                     (1|participant_id),
+                            data = all_trials_df,
+                            family = binomial)
+
+summary(model_P2_31_fit)
+
+block_effect<-Effect("block_fair", model_P2_31_fit)
+data.frame(block_effect)
+avg_slopes(model=model_P2_31_fit,re.form=NA)
 ```
 
-# alpha ~ age_bi * ingroup/outgroup, not sig
-```{r}
-all_trials_df = indiv_df %>% 
-  select(participant_id, age_bi, ingroup_alpha, outgroup_alpha) %>% 
-  melt(., id.vars = c("participant_id","age_bi"), variable.name = "alpha_group") %>% 
-  mutate(alpha = as.factor(alpha_group))
+## P2 NH1A
+"NH1A) The anterior insula (ins), dorsal anterior cingulate cortex (dACC), ventromedial prefrontal cortex (vmPFC), and ventral striatum (VS) will be associated with choice." [ins, dACC, vmPFC, VS]
 
-model_fit <- lmer(value ~ alpha_group * age_bi + (1 | participant_id),
-                      data = all_trials_df)
-summary(model_fit)
+accept ~ brain * age(or group) + (1|participant)
+
+### prepare empty df to store results
+```{r}
+results_cols = c("brain", "mod", "Coef", "p", "p_check", "p_0125_check")
+results_df = data.frame(matrix(nrow = 4*(3+1), ncol = length(results_cols)))
+colnames(results_df) = results_cols
 ```
 
-# epsilon ~ age_bi * human/computer, not sig
+### anterior insula * age, strict prereg, not sig
 ```{r}
-all_trials_df = indiv_df %>% 
-  select(participant_id, age_bi, age_bi, computer_epsilon, human_epsilon) %>% 
-  melt(., id.vars = c("participant_id","age_bi"), variable.name = "epsilon_group") %>% 
-  mutate(epsilon = as.factor(epsilon_group)) %>% 
-  within(epsilon_group <- relevel(epsilon_group, ref = "computer_epsilon"))
+## converge, no interaction
+model_P2_NH1_antIns_age_fit = glmer(accept ~ anteriorinsula_corrected * age_bi +
+                     (1|participant_id), 
+                     data = all_trials_df,
+                            family = binomial)
+summary(model_P2_NH1_antIns_age_fit)
 
-model_fit <- lmer(value ~ epsilon * age_bi + (1 | participant_id),
-                  data = all_trials_df)
-summary(model_fit)
+m_params = model_parameters(model_P2_NH1_antIns_age_fit, effects = "fixed")
 
-model_fit <- lmer(value ~ epsilon * age_bi + (1 | participant_id),
-                  data = all_trials_df)
-summary(model_fit)
-
-model_1_fit <- lmer(value ~ epsilon + age_bi + (1 | participant_id),
-                  data = all_trials_df)
-summary(model_1_fit)
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[4]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
 ```
 
-# epsilon ~ age_bi * ingroup/outgroup, group main sig
+### anterior insula * group, strict prereg, sig
 ```{r}
-all_trials_df = indiv_df %>% 
-  select(participant_id, age_bi, age_bi, ingroup_epsilon, outgroup_epsilon) %>% 
-  melt(., id.vars = c("participant_id", "age_bi"), variable.name = "epsilon_group") %>% 
-  mutate(epsilon = as.factor(epsilon_group)) %>% 
-  within(epsilon_group <- relevel(epsilon_group, ref = "outgroup_epsilon"))
+## converge, no interaction
+model_P2_NH1_antIns_group_fit = glmer(accept ~ anteriorinsula_corrected * group_tri +
+                                      (1|participant_id), 
+                                    data = all_trials_df,
+                                    family = binomial)
+summary(model_P2_NH1_antIns_group_fit)
 
-model_fit <- lmer(value ~ epsilon_group * age_bi + (1 | participant_id),
-                  data = all_trials_df)
-summary(model_fit)
+m_params = model_parameters(model_P2_NH1_antIns_group_fit, effects = "fixed")
 
-model_1_fit <- lmer(value ~ epsilon_group + age_bi + (1 | participant_id),
-                  data = all_trials_df)
-summary(model_1_fit)
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[5]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[5]
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[4]
+results_df$p[N_nonNA_results+1] = m_params$p[6]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[6]
 ```
+
+### ant insula main, strict prereg, not sig
+```{r}
+## converged, no sig vmpfc_corrected * age_bi
+model_P2_NH1_antIns_main_fit <- glmer(accept ~ anteriorinsula_corrected +
+                                      (1|participant_id),
+                                    data = all_trials_df,
+                                    family = binomial)
+summary(model_P2_NH1_antIns_main_fit)
+
+m_params = model_parameters(model_P2_NH1_antIns_main_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = "main"
+results_df$p[N_nonNA_results+1] = m_params$p[2]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
+```
+
+### dacc * age, strict prereg
+```{r}
+## converged, no sig dacc_corrected * age_bi
+model_P2_NH1_dacc_age_fit <- glmer(accept ~ dacc_corrected * age_bi +
+                                     (1|participant_id),
+                            data = all_trials_df,
+                            family = binomial)
+summary(model_P2_NH1_dacc_age_fit)
+
+m_params = model_parameters(model_P2_NH1_dacc_age_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[4]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
+```
+
+### dacc * group, strict prereg, not sig
+```{r}
+## converged, no sig dacc_corrected * age_bi
+model_P2_NH1_dacc_group_fit <- glmer(accept ~ dacc_corrected * group_tri +
+                                     (1|participant_id),
+                            data = all_trials_df,
+                            family = binomial)
+summary(model_P2_NH1_dacc_group_fit)
+
+m_params = model_parameters(model_P2_NH1_dacc_group_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[5]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[5]
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[4]
+results_df$p[N_nonNA_results+1] = m_params$p[6]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[6]
+```
+
+### dacc main, strict prereg, not sig
+```{r}
+## converged, no sig dacc_corrected * age_bi
+model_P2_NH1_dacc_main_fit <- glmer(accept ~ dacc_corrected +
+                                     (1|participant_id),
+                            data = all_trials_df,
+                            family = binomial)
+summary(model_P2_NH1_dacc_main_fit)
+
+m_params = model_parameters(model_P2_NH1_dacc_main_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = "main"
+results_df$p[N_nonNA_results+1] = m_params$p[2]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
+```
+
+### VS * age, strict prereg, sig, not sig after correction
+```{r}
+## converged, no sig VS_corrected * age_bi
+model_P2_NH1_VS_age_fit <- glmer(accept ~ VS_corrected * age_bi +
+                                     (1|participant_id),
+                                   data = all_trials_df,
+                                   family = binomial)
+summary(model_P2_NH1_VS_age_fit)
+
+m_params = model_parameters(model_P2_NH1_VS_age_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[4]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
+```
+
+### VS * group, strict prereg, sig
+```{r}
+## converged, no sig VS_corrected * age_bi
+model_P2_NH1_VS_group_fit <- glmer(accept ~ VS_corrected * group_tri +
+                                       (1|participant_id),
+                                     data = all_trials_df,
+                                     family = binomial)
+summary(model_P2_NH1_VS_group_fit)
+
+m_params = model_parameters(model_P2_NH1_VS_group_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[5]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[5]
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[4]
+results_df$p[N_nonNA_results+1] = m_params$p[6]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[6]
+```
+
+### VS main, strict prereg, sig
+```{r}
+## converged, no sig VS_corrected * age_bi
+model_P2_NH1_VS_main_fit <- glmer(accept ~ VS_corrected +
+                                      (1|participant_id),
+                                    data = all_trials_df,
+                                    family = binomial)
+summary(model_P2_NH1_VS_main_fit)
+
+m_params = model_parameters(model_P2_NH1_VS_main_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = "main"
+results_df$p[N_nonNA_results+1] = m_params$p[2]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
+```
+
+### vmpfc * age, strict prereg, sig
+```{r}
+## converged, no sig vmpfc_corrected * age_bi
+model_P2_NH1_vmpfc_age_fit <- glmer(accept ~ vmpfc_corrected * age_bi +
+                                     (1|participant_id),
+                                   data = all_trials_df,
+                                   family = binomial)
+summary(model_P2_NH1_vmpfc_age_fit)
+
+m_params = model_parameters(model_P2_NH1_vmpfc_age_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[4]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
+```
+
+### vmpfc * group, strict prereg, not sig
+```{r}
+## converged, no sig vmpfc_corrected * age_bi
+model_P2_NH1_vmpfc_group_fit <- glmer(accept ~ vmpfc_corrected * group_tri +
+                                       (1|participant_id),
+                                     data = all_trials_df,
+                                     family = binomial)
+summary(model_P2_NH1_vmpfc_group_fit)
+
+m_params = model_parameters(model_P2_NH1_vmpfc_group_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[5]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[5]
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[4]
+results_df$p[N_nonNA_results+1] = m_params$p[6]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[6]
+```
+
+### vmpfc main, strict prereg, not sig
+```{r}
+## converged, no sig vmpfc_corrected * age_bi
+model_P2_NH1_vmpfc_main_fit <- glmer(accept ~ vmpfc_corrected +
+                                      (1|participant_id),
+                                    data = all_trials_df,
+                                    family = binomial)
+summary(model_P2_NH1_vmpfc_main_fit)
+
+m_params = model_parameters(model_P2_NH1_vmpfc_main_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = "main"
+results_df$p[N_nonNA_results+1] = m_params$p[2]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
+```
+
+
+### clean single trial results
+```{r}
+results_df = results_df %>% 
+  mutate(p_check = case_when(p >=0.05 ~ NA,
+                                p < 0.05 ~ "*" ),
+         p_0125_check = case_when(p >=0.0125 ~ NA,
+                                p < 0.0125 ~ "*"),
+         p = round(p,4))
+```
+
+
+## P2 NH1A, human vs computer
+"NH1A) The anterior insula (ins), dorsal anterior cingulate cortex (dACC), ventromedial prefrontal cortex (vmPFC), and ventral striatum (VS) will be associated with choice." [ins, dACC, vmPFC, VS]
+
+accept ~ brain * age(or group) + (1|participant)
+
+### prepare empty df to store results
+```{r}
+results_cols = c("brain", "mod", "Coef", "p", "p_check", "p_0125_check")
+results_df = data.frame(matrix(nrow = 4*(3+1), ncol = length(results_cols)))
+colnames(results_df) = results_cols
+```
+
+### anterior insula * age, strict prereg, not sig
+```{r}
+## converge, no interaction
+model_P2_NH1_antIns_age_fit = glmer(accept ~ anteriorinsula_corrected * age_bi +
+                                      (1|participant_id), 
+                                    data = all_trials_df,
+                                    family = binomial)
+summary(model_P2_NH1_antIns_age_fit)
+
+m_params = model_parameters(model_P2_NH1_antIns_age_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[4]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
+```
+
+### anterior insula * group, strict prereg, sig
+```{r}
+## converge, no interaction
+model_P2_NH1_antIns_group_fit = glmer(accept ~ anteriorinsula_corrected * human +
+                                        (1|participant_id), 
+                                      data = all_trials_df,
+                                      family = binomial)
+summary(model_P2_NH1_antIns_group_fit)
+
+m_params = model_parameters(model_P2_NH1_antIns_group_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[4]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
+```
+
+### ant insula main, strict prereg, not sig
+```{r}
+## converged, no sig vmpfc_corrected * age_bi
+model_P2_NH1_antIns_main_fit <- glmer(accept ~ anteriorinsula_corrected +
+                                        (1|participant_id),
+                                      data = all_trials_df,
+                                      family = binomial)
+summary(model_P2_NH1_antIns_main_fit)
+
+m_params = model_parameters(model_P2_NH1_antIns_main_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = "main"
+results_df$p[N_nonNA_results+1] = m_params$p[2]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
+```
+
+### dacc * age, strict prereg
+```{r}
+## converged, no sig dacc_corrected * age_bi
+model_P2_NH1_dacc_age_fit <- glmer(accept ~ dacc_corrected * age_bi +
+                                     (1|participant_id),
+                                   data = all_trials_df,
+                                   family = binomial)
+summary(model_P2_NH1_dacc_age_fit)
+
+m_params = model_parameters(model_P2_NH1_dacc_age_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[4]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
+```
+
+### dacc * group, strict prereg, not sig
+```{r}
+## converged, no sig dacc_corrected * age_bi
+model_P2_NH1_dacc_group_fit <- glmer(accept ~ dacc_corrected * human +
+                                       (1|participant_id),
+                                     data = all_trials_df,
+                                     family = binomial)
+summary(model_P2_NH1_dacc_group_fit)
+
+m_params = model_parameters(model_P2_NH1_dacc_group_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[4]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
+```
+
+### dacc main, strict prereg, not sig
+```{r}
+## converged, no sig dacc_corrected * age_bi
+model_P2_NH1_dacc_main_fit <- glmer(accept ~ dacc_corrected +
+                                      (1|participant_id),
+                                    data = all_trials_df,
+                                    family = binomial)
+summary(model_P2_NH1_dacc_main_fit)
+
+m_params = model_parameters(model_P2_NH1_dacc_main_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = "main"
+results_df$p[N_nonNA_results+1] = m_params$p[2]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
+```
+
+### VS * age, strict prereg, sig, not sig after correction
+```{r}
+## converged, no sig VS_corrected * age_bi
+model_P2_NH1_VS_age_fit <- glmer(accept ~ VS_corrected * age_bi +
+                                   (1|participant_id),
+                                 data = all_trials_df,
+                                 family = binomial)
+summary(model_P2_NH1_VS_age_fit)
+
+m_params = model_parameters(model_P2_NH1_VS_age_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[4]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
+```
+
+### VS * group, strict prereg, sig
+```{r}
+## converged, no sig VS_corrected * age_bi
+model_P2_NH1_VS_group_fit <- glmer(accept ~ VS_corrected * human +
+                                     (1|participant_id),
+                                   data = all_trials_df,
+                                   family = binomial)
+summary(model_P2_NH1_VS_group_fit)
+
+m_params = model_parameters(model_P2_NH1_VS_group_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[4]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
+```
+
+### VS main, strict prereg, sig
+```{r}
+## converged, no sig VS_corrected * age_bi
+model_P2_NH1_VS_main_fit <- glmer(accept ~ VS_corrected +
+                                    (1|participant_id),
+                                  data = all_trials_df,
+                                  family = binomial)
+summary(model_P2_NH1_VS_main_fit)
+
+m_params = model_parameters(model_P2_NH1_VS_main_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = "main"
+results_df$p[N_nonNA_results+1] = m_params$p[2]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
+```
+
+### vmpfc * age, strict prereg, sig
+```{r}
+## converged, no sig vmpfc_corrected * age_bi
+model_P2_NH1_vmpfc_age_fit <- glmer(accept ~ vmpfc_corrected * age_bi +
+                                      (1|participant_id),
+                                    data = all_trials_df,
+                                    family = binomial)
+summary(model_P2_NH1_vmpfc_age_fit)
+
+m_params = model_parameters(model_P2_NH1_vmpfc_age_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[4]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
+```
+
+### vmpfc * group, strict prereg, not sig
+```{r}
+## converged, no sig vmpfc_corrected * age_bi
+model_P2_NH1_vmpfc_group_fit <- glmer(accept ~ vmpfc_corrected * human +
+                                        (1|participant_id),
+                                      data = all_trials_df,
+                                      family = binomial)
+summary(model_P2_NH1_vmpfc_group_fit)
+
+m_params = model_parameters(model_P2_NH1_vmpfc_group_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
+results_df$p[N_nonNA_results+1] = m_params$p[4]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
+```
+
+### vmpfc main, strict prereg, not sig
+```{r}
+## converged, no sig vmpfc_corrected * age_bi
+model_P2_NH1_vmpfc_main_fit <- glmer(accept ~ vmpfc_corrected +
+                                       (1|participant_id),
+                                     data = all_trials_df,
+                                     family = binomial)
+summary(model_P2_NH1_vmpfc_main_fit)
+
+m_params = model_parameters(model_P2_NH1_vmpfc_main_fit, effects = "fixed")
+
+N_nonNA_results = sum(!is.na(results_df$brain))
+results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
+results_df$mod[N_nonNA_results+1] = "main"
+results_df$p[N_nonNA_results+1] = m_params$p[2]
+results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
+```
+
+
+## clean single trial results
+```{r}
+results_df = results_df %>% 
+  mutate(p_check = case_when(p >=0.05 ~ NA,
+                             p < 0.05 ~ "*" ),
+         p_0125_check = case_when(p >=0.0125 ~ NA,
+                                  p < 0.0125 ~ "*"),
+         p = round(p,4))
+```
+
+
+
+## P2 NH1B
+"NH1B) The ins and dACC will be activated during the rejection of offers."
+[insula, dACC][reject] (?)
+
+
+## P2 NH1C
+"NH1C) The vmPFC and VS will be activated during the acceptance of offers."
+[vmPFC, VS][accept] (?) 
+
+
+## P2 NH2A
+"NH2A) All effects specified in NH1 will be blunted in older adults."
+ROI mean ~ age
+
+
+
+## P2 NH2B
+"NH2B) The effect specified in NHB1 will be enhanced when rejecting unfair offers from human versus computer partners."
+[insula, dACC][reject, human > computer]
+
+
+# P2 NH single trial exploratory
+### anterior insula, exploratory
+```{r, eval = F}
+# ## won't converge
+# # model_P2_NH1_antIns_fit <- glmer(accept ~ anteriorinsula_corrected * age_bi * group_tri * block_fair +
+# #                      (1|participant_id),
+# #                             data = all_trials_df,
+# #                             family = binomial)
+# 
+# ## converged, NO SIG three-way interaction
+# model_P2_NH1_antIns_fit <- glmer(accept ~ anteriorinsula_corrected * age_bi * group_tri * block_fair -
+#                             anteriorinsula_corrected:age_bi:group_tri:block_fair +
+#                             (1|participant_id),
+#                             data = all_trials_df,
+#                             family = binomial)
+# summary(model_P2_NH1_antIns_fit)
+# 
+# ## converged, SIG ant insula * group interaction
+# model_P2_NH1_antIns_fit <- glmer(accept ~ anteriorinsula_corrected * age_bi * group_tri * block_fair -
+#                             anteriorinsula_corrected:age_bi:group_tri:block_fair -
+#                               anteriorinsula_corrected:age_bi:group_tri -
+#                               anteriorinsula_corrected:age_bi:block_fair -
+#                               anteriorinsula_corrected:group_tri:block_fair -
+#                               age_bi:group_tri:block_fair +
+#                               (1|participant_id),
+#                             data = all_trials_df,
+#                             family = binomial)
+# summary(model_P2_NH1_antIns_fit)
+# 
+# ## won't converge
+# # model_P2_NH1_fit <- glmer(accept ~ anteriorinsula_corrected * age_bi * group_tri +
+# #                      (1|participant_id),
+# #                             data = all_trials_df,
+# #                             family = binomial)
+# 
+# ## converged, SIG insula*group interaction
+# model_P2_NH1_antIns_fit <- glmer(accept ~ anteriorinsula_corrected * age_bi * group_tri -
+#                             anteriorinsula_corrected:age_bi:group_tri + 
+#                               anteriorinsula_corrected * age_bi * block_fair +
+#                      (1|participant_id),
+#                             data = all_trials_df,
+#                             family = binomial)
+# summary(model_P2_NH1_antIns_fit)
+```
+
+
