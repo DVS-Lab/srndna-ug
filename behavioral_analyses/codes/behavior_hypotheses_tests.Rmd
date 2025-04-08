@@ -258,7 +258,7 @@ H1.2: Within social conditions, younger adults will show increased rates of acce
 #                             family = binomial)
 
 ## converged, no sig offer * ingroup * age_bi
-model1.2_fit <- glmer(accept ~ offer * ingroup * age_bi +
+model1.2_fit <- glmer(accept ~ offer * ingroup * age_bi + brain +
                      (1 | participant_id),
                             data = all_trials_df,
                             family = binomial)
@@ -407,7 +407,7 @@ data.frame(block_effect)
 avg_slopes(model=model_P2_31_fit,re.form=NA)
 ```
 
-## P2 NH1A
+## P2 NH1A, group_tri
 "NH1A) The anterior insula (ins), dorsal anterior cingulate cortex (dACC), ventromedial prefrontal cortex (vmPFC), and ventral striatum (VS) will be associated with choice." [ins, dACC, vmPFC, VS]
 
 accept ~ brain * age(or group) + (1|participant)
@@ -900,7 +900,7 @@ results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
 ```
 
 
-## clean single trial results
+### clean single trial results
 ```{r}
 results_df = results_df %>% 
   mutate(p_check = case_when(p >=0.05 ~ NA,
@@ -909,6 +909,170 @@ results_df = results_df %>%
                                   p < 0.0125 ~ "*"),
          p = round(p,4))
 ```
+
+# single trial exploratory
+## if brain contribute above behavior model
+### based behavior model
+```{r}
+all_trials_df = na.omit(all_trials_df)
+
+beh_full_fit = glmer(accept ~ offer * age_bi + block_fair + group_tri + 
+                                       (1|participant_id),
+                                     data = all_trials_df,
+                                     family = binomial)
+
+summary(beh_full_fit)
+```
+### prepare empty df for results
+```{r}
+brain_behavior_cols = c("brain", "formula", "chi_p", "sig_check")
+brain_behavior_df = data.frame(matrix(nrow = 4, ncol = length(brain_behavior_cols)))
+colnames(brain_behavior_df) = brain_behavior_cols
+```
+
+### VS,sig
+```{r}
+## full model, converged
+beh_VS_full_0_fit = glmer(accept ~ offer * age_bi + block_fair + 
+                            VS_corrected * offer * age_bi + 
+                            VS_corrected * block_fair +
+                            (1|participant_id),
+                          data = all_trials_df,
+                          family = binomial)
+
+summary(beh_VS_full_0_fit)
+
+## reduced model, no 3-way interaction
+beh_VS_full_1_fit = glmer(accept ~ offer * age_bi + block_fair + 
+                            VS_corrected * offer * age_bi -
+                            VS_corrected:offer:age_bi +
+                            VS_corrected * block_fair +
+                            (1|participant_id),
+                          data = all_trials_df,
+                          family = binomial)
+
+# no diff in fit quality between full and reduced model. use reduced model for later comparison
+anova(beh_VS_full_0_fit, beh_VS_full_1_fit, refit = T)
+
+Anova(beh_VS_full_1_fit)
+anova(beh_full_fit, beh_VS_full_1_fit, refit = TRUE)
+```
+### dacc, not sig but close
+```{r}
+beh_dacc_full_0_fit = glmer(accept ~ offer * age_bi + block_fair + 
+                          dacc_corrected * offer * age_bi + dacc_corrected * block_fair +
+                          (1|participant_id),
+                        data = all_trials_df,
+                        family = binomial)
+
+summary(beh_dacc_full_0_fit)
+
+beh_dacc_full_1_fit = glmer(accept ~ offer * age_bi + block_fair + 
+                          dacc_corrected * offer * age_bi - 
+                            dacc_corrected:offer:age_bi +
+                            dacc_corrected * block_fair +
+                          (1|participant_id),
+                        data = all_trials_df,
+                        family = binomial)
+
+anova(beh_dacc_full_0_fit, beh_dacc_full_1_fit, refit = T)
+
+anova(beh_full_fit, beh_dacc_full_1_fit, refit = TRUE)
+```
+
+### vmpfc, not sig
+```{r}
+beh_vmpfc_full_0_fit = glmer(accept ~ offer * age_bi + block_fair + 
+                            vmpfc_corrected * offer * age_bi + vmpfc_corrected * block_fair +
+                            (1|participant_id),
+                          data = all_trials_df,
+                          family = binomial)
+
+summary(beh_vmpfc_full_0_fit)
+
+beh_vmpfc_full_1_fit = glmer(accept ~ offer * age_bi + block_fair + 
+                            vmpfc_corrected * offer * age_bi - 
+                              vmpfc_corrected:offer:age_bi +
+                              vmpfc_corrected * block_fair +
+                            (1|participant_id),
+                          data = all_trials_df,
+                          family = binomial)
+
+
+anova(beh_full_fit, beh_vmpfc_full_fit, refit = TRUE)
+```
+
+### anteriorinsula_corrected, very sig
+```{r}
+## full model won't converge
+beh_antIns_full_0_fit = glmer(accept ~ offer * age_bi + block_fair + 
+                            anteriorinsula_corrected * offer * age_bi +
+                              anteriorinsula_corrected * block_fair +
+                            (1|participant_id),
+                          data = all_trials_df,
+                          family = binomial)
+allFit(beh_antIns_full_0_fit)
+
+## reduced model based on purpose of test - see potentional interactions between brain and other non-brain factors
+beh_antIns_full_1_fit = glmer(accept ~ offer * age_bi + block_fair + 
+                            anteriorinsula_corrected * offer * age_bi -
+                              anteriorinsula_corrected:offer:age_bi +
+                              anteriorinsula_corrected * block_fair +
+                            (1|participant_id),
+                          data = all_trials_df,
+                          family = binomial)
+
+# beh_antIns_full_2_fit = glmer(accept ~ offer * age_bi + block_fair + 
+#                             anteriorinsula_corrected * offer * age_bi +
+#                               # anteriorinsula_corrected:offer:age_bi +
+#                               anteriorinsula_corrected +
+#                             (1|participant_id),
+#                           data = all_trials_df,
+#                           family = binomial)
+## NO sig difference between the two models
+# anova(beh_antIns_full_1_fit, beh_antIns_full_2_fit, refit=T)
+anova(beh_full_fit, beh_antIns_full_1_fit, refit = TRUE)
+anova(beh_full_fit, beh_antIns_full_2_fit, refit = TRUE)
+```
+
+
+
+### main brain only model
+```{r}
+beh_VS_full_fit = glmer(accept ~ offer * age_bi + block_fair + group_tri + 
+                       VS_corrected + 
+                                       (1|participant_id),
+                                     data = all_trials_df,
+                                     family = binomial)
+
+# summary(beh_VS_full_fit)
+
+beh_vmpfc_full_fit = glmer(accept ~ offer * age_bi + block_fair + group_tri + 
+                       vmpfc_corrected + 
+                                       (1|participant_id),
+                                     data = all_trials_df,
+                                     family = binomial)
+
+beh_antIns_full_fit = glmer(accept ~ offer * age_bi + block_fair + group_tri + 
+                       anteriorinsula_corrected + 
+                         (1|participant_id),
+                                     data = all_trials_df,
+                                     family = binomial)
+
+beh_dacc_full_fit = glmer(accept ~ offer * age_bi + block_fair + group_tri + 
+                       dacc_corrected + 
+                         (1|participant_id),
+                                     data = all_trials_df,
+                                     family = binomial)
+
+anova(beh_full_fit, beh_VS_full_fit, refit = TRUE)
+anova(beh_full_fit, beh_vmpfc_full_fit, refit = TRUE)
+anova(beh_full_fit, beh_antIns_full_fit, refit = TRUE)
+anova(beh_full_fit, beh_dacc_full_fit, refit = TRUE)
+```
+
+
+
 
 
 
