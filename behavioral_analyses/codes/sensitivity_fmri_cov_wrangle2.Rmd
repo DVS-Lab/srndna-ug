@@ -146,8 +146,9 @@ outgroup_random_effects = outgroup_random_effects[outgroup_random_effects$term =
 
 ## in-out
 in_out_rand_df = merge(ingroup_random_effects, outgroup_random_effects, by = "subjID") %>% 
-  mutate(in_out = ingroup - outgroup) %>% 
-  dplyr::select(subjID, in_out)
+  mutate(in_out_logit = ingroup - outgroup,
+         in_out_prob = (exp(ingroup) / (1 + exp(ingroup))) - exp(outgroup) / (1 + exp(outgroup))) %>% 
+  dplyr::select(subjID, in_out_logit, in_out_prob)
 ```
 
 ## computer
@@ -182,8 +183,9 @@ human_random_effects = human_random_effects[human_random_effects$term == "offer"
 
 ## soc-nonsoc
 soc_nonsoc_rand_df = merge(computer_random_effects, human_random_effects, by = "subjID") %>% 
-  mutate(soc_nonsoc = human - computer) %>% 
-  dplyr::select(subjID, soc_nonsoc)
+  mutate(soc_nonsoc_logit = human - computer,
+         soc_nonsoc_prob = (exp(human) / (1 + exp(human))) - exp(computer) / (1 + exp(computer))) %>% 
+  dplyr::select(subjID, soc_nonsoc_logit, soc_nonsoc_prob)
 ```
 
 # human, norm (pause for now)
@@ -208,27 +210,55 @@ soc_nonsoc_rand_df = merge(computer_random_effects, human_random_effects, by = "
 # in_out_sens_df for L3 w/ cov
 ```{r}
 in_out_sens_df = in_out_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
-  mutate(in_out_demean = in_out - mean(in_out),
+  mutate(in_out_demean = in_out_logit - mean(in_out_logit),
          in_out_young = in_out_demean*younger,
          in_out_old = in_out_demean*older,
          ones = 1) %>% 
-select(subjID, ones, ismale, tsnr, fd_mean, RT, 
-       younger, older,
-       in_out_young, in_out_old)
-write.csv(in_out_sens_df, paste(data_dir, "L3_cov_in_out_sensitivity.csv", sep = "/"),
+  select(subjID, ones, ismale, tsnr, fd_mean, RT, 
+         younger, older,
+         in_out_young, in_out_old)
+write.csv(in_out_sens_df, paste(data_dir, "L3_cov_in_out_sensitivity_logit.csv", sep = "/"),
           row.names = FALSE)
 ```
 
 # soc_nonsoc_sens_df for L3 w/ cov
 ```{r}
 soc_nonsoc_sens_df = soc_nonsoc_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
-  mutate(soc_nonsoc_demean = soc_nonsoc - mean(soc_nonsoc),
+  mutate(soc_nonsoc_demean = soc_nonsoc_logit - mean(soc_nonsoc_logit),
          soc_nonsoc_young = soc_nonsoc_demean*younger,
          soc_nonsoc_old = soc_nonsoc_demean*older,
          ones = 1) %>% 
   select(subjID, ones, ismale, tsnr, fd_mean, RT, 
          younger, older,
          soc_nonsoc_young, soc_nonsoc_old)
-write.csv(soc_nonsoc_sens_df, paste(data_dir, "L3_cov_soc_nonsoc_sensitivity.csv", sep = "/"),
+write.csv(soc_nonsoc_sens_df, paste(data_dir, "L3_cov_soc_nonsoc_sensitivity_logit.csv", sep = "/"),
+          row.names = FALSE)
+```
+
+# in_out_sens_df for L3 w/ cov
+```{r}
+in_out_sens_df = in_out_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
+  mutate(in_out_demean = in_out_prob - mean(in_out_prob),
+         in_out_young = in_out_demean*younger,
+         in_out_old = in_out_demean*older,
+         ones = 1) %>% 
+  select(subjID, ones, ismale, tsnr, fd_mean, RT, 
+         younger, older,
+         in_out_young, in_out_old)
+write.csv(in_out_sens_df, paste(data_dir, "L3_cov_in_out_sensitivity_prob.csv", sep = "/"),
+          row.names = FALSE)
+```
+
+# soc_nonsoc_sens_df for L3 w/ cov
+```{r}
+soc_nonsoc_sens_df = soc_nonsoc_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
+  mutate(soc_nonsoc_demean = soc_nonsoc_prob - mean(soc_nonsoc_prob),
+         soc_nonsoc_young = soc_nonsoc_demean*younger,
+         soc_nonsoc_old = soc_nonsoc_demean*older,
+         ones = 1) %>% 
+  select(subjID, ones, ismale, tsnr, fd_mean, RT, 
+         younger, older,
+         soc_nonsoc_young, soc_nonsoc_old)
+write.csv(soc_nonsoc_sens_df, paste(data_dir, "L3_cov_soc_nonsoc_sensitivity_prob.csv", sep = "/"),
           row.names = FALSE)
 ```
