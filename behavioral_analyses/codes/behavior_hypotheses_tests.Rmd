@@ -352,119 +352,30 @@ summary(model1.3_1_fit)
 # summary(model1.3_2_fit)
 ```
 
-# behavior, to continue
-```{r}
-## won't converge
-# beh_full_group3_0_fit = glmer(accept ~ offer * age_bi * group_tri -
-#                                 offer:age_bi:group_tri +
-#                                 # block_fair * age_bi + 
-#                                 block_fair + 
-#                                        (1|participant_id),
-#                                      data = all_trials_df,
-#                                      family = binomial)
-
-## converged, interaction not sig
-beh_full_inout_noage_fit = glmer(accept ~ 
-                                offer * ingroup + 
-                                block_fair + 
-                                       (1|participant_id),
-                                     data = all_trials_df[all_trials_df$human == 1,],
-                                     family = binomial)
-summary(beh_full_inout_noage_fit)
-
-beh_full_group3_0_fit = glmer(accept ~ 
-                                offer * age_bi + 
-                                age_bi * group_tri +
-                                # offer * group_tri +
-                                block_fair + 
-                                       (1|participant_id),
-                                     data = all_trials_df,
-                                     family = binomial)
-summary(beh_full_group3_0_fit)
-
-beh_full_intout_0_fit = glmer(accept ~ 
-                                offer * age_bi + 
-                                age_bi * ingroup +
-                                # offer * ingroup +
-                                block_fair + 
-                                       (1|participant_id),
-                                     data = all_trials_df[all_trials_df$human == 1,],
-                                     family = binomial)
-summary(beh_full_intout_0_fit)
-
-
-beh_full_inout_fit = glmer(accept ~ offer * age_bi + age_bi * ingroup + block_fair + 
-                                       (1|participant_id),
-                                     data = all_trials_df[all_trials_df$human == 1,],
-                                     family = binomial)
-
-summary(beh_full_inout_fit)
-
-beh_full_group3_fit = glmer(accept ~ offer * age_bi + age_bi * group_tri + block_fair + 
-                                       (1|participant_id),
-                                     data = all_trials_df,
-                                     family = binomial)
-
-summary(beh_full_group3_fit)
-```
-
-
-
-
 # prereg 2 analyses
 ## P2 BH3
 BH3) Acceptance rates for an individual offer will vary according to its consistency with other offers in a given block rather than the objective dollar amount of the offer. That is, there will be an offer amount by block interaction, such that acceptance of higher, unfair offers will be greater in unfair blocks, and acceptance of lower, fair offers will be lower in fair blocks, as opposed to participants always rejecting unfair offers and always accepting fair offers.
 ```{r}
 ## full model, won't converge
-# model_P2_3_fit <- glmer(accept ~ offer * group_tri * age_bi * block_fair +
+# model_P2_3_fit <- glmer(accept ~ group_tri * age_bi * block_fair +
 #                      (1|participant_id),
 #                             data = all_trials_df,
 #                             family = binomial)
 
-## won't converge
-# model_P2_3_fit <- glmer(
-#   accept ~ offer * group_tri * age_bi * block_fair - offer:group_tri:age_bi:block_fair +
-#                      (1|participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model_P2_3_fit <- glmer(accept ~ offer * age_bi * block_fair + group_tri +
-#                      (1|participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model_P2_3_fit <- glmer(accept ~ offer * age_bi * block_fair + group_tri * block_fair +
-#                      (1|participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## converged, block main sig
-model_P2_3_fit <- glmer(accept ~ offer * age_bi * block_fair + group_tri -
-                          offer:age_bi:block_fair +
+## converged, positive block effect at computer and young, group_tri2:block_fair p 0.097
+model_P2_3_fit <- glmer(
+  accept ~ group_tri * age_bi * block_fair - group_tri:age_bi:block_fair +
                      (1|participant_id),
                             data = all_trials_df,
                             family = binomial)
-
-
 summary(model_P2_3_fit)
 
-block_effect<-Effect("block_fair", model_P2_3_fit)
-data.frame(block_effect)
-avg_slopes(model=model_P2_3_fit,re.form=NA)
+# block_fair ~ offer colinearity test
+block_offer_cor = glm(block_fair~offer, data = all_trials_df, family = binomial)
+summary(block_offer_cor)
 
-## further simplified model based on sig above, all unnecessary non-sig removed
-model_P2_31_fit <- glmer(accept ~ offer * age_bi + block_fair +
-                     (1|participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-
-summary(model_P2_31_fit)
-
-block_effect<-Effect("block_fair", model_P2_31_fit)
-data.frame(block_effect)
-avg_slopes(model=model_P2_31_fit,re.form=NA)
+block_offer_cor = lm(offer~block_fair, data = all_trials_df)
+summary(block_offer_cor)
 ```
 
 ## P2 NH1A, group_tri
@@ -719,7 +630,6 @@ results_df$p[N_nonNA_results+1] = m_params$p[2]
 results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
 ```
 
-
 ### clean single trial results
 ```{r}
 results_df = results_df %>% 
@@ -781,7 +691,6 @@ results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
 
 ### ant insula main, strict prereg, not sig
 ```{r}
-## converged, no sig vmpfc_corrected * age_bi
 model_P2_NH1_antIns_main_fit <- glmer(accept ~ anteriorinsula_corrected +
                                         (1|participant_id),
                                       data = all_trials_df,
@@ -799,7 +708,6 @@ results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
 
 ### dacc * age, strict prereg
 ```{r}
-## converged, no sig dacc_corrected * age_bi
 model_P2_NH1_dacc_age_fit <- glmer(accept ~ dacc_corrected * age_bi +
                                      (1|participant_id),
                                    data = all_trials_df,
@@ -817,7 +725,6 @@ results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
 
 ### dacc * group, strict prereg, not sig
 ```{r}
-## converged, no sig dacc_corrected * age_bi
 model_P2_NH1_dacc_group_fit <- glmer(accept ~ dacc_corrected * human +
                                        (1|participant_id),
                                      data = all_trials_df,
@@ -835,7 +742,6 @@ results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
 
 ### dacc main, strict prereg, not sig
 ```{r}
-## converged, no sig dacc_corrected * age_bi
 model_P2_NH1_dacc_main_fit <- glmer(accept ~ dacc_corrected +
                                       (1|participant_id),
                                     data = all_trials_df,
@@ -853,7 +759,6 @@ results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
 
 ### VS * age, strict prereg, sig, not sig after correction
 ```{r}
-## converged, no sig VS_corrected * age_bi
 model_P2_NH1_VS_age_fit <- glmer(accept ~ VS_corrected * age_bi +
                                    (1|participant_id),
                                  data = all_trials_df,
@@ -871,7 +776,6 @@ results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
 
 ### VS * group, strict prereg, sig
 ```{r}
-## converged, no sig VS_corrected * age_bi
 model_P2_NH1_VS_group_fit <- glmer(accept ~ VS_corrected * human +
                                      (1|participant_id),
                                    data = all_trials_df,
@@ -889,7 +793,6 @@ results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
 
 ### VS main, strict prereg, sig
 ```{r}
-## converged, no sig VS_corrected * age_bi
 model_P2_NH1_VS_main_fit <- glmer(accept ~ VS_corrected +
                                     (1|participant_id),
                                   data = all_trials_df,
@@ -907,7 +810,6 @@ results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
 
 ### vmpfc * age, strict prereg, sig
 ```{r}
-## converged, no sig vmpfc_corrected * age_bi
 model_P2_NH1_vmpfc_age_fit <- glmer(accept ~ vmpfc_corrected * age_bi +
                                       (1|participant_id),
                                     data = all_trials_df,
@@ -925,7 +827,6 @@ results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
 
 ### vmpfc * group, strict prereg, not sig
 ```{r}
-## converged, no sig vmpfc_corrected * age_bi
 model_P2_NH1_vmpfc_group_fit <- glmer(accept ~ vmpfc_corrected * human +
                                         (1|participant_id),
                                       data = all_trials_df,
@@ -973,35 +874,46 @@ results_df = results_df %>%
 
 
 # single trial exploratory
-## accept ~ brain * block
+## accept ~ brain * offer * age_bi
 ```{r}
 ## not sig
-antIns_block_fit <- glmer(accept ~ anteriorinsula_corrected * block_fair +
-                                        (1|participant_id),
-                                      data = all_trials_df,
-                                      family = binomial)
-summary(antIns_block_fit)
-
-#@ not sig
-VS_block_fit <- glmer(accept ~ VS_corrected * block_fair +
-                                        (1|participant_id),
-                                      data = all_trials_df,
-                                      family = binomial)
-summary(VS_block_fit)
-
-## not sig
-dacc_block_fit <- glmer(accept ~ dacc_corrected * block_fair +
-                                        (1|participant_id),
-                                      data = all_trials_df,
-                                      family = binomial)
-summary(dacc_block_fit)
+antIns_offer_fit <- glmer(accept ~ anteriorinsula_corrected * offer * age_bi +
+                            (1|participant_id),
+                          data = all_trials_df,
+                          family = binomial)
+## brain * age sig, offer * age sig
+antIns_offer_fit <- glmer(accept ~ anteriorinsula_corrected * offer * age_bi -
+                            anteriorinsula_corrected:offer:age_bi +
+                            (1|participant_id),
+                          data = all_trials_df,
+                          family = binomial)
+summary(antIns_offer_fit)
 
 ## not sig
-vmpfc_block_fit <- glmer(accept ~ vmpfc_corrected * block_fair +
-                                        (1|participant_id),
-                                      data = all_trials_df,
-                                      family = binomial)
-summary(vmpfc_block_fit)
+VS_offer_fit <- glmer(accept ~ VS_corrected * offer * age_bi +
+                        (1|participant_id),
+                      data = all_trials_df,
+                      family = binomial)
+VS_offer_fit <- glmer(accept ~ VS_corrected * offer * age_bi -
+                        VS_corrected:offer:age_bi +
+                        (1|participant_id),
+                      data = all_trials_df,
+                      family = binomial)
+summary(VS_offer_fit)
+
+## not sig
+dacc_offer_fit <- glmer(accept ~ dacc_corrected * offer +
+                          (1|participant_id),
+                        data = all_trials_df,
+                        family = binomial)
+summary(dacc_offer_fit)
+
+## not sig
+vmpfc_offer_fit <- glmer(accept ~ vmpfc_corrected * offer +
+                           (1|participant_id),
+                         data = all_trials_df,
+                         family = binomial)
+summary(vmpfc_offer_fit)
 ```
 
 ## brain ~ offer + group + block + accept
@@ -1075,7 +987,7 @@ summary(VS_dacc_fit)
 ```{r}
 all_trials_df = na.omit(all_trials_df)
 
-beh_full_fit = glmer(accept ~ offer * age_bi + block_fair + 
+beh_full_fit = glmer(accept ~ offer * age_bi + 
                                        (1|participant_id),
                                      data = all_trials_df,
                                      family = binomial)
@@ -1096,7 +1008,7 @@ colnames(brain_behavior_df) = brain_behavior_cols
 ### VS,offer sig
 ```{r}
 ## full model, converged
-# beh_VS_full_0_fit = glmer(accept ~ offer * age_bi + block_fair + 
+# beh_VS_full_0_fit = glmer(accept ~ offer * age_bi +
 #                             VS_corrected * offer * age_bi + 
 #                             VS_corrected * block_fair +
 #                             (1|participant_id),
@@ -1106,7 +1018,7 @@ colnames(brain_behavior_df) = brain_behavior_cols
 # summary(beh_VS_full_0_fit)
 
 ## reduced model, no 3-way interaction
-# beh_VS_full_1_fit = glmer(accept ~ offer * age_bi + block_fair + 
+# beh_VS_full_1_fit = glmer(accept ~ offer * age_bi +
 #                             VS_corrected * offer * age_bi -
 #                             VS_corrected:offer:age_bi +
 #                             VS_corrected * block_fair +
@@ -1119,7 +1031,7 @@ colnames(brain_behavior_df) = brain_behavior_cols
 # anova(beh_VS_full_0_fit, beh_VS_full_1_fit, refit = T)
 
 ## reduced model, brain * age
-beh_VS_full_2_fit = glmer(accept ~ offer * age_bi + block_fair + 
+beh_VS_full_2_fit = glmer(accept ~ offer * age_bi +
                             VS_corrected * age_bi +
                             (1|participant_id),
                           data = all_trials_df,
@@ -1144,7 +1056,7 @@ brain_behavior_df$model_p[N_nonNA_results+1] =
 ```
 ### dacc, not sig but close
 ```{r}
-# beh_dacc_full_0_fit = glmer(accept ~ offer * age_bi + block_fair + 
+# beh_dacc_full_0_fit = glmer(accept ~ offer * age_bi +
 #                           dacc_corrected * offer * age_bi + dacc_corrected * block_fair +
 #                           (1|participant_id),
 #                         data = all_trials_df,
@@ -1152,7 +1064,7 @@ brain_behavior_df$model_p[N_nonNA_results+1] =
 # 
 # summary(beh_dacc_full_0_fit)
 
-# beh_dacc_full_1_fit = glmer(accept ~ offer * age_bi + block_fair + 
+# beh_dacc_full_1_fit = glmer(accept ~ offer * age_bi +
 #                           dacc_corrected * offer * age_bi - 
 #                             dacc_corrected:offer:age_bi +
 #                             dacc_corrected * block_fair +
@@ -1186,7 +1098,7 @@ brain_behavior_df$model_p[N_nonNA_results+1] =
 
 ### vmpfc, not sig
 ```{r}
-# beh_vmpfc_full_0_fit = glmer(accept ~ offer * age_bi + block_fair + 
+# beh_vmpfc_full_0_fit = glmer(accept ~ offer * age_bi +
 #                             vmpfc_corrected * offer * age_bi + vmpfc_corrected * block_fair +
 #                             (1|participant_id),
 #                           data = all_trials_df,
@@ -1194,7 +1106,7 @@ brain_behavior_df$model_p[N_nonNA_results+1] =
 # 
 # summary(beh_vmpfc_full_0_fit)
 
-# beh_vmpfc_full_1_fit = glmer(accept ~ offer * age_bi + block_fair + 
+# beh_vmpfc_full_1_fit = glmer(accept ~ offer * age_bi +
 #                             vmpfc_corrected * offer * age_bi - 
 #                               vmpfc_corrected:offer:age_bi +
 #                               vmpfc_corrected * block_fair +
@@ -1202,7 +1114,7 @@ brain_behavior_df$model_p[N_nonNA_results+1] =
 #                           data = all_trials_df,
 #                           family = binomial)
 
-beh_vmpfc_full_2_fit = glmer(accept ~ offer * age_bi + block_fair + 
+beh_vmpfc_full_2_fit = glmer(accept ~ offer * age_bi +
                             vmpfc_corrected * age_bi - 
                             (1|participant_id),
                           data = all_trials_df,
@@ -1238,7 +1150,7 @@ brain_behavior_df = brain_behavior_df %>%
 ### anteriorinsula_corrected, very sig
 ```{r}
 ## full model won't converge
-# beh_antIns_full_0_fit = glmer(accept ~ offer * age_bi + block_fair + 
+# beh_antIns_full_0_fit = glmer(accept ~ offer * age_bi +
 #                             anteriorinsula_corrected * offer * age_bi +
 #                               anteriorinsula_corrected * block_fair +
 #                             (1|participant_id),
@@ -1247,7 +1159,7 @@ brain_behavior_df = brain_behavior_df %>%
 # allFit(beh_antIns_full_0_fit)
 
 ## reduced model based on purpose of test - see potentional interactions between brain and other non-brain factors
-# beh_antIns_full_1_fit = glmer(accept ~ offer * age_bi + block_fair + 
+# beh_antIns_full_1_fit = glmer(accept ~ offer * age_bi +
 #                             anteriorinsula_corrected * offer * age_bi -
 #                               anteriorinsula_corrected:offer:age_bi +
 #                               anteriorinsula_corrected * block_fair +
@@ -1289,7 +1201,7 @@ brain_behavior_df$model_p[N_nonNA_results+1] =
 
 ### main brain only model
 ```{r}
-beh_VS_full_fit = glmer(accept ~ offer * age_bi + block_fair + group_tri + 
+beh_VS_full_fit = glmer(accept ~ offer * age_bi +group_tri + 
                        VS_corrected + 
                                        (1|participant_id),
                                      data = all_trials_df,
@@ -1297,19 +1209,19 @@ beh_VS_full_fit = glmer(accept ~ offer * age_bi + block_fair + group_tri +
 
 # summary(beh_VS_full_fit)
 
-beh_vmpfc_full_fit = glmer(accept ~ offer * age_bi + block_fair + group_tri + 
+beh_vmpfc_full_fit = glmer(accept ~ offer * age_bi +group_tri + 
                        vmpfc_corrected + 
                                        (1|participant_id),
                                      data = all_trials_df,
                                      family = binomial)
 
-beh_antIns_full_fit = glmer(accept ~ offer * age_bi + block_fair + group_tri + 
+beh_antIns_full_fit = glmer(accept ~ offer * age_bi +group_tri + 
                        anteriorinsula_corrected + 
                          (1|participant_id),
                                      data = all_trials_df,
                                      family = binomial)
 
-beh_dacc_full_fit = glmer(accept ~ offer * age_bi + block_fair + group_tri + 
+beh_dacc_full_fit = glmer(accept ~ offer * age_bi +group_tri + 
                        dacc_corrected + 
                          (1|participant_id),
                                      data = all_trials_df,

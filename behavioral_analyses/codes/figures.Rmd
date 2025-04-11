@@ -157,15 +157,6 @@ w = 5
 h = 4
 ```
 
-# block_fair ~ offer colinearity test
-```{r}
-block_offer_cor = glm(block_fair~offer, data = all_trials_df, family = binomial)
-summary(block_offer_cor)
-
-block_offer_cor = lm(offer~block_fair, data = all_trials_df)
-summary(block_offer_cor)
-```
-
 
 # all, accept ~ offer * age
 ## model, explore
