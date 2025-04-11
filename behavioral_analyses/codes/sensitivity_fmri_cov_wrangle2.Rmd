@@ -88,8 +88,9 @@ indiv_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header 
 
 all_trials_df = merge(all_trials_df, indiv_df, by.x = "subjID", by.y = "participant_id")
 
-sublist_final = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE) %>% 
-  dplyr::select(subjID)
+L3_47_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE)
+
+sublist_final = L3_47_df %>% dplyr::select(subjID)
 
 all_trials_df = all_trials_df[all_trials_df$subjID %in% sublist_final$subjID,] 
 
@@ -108,11 +109,12 @@ all_trials_human_df = all_trials_df[all_trials_df$human == 1,]
 # sensitivity
 ## human only
 ```{r}
+## ingroup offer sensitivity
 ingroup_df = all_trials_human_df[all_trials_human_df$ingroup == 1,]
-ingroup_mlm_1 = glmer(accept ~ offer + (1+offer|subjID), 
+ingroup_mlm = glmer(accept ~ offer + (1+offer|subjID), 
                  data = ingroup_df, 
                  family = binomial)
-summary(ingroup_mlm_1)
+summary(ingroup_mlm)
 
 # ingroup_df = all_trials_human_df[all_trials_human_df$ingroup == 1,]
 # ingroup_mlm_2 = glmer(accept ~ offer + (1+offer||subjID), 
@@ -127,11 +129,12 @@ ingroup_random_effects <- ranef(ingroup_mlm, condVar = FALSE) %>%
          subjID = grp) %>% 
   dplyr::select(subjID, ingroup)
 
+## outgroup offer sensitivity
 outgroup_df = all_trials_human_df[all_trials_human_df$ingroup == 0,]
-outgroup_mlm = glmer(accept ~ offer + (1+offer||subjID), 
+outgroup_mlm = glmer(accept ~ offer + (1+offer|subjID), 
                     data = outgroup_df, 
                     family = binomial)
-summary(outgroup_mlm)
+# summary(outgroup_mlm)
 
 outgroup_random_effects <- ranef(outgroup_mlm, condVar = FALSE) %>% 
   as.data.frame() %>% 
@@ -139,20 +142,44 @@ outgroup_random_effects <- ranef(outgroup_mlm, condVar = FALSE) %>%
          subjID = grp) %>% 
   dplyr::select(subjID, outgroup)
 
+## in-out
 in_out_rand_df = merge(ingroup_random_effects, outgroup_random_effects, by = "subjID") %>% 
   mutate(in_out = ingroup - outgroup) %>% 
   dplyr::select(subjID, in_out)
 ```
 ## computer
 ```{r}
-all_mlm = glmer(accept ~ offer * human +
-                  (1+offer * human||subjID), 
-                 data = all_trials_df, 
-                 family = binomial)
-summary(all_mlm)
+## computer offer sensitivity
+computer_df = all_trials_human_df[all_trials_df$human == 0,]
+computer_mlm = glmer(accept ~ offer + (1+offer|subjID), 
+                     data = computer_df, 
+                     family = binomial)
+# summary(computer_mlm)
+
+computer_random_effects <- ranef(computer_mlm, condVar = FALSE) %>% 
+  as.data.frame() %>% 
+  mutate(computer = condval,
+         subjID = grp) %>% 
+  dplyr::select(subjID, computer)
+
+## human offer sensitivity
+human_df = all_trials_human_df[all_trials_df$human == 1,]
+human_mlm = glmer(accept ~ offer + (1+offer|subjID), 
+                     data = human_df, 
+                     family = binomial)
+# summary(human_mlm)
+
+human_random_effects <- ranef(human_mlm, condVar = FALSE) %>% 
+  as.data.frame() %>% 
+  mutate(human = condval,
+         subjID = grp) %>% 
+  dplyr::select(subjID, human)
+
+## soc-nonsoc
+soc_nonsoc_rand_df = merge(computer_random_effects, human_random_effects, by = "subjID") %>% 
+  mutate(soc_nonsoc = human - computer) %>% 
+  dplyr::select(subjID, soc_nonsoc)
 ```
-
-
 
 # human, norm (pause for now)
 ```{r}
@@ -171,287 +198,32 @@ summary(all_mlm)
 ```
 
 
+
+
+# in_out_sens_df for L3 w/ cov
 ```{r}
-for (sub_s in 1:nrow(sublist_final)) {
-  sub_s = 3
-  subID_s = sublist_final$subjID[sub_s]
-  print(subID_s)
-  in_out_fair_sensitivity_norm_df$subjID[sub_s] = subID_s
-  
-  df_s = all_trials_human_df[all_trials_human_df$subjID == subID_s,] %>% 
-    dplyr::select(accept, offer, ingroup)
-  df_s_in = df_s[df_s$ingroup == 1,]
-  df_s_out = df_s[df_s$ingroup == 0,]
-  
-  # sens_fit = glm(accept ~ offer * ingroup, 
-  #                data = df_s, 
-  #                family = binomial)
-  # summary(sens_fit)
-  
-  print("in")
-  if (sum(df_s_in$accept == nrow(df_s_in))) {
-    sens_in_s = 0 # slope of probability curve is zero
-  } else {
-  in_fit = glm(accept ~ offer , 
-                 data = df_s_in, 
-                 family = binomial)
-  # summary(in_fit)
-  in_params = model_parameters(in_fit, effects = "fixed")
-  in_sens = in_params$Coefficient[in_params$Parameter == "offer"]
-  }
-  
-  print("out")
-  out_fit = glm(accept ~ offer , 
-             data = df_s_out, 
-             family = binomial)
-  # summary(out_fit)
-
-  print("norm")
-  norm_fit = glm(accept ~ ingroup, 
-                 data = df_s, 
-                 family = binomial)
-  # summary(norm_fit)
-  
-  in_params = model_parameters(in_fit, effects = "fixed")
-  in_sens = in_params$Coefficient[in_params$Parameter == "offer"]
-  
-  out_params = model_parameters(out_fit, effects = "fixed")
-  out_sens = out_params$Coefficient[out_params$Parameter == "offer"]
-  
-  norm_params = model_parameters(norm_fit, effects = "fixed")
-  in_out_norm_s = norm_params$Coefficient[norm_params$Parameter == "ingroup1"]
-  
-  in_out_fair_sensitivity_norm_df$subjID[sub_s] = subID_s
-  in_out_fair_sensitivity_norm_df$in_out_sens[sub_s] = in_sens - out_sens
-  in_out_fair_sensitivity_norm_df$in_out_norm[sub_s] = in_out_norm_s
-}
-
+in_out_sens_df = in_out_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
+  mutate(in_out_demean = in_out - mean(in_out),
+         in_out_young = in_out_demean*younger,
+         in_out_old = in_out_demean*older,
+         ones = 1) %>% 
+select(subjID, ones, ismale, tsnr, fd_mean, RT, 
+       younger, older,
+       in_out_young, in_out_old)
+write.csv(in_out_sens_df, paste(data_dir, "L3_cov_in_out_sensitivity.csv", sep = "/"),
+          row.names = FALSE)
 ```
 
-
-
-
-# combine data frame using the subject order in L3_plain
-## rejection rate difference between conditions
+# soc_nonsoc_sens_df for L3 w/ cov
 ```{r}
-rej_rate_L3_df = L3_plain_df
-rej_colnames = colnames(rej_rate_df)[-1]
-rej_rate_L3_df[, c("age", rej_colnames)] = NA
-for (i in 1:nrow(L3_plain_df)) {
-  sub_i = L3_plain_df$subjID[i]
-  rej_rate_L3_df[i,rej_colnames] = rej_rate_df[rej_rate_df$subjID == sub_i, rej_colnames]
-  rej_rate_L3_df$age[i] = participant_check_df$age[participant_check_df$participant_id == sub_i]
-}
-
-rej_rate_L3_df = rej_rate_L3_df %>% 
-  mutate(
-    # age_mean = age - mean(age),
-         young = case_when(age <=36 ~ 1,
-                           age > 36 ~ 0),
-         old = case_when(age <=36 ~ 0,
-                           age > 36 ~ 1),
-         in_out = ingroup_rej_rate - outgroup_rej_rate,
-         in_out_demean = in_out - mean(in_out),
-         in_computer = ingroup_rej_rate - computer_rej_rate,
-         in_computer_demean = in_computer - mean(in_computer),
-         out_computer = outgroup_rej_rate - computer_rej_rate,
-         out_computer_demean = out_computer - mean(out_computer),
-         soc_nonsoc = 0.5 * (ingroup_rej_rate + outgroup_rej_rate) - computer_rej_rate,
-         soc_nonsoc_demean = soc_nonsoc - mean(soc_nonsoc)
-  )
-```
-
-### in_out_age_bi_df
-```{r}
-in_out_age_bi_df = rej_rate_L3_df %>% 
-  mutate(in_out_young = in_out_demean*young,
-         in_out_old = in_out_demean*old) %>% 
-  select(subjID, ismale, tsnr, fd_mean, RT, 
-         young, old,
-         in_out_young, in_out_old)
-# write.csv(in_out_age_bi_df, paste(data_dir, "in_out_age_rej.csv", sep = "/"),
-#           row.names = FALSE)
-```
-
-### soc_nonsoc_age_bi_df
-```{r}
-soc_nonsoc_age_bi_df = rej_rate_L3_df %>% 
-  mutate(soc_nonsoc_young = soc_nonsoc_demean*young,
-         soc_nonsoc_old = soc_nonsoc_demean*old) %>% 
-  select(subjID, ismale, tsnr, fd_mean, RT, 
-         young, old,
+soc_nonsoc_sens_df = soc_nonsoc_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
+  mutate(soc_nonsoc_demean = soc_nonsoc - mean(soc_nonsoc),
+         soc_nonsoc_young = soc_nonsoc_demean*younger,
+         soc_nonsoc_old = soc_nonsoc_demean*older,
+         ones = 1) %>% 
+  select(subjID, ones, ismale, tsnr, fd_mean, RT, 
+         younger, older,
          soc_nonsoc_young, soc_nonsoc_old)
-# write.csv(soc_nonsoc_age_bi_df, paste(data_dir, "soc_nonsoc_age_rej.csv", sep = "/"),
-#           row.names = FALSE)
-```
-
-## rejction rate per offer size based fairness sensitivity and norm
-```{r}
-reject_fairness_cols = c("subjID", "partner", "offer", "rejection")
-reject_fairness_df = data.frame(matrix(nrow = 0, ncol = length(reject_fairness_cols)))
-colnames(reject_fairness_df) = reject_fairness_cols
-
-partner = c("computer", "ingroup", "outgroup")
-partner_coding_human = c(0, 1, 1)
-partner_coding_group = c(0, 1, 0)
-
-for (i in 1:nrow(L3_plain_df)) {
-  # i = 1
-  sub_i = L3_plain_df$subjID[i]
-  all_i = all_trials_df[all_trials_df$subjID == sub_i,]
-  for (p in 1:length(partner)) {
-    # p = 1
-    partner_p = partner[p]
-    partner_human = partner_coding_human[p]
-    partner_group = partner_coding_group[p]
-    all_i_p = all_i[all_i$human == partner_human & all_i$ingroup == partner_group,]
-    offer_unique = sort(unique(all_i_p$offer))
-    for (f in 1:length(offer_unique)) {
-      # f = 1
-      offer_f = offer_unique[f]
-      all_i_p_f = all_i_p[all_i_p$offer == offer_f,]
-      sum_f = nrow(all_i_p_f)
-      reject_f = nrow(all_i_p_f) - sum(all_i_p_f$accept)
-      nrow_df = nrow(reject_fairness_df)
-      reject_fairness_df[nrow_df+1,] = 
-        c(sub_i, partner_p, offer_f, reject_f/sum_f)
-    }
-  } 
-}
-
-reject_fairness_df <- reject_fairness_df %>%
-  mutate(
-    subjID = as.factor(subjID),
-    partner = as.factor(partner),
-    offer = as.numeric(offer) - 5, # center offer size to 5 for interpretation of intercept as a proxy of individual norm
-    rejection = as.numeric(rejection),
-  )
-```
-
-### individual slope (sensitivity) and intercept (norm)
-```{r}
-fair_sense_cols = reject_fairness_cols = c("subjID", "partner", "slope", "intercept_5", "rejection_average")
-fair_sense_df = data.frame(matrix(nrow = 0, ncol = length(fair_sense_cols)))
-colnames(fair_sense_df) = fair_sense_cols
-
-for (s in 1:nrow(L3_plain_df)) {
-  # s = 5
-  sub_s = L3_plain_df$subjID[s]
-  df_s = reject_fairness_df[reject_fairness_df$subjID == sub_s,]
-  for (ps in 1:length(partner)) {
-    # ps = 2
-    partner_ps = partner[ps]
-    df_ps = df_s[df_s$partner == partner_ps,]
-    # check if a sub reject or accept all
-    vari_check_ps = mean(df_ps$rejection)
-    
-    model_ps = lm(rejection~offer, data = df_ps)
-    # summary(model_ps)
-    slope_ps <- model_ps$coefficients[2]
-    if (vari_check_ps == 0) { # accept all
-      intercept_5_ps <- 0
-    } else if(vari_check_ps == 1) {
-      intercept_5_ps <- 20
-    } else {
-      intercept_5_ps <- model_ps$coefficients[1]
-    }
-    nrow_ps = nrow(fair_sense_df)
-    fair_sense_df[nrow_ps+1,] = c(sub_s, partner_ps, slope_ps, intercept_5_ps, vari_check_ps)
-  }
-}
-
-fair_sense_df = fair_sense_df %>% 
-  mutate(slope = as.numeric(slope),
-         intercept_5 = as.numeric(intercept_5))
-
-slope_fair_sense_df = fair_sense_df[,c("subjID", "partner", "slope")]
-slope_fair_sense_wide_df <- slope_fair_sense_df %>%
-  pivot_wider(names_from = partner, values_from = slope)
-
-intercept_5_fair_sense_df = fair_sense_df[,c("subjID", "partner", "intercept_5")]
-intercept_5_fair_sense_wide_df <- intercept_5_fair_sense_df %>%
-  pivot_wider(names_from = partner, values_from = intercept_5)
-
-sensitivity_df = merge(L3_plain_df, slope_fair_sense_wide_df, by.x = "subjID")
-norm_df =   merge(L3_plain_df, intercept_5_fair_sense_wide_df, by.x = "subjID")
-```
-
-### sensitivity (slope) for L3 cov
-```{r}
-sensitivity_df = sensitivity_df %>% 
-  mutate(
-    # age_mean = age - mean(age),
-    young = younger,
-    old = older,
-    in_out = ingroup - outgroup,
-    in_out_demean = in_out - mean(in_out),
-    soc_nonsoc = 0.5 * (ingroup + outgroup) - computer,
-    soc_nonsoc_demean = soc_nonsoc - mean(soc_nonsoc)
-  )
-```
-
-#### in_out_age_bi_df (intercept)
-```{r}
-in_out_age_bi_df = sensitivity_df %>% 
-  mutate(in_out_young = in_out_demean*young,
-         in_out_old = in_out_demean*old) %>% 
-  select(subjID, ismale, tsnr, fd_mean, RT, 
-         young, old,
-         in_out_young, in_out_old)
-write.csv(in_out_age_bi_df, paste(data_dir, "in_out_age_sensitivity.csv", sep = "/"),
+write.csv(soc_nonsoc_sens_df, paste(data_dir, "L3_cov_soc_nonsoc_sensitivity.csv", sep = "/"),
           row.names = FALSE)
 ```
-
-#### soc_nonsoc_age_bi_df
-```{r}
-soc_nonsoc_age_bi_df = sensitivity_df %>% 
-  mutate(soc_nonsoc_young = soc_nonsoc_demean*young,
-         soc_nonsoc_old = soc_nonsoc_demean*old) %>% 
-  select(subjID, ismale, tsnr, fd_mean, RT, 
-         young, old,
-         soc_nonsoc_young, soc_nonsoc_old)
-write.csv(soc_nonsoc_age_bi_df, paste(data_dir, "soc_nonsoc_age_sensitivity.csv", sep = "/"),
-          row.names = FALSE)
-```
-
-### norm (intercept) for L3 cov
-```{r}
-norm_df = norm_df %>% 
-  mutate(
-    # age_mean = age - mean(age),
-    young = younger,
-    old = older,
-    in_out = ingroup - outgroup,
-    in_out_demean = in_out - mean(in_out),
-    soc_nonsoc = 0.5 * (ingroup + outgroup) - computer,
-    soc_nonsoc_demean = soc_nonsoc - mean(soc_nonsoc)
-  )
-```
-
-#### in_out_age_bi_df
-```{r}
-in_out_age_bi_df = norm_df %>% 
-  mutate(in_out_young = in_out_demean*young,
-         in_out_old = in_out_demean*old) %>% 
-  select(subjID, ismale, tsnr, fd_mean, RT, 
-         young, old,
-         in_out_young, in_out_old)
-write.csv(in_out_age_bi_df, paste(data_dir, "in_out_age_norm.csv", sep = "/"),
-          row.names = FALSE)
-```
-
-#### soc_nonsoc_age_bi_df
-```{r}
-soc_nonsoc_age_bi_df = norm_df %>% 
-  mutate(soc_nonsoc_young = soc_nonsoc_demean*young,
-         soc_nonsoc_old = soc_nonsoc_demean*old) %>% 
-  select(subjID, ismale, tsnr, fd_mean, RT, 
-         young, old,
-         soc_nonsoc_young, soc_nonsoc_old)
-write.csv(soc_nonsoc_age_bi_df, paste(data_dir, "soc_nonsoc_age_norm.csv", sep = "/"),
-          row.names = FALSE)
-```
-
-## logistic regression based sensitivity and norm
-### sensitivity (slope)
-### norm (intercept)
