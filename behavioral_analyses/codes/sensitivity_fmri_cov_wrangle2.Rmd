@@ -124,7 +124,8 @@ summary(ingroup_mlm)
 # anova(ingroup_mlm_1, ingroup_mlm_2, refit = F)
 
 ingroup_random_effects <- ranef(ingroup_mlm, condVar = FALSE) %>% 
-  as.data.frame() %>% 
+  as.data.frame()
+ingroup_random_effects = ingroup_random_effects[ingroup_random_effects$term == "offer",] %>% 
   mutate(ingroup = condval,
          subjID = grp) %>% 
   dplyr::select(subjID, ingroup)
@@ -137,7 +138,8 @@ outgroup_mlm = glmer(accept ~ offer + (1+offer|subjID),
 # summary(outgroup_mlm)
 
 outgroup_random_effects <- ranef(outgroup_mlm, condVar = FALSE) %>% 
-  as.data.frame() %>% 
+  as.data.frame()
+outgroup_random_effects = outgroup_random_effects[outgroup_random_effects$term == "offer",] %>% 
   mutate(outgroup = condval,
          subjID = grp) %>% 
   dplyr::select(subjID, outgroup)
@@ -147,6 +149,7 @@ in_out_rand_df = merge(ingroup_random_effects, outgroup_random_effects, by = "su
   mutate(in_out = ingroup - outgroup) %>% 
   dplyr::select(subjID, in_out)
 ```
+
 ## computer
 ```{r}
 ## computer offer sensitivity
@@ -157,7 +160,8 @@ computer_mlm = glmer(accept ~ offer + (1+offer|subjID),
 # summary(computer_mlm)
 
 computer_random_effects <- ranef(computer_mlm, condVar = FALSE) %>% 
-  as.data.frame() %>% 
+  as.data.frame()
+computer_random_effects = computer_random_effects[computer_random_effects$term == "offer",] %>% 
   mutate(computer = condval,
          subjID = grp) %>% 
   dplyr::select(subjID, computer)
@@ -170,7 +174,8 @@ human_mlm = glmer(accept ~ offer + (1+offer|subjID),
 # summary(human_mlm)
 
 human_random_effects <- ranef(human_mlm, condVar = FALSE) %>% 
-  as.data.frame() %>% 
+  as.data.frame()
+human_random_effects = human_random_effects[human_random_effects$term == "offer",] %>% 
   mutate(human = condval,
          subjID = grp) %>% 
   dplyr::select(subjID, human)
