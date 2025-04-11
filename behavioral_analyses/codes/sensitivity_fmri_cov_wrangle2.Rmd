@@ -105,17 +105,75 @@ all_trials_human_df = all_trials_df[all_trials_df$human == 1,]
 
 ```
 
-# human only
+# sensitivity
+## human only
 ```{r}
-in_out_fair_sensitivity_norm_cols = c("subjID", "in_out_sens", "in_out_norm")
-in_out_fair_sensitivity_norm_df = data.frame(matrix(nrow = nrow(sublist_final),
-                                                 ncol = length(in_out_fair_sensitivity_norm_cols)))
-colnames(in_out_fair_sensitivity_norm_df) = in_out_fair_sensitivity_norm_cols
+ingroup_df = all_trials_human_df[all_trials_human_df$ingroup == 1,]
+ingroup_mlm_1 = glmer(accept ~ offer + (1+offer|subjID), 
+                 data = ingroup_df, 
+                 family = binomial)
+summary(ingroup_mlm_1)
+
+# ingroup_df = all_trials_human_df[all_trials_human_df$ingroup == 1,]
+# ingroup_mlm_2 = glmer(accept ~ offer + (1+offer||subjID), 
+#                  data = ingroup_df, 
+#                  family = binomial)
+# summary(ingroup_mlm_2)
+# anova(ingroup_mlm_1, ingroup_mlm_2, refit = F)
+
+ingroup_random_effects <- ranef(ingroup_mlm, condVar = FALSE) %>% 
+  as.data.frame() %>% 
+  mutate(ingroup = condval,
+         subjID = grp) %>% 
+  dplyr::select(subjID, ingroup)
+
+outgroup_df = all_trials_human_df[all_trials_human_df$ingroup == 0,]
+outgroup_mlm = glmer(accept ~ offer + (1+offer||subjID), 
+                    data = outgroup_df, 
+                    family = binomial)
+summary(outgroup_mlm)
+
+outgroup_random_effects <- ranef(outgroup_mlm, condVar = FALSE) %>% 
+  as.data.frame() %>% 
+  mutate(outgroup = condval,
+         subjID = grp) %>% 
+  dplyr::select(subjID, outgroup)
+
+in_out_rand_df = merge(ingroup_random_effects, outgroup_random_effects, by = "subjID") %>% 
+  mutate(in_out = ingroup - outgroup) %>% 
+  dplyr::select(subjID, in_out)
 ```
+## computer
+```{r}
+all_mlm = glmer(accept ~ offer * human +
+                  (1+offer * human||subjID), 
+                 data = all_trials_df, 
+                 family = binomial)
+summary(all_mlm)
+```
+
+
+
+# human, norm (pause for now)
+```{r}
+# norm_fit_1 = glmer(accept ~ ingroup +
+#                    (1+ingroup|subjID) , 
+#                  data = all_trials_human_df, 
+#                  family = binomial)
+# summary(norm_fit_1)
+# 
+# norm_fit_2 = glmer(accept ~ ingroup +
+#                    (1+ingroup||subjID) , 
+#                  data = all_trials_human_df, 
+#                  family = binomial)
+# summary(norm_fit_2)
+# anova(norm_fit_1, norm_fit_2, refit = F)
+```
+
 
 ```{r}
 for (sub_s in 1:nrow(sublist_final)) {
-  sub_s = 9
+  sub_s = 3
   subID_s = sublist_final$subjID[sub_s]
   print(subID_s)
   in_out_fair_sensitivity_norm_df$subjID[sub_s] = subID_s
@@ -131,10 +189,16 @@ for (sub_s in 1:nrow(sublist_final)) {
   # summary(sens_fit)
   
   print("in")
+  if (sum(df_s_in$accept == nrow(df_s_in))) {
+    sens_in_s = 0 # slope of probability curve is zero
+  } else {
   in_fit = glm(accept ~ offer , 
                  data = df_s_in, 
                  family = binomial)
   # summary(in_fit)
+  in_params = model_parameters(in_fit, effects = "fixed")
+  in_sens = in_params$Coefficient[in_params$Parameter == "offer"]
+  }
   
   print("out")
   out_fit = glm(accept ~ offer , 
