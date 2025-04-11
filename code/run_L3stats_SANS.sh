@@ -18,8 +18,8 @@ for analysis in act nppi-dmn nppi-ecn; do #act; do # nppi-dmn nppi-ecn; do
 	# "1 comp" "2 comp_p" "3 in" "4 in_p" "5 out" "6 out_p"
 	# "7 in_p-out_p" "8 soc_p-nonsoc_p" "9 in-out" "10 soc-nonsoc" "11 phys"
 #	for copeinfo in "7 in_p-out_p" "8 soc_p-nonsoc_p" "9 in-out" "10 soc-nonsoc" "11 phys"; do
-	for copeinfo in "7 in_p-out_p" "9 in-out" "11 phys"; do
-#	for copeinfo in "8 soc_p-nonsoc_p"; do
+#	for copeinfo in "7 in_p-out_p" "9 in-out"; do
+	for copeinfo in "8 soc_p-nonsoc_p" "10 soc-nonsoc"; do
 
 		# split copeinfo variable
 		set -- $copeinfo
