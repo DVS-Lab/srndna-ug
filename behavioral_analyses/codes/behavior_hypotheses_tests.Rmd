@@ -193,7 +193,7 @@ Result: only offer/fairness is related to acceptance
 #                             data = all_trials_df,
 #                             family = binomial)
 
-## converged, SIG offer:age_bi effect, NO no offer * human effect or age * human
+## converged, SIG offer:age_bi effect, NO offer * human effect or age * human
 model1.1_2_fit <- glmer(accept ~ offer * human * age_bi + sex - offer : human : age_bi +
                      (1 | participant_id),
                             data = all_trials_df,
@@ -258,7 +258,7 @@ H1.2: Within social conditions, younger adults will show increased rates of acce
 #                             family = binomial)
 
 ## converged, no sig offer * ingroup * age_bi
-model1.2_fit <- glmer(accept ~ offer * ingroup * age_bi + brain +
+model1.2_fit <- glmer(accept ~ offer * ingroup * age_bi +
                      (1 | participant_id),
                             data = all_trials_df,
                             family = binomial)
@@ -303,7 +303,8 @@ H1.2 has sig offer*age interaction but H1.1 doesn't
 #                             family = binomial)
 
 ## converged, SIG offer:age_biolder
-model1.3_fit <- glmer(accept ~ offer * group_tri + sex +
+model1.3_fit <- glmer(accept ~ offer * group_tri + 
+                        # sex +
                           offer * age_bi +
                           age_bi * group_tri +
                      (1 | participant_id),
@@ -350,6 +351,65 @@ summary(model1.3_1_fit)
 #                             family = binomial)
 # summary(model1.3_2_fit)
 ```
+
+# behavior, to continue
+```{r}
+## won't converge
+# beh_full_group3_0_fit = glmer(accept ~ offer * age_bi * group_tri -
+#                                 offer:age_bi:group_tri +
+#                                 # block_fair * age_bi + 
+#                                 block_fair + 
+#                                        (1|participant_id),
+#                                      data = all_trials_df,
+#                                      family = binomial)
+
+## converged, interaction not sig
+beh_full_inout_noage_fit = glmer(accept ~ 
+                                offer * ingroup + 
+                                block_fair + 
+                                       (1|participant_id),
+                                     data = all_trials_df[all_trials_df$human == 1,],
+                                     family = binomial)
+summary(beh_full_inout_noage_fit)
+
+beh_full_group3_0_fit = glmer(accept ~ 
+                                offer * age_bi + 
+                                age_bi * group_tri +
+                                # offer * group_tri +
+                                block_fair + 
+                                       (1|participant_id),
+                                     data = all_trials_df,
+                                     family = binomial)
+summary(beh_full_group3_0_fit)
+
+beh_full_intout_0_fit = glmer(accept ~ 
+                                offer * age_bi + 
+                                age_bi * ingroup +
+                                # offer * ingroup +
+                                block_fair + 
+                                       (1|participant_id),
+                                     data = all_trials_df[all_trials_df$human == 1,],
+                                     family = binomial)
+summary(beh_full_intout_0_fit)
+
+
+beh_full_inout_fit = glmer(accept ~ offer * age_bi + age_bi * ingroup + block_fair + 
+                                       (1|participant_id),
+                                     data = all_trials_df[all_trials_df$human == 1,],
+                                     family = binomial)
+
+summary(beh_full_inout_fit)
+
+beh_full_group3_fit = glmer(accept ~ offer * age_bi + age_bi * group_tri + block_fair + 
+                                       (1|participant_id),
+                                     data = all_trials_df,
+                                     family = binomial)
+
+summary(beh_full_group3_fit)
+```
+
+
+
 
 # prereg 2 analyses
 ## P2 BH3

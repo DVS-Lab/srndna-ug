@@ -1,5 +1,5 @@
 ---
-title: "rejection rate and outcome weight computation"
+title: "overall rejection rate per partner type"
 author: "Jen Yang"
 date: "2024-12-17, last modified 2024-12-17"
 output: 

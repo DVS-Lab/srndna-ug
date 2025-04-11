@@ -85,7 +85,7 @@ all_trials_df = read.csv(file = paste(data_dir, "all_trials.csv", sep = "/"), he
 ```
 
 # combine data frame using the subject order in L3_plain
-## rejection rate
+## rejection rate difference between conditions
 ```{r}
 rej_rate_L3_df = L3_plain_df
 rej_colnames = colnames(rej_rate_df)[-1]
@@ -122,8 +122,8 @@ in_out_age_bi_df = rej_rate_L3_df %>%
   select(subjID, ismale, tsnr, fd_mean, RT, 
          young, old,
          in_out_young, in_out_old)
-write.csv(in_out_age_bi_df, paste(data_dir, "in_out_age_rej.csv", sep = "/"),
-          row.names = FALSE)
+# write.csv(in_out_age_bi_df, paste(data_dir, "in_out_age_rej.csv", sep = "/"),
+#           row.names = FALSE)
 ```
 
 ### soc_nonsoc_age_bi_df
@@ -134,11 +134,11 @@ soc_nonsoc_age_bi_df = rej_rate_L3_df %>%
   select(subjID, ismale, tsnr, fd_mean, RT, 
          young, old,
          soc_nonsoc_young, soc_nonsoc_old)
-write.csv(soc_nonsoc_age_bi_df, paste(data_dir, "soc_nonsoc_age_rej.csv", sep = "/"),
-          row.names = FALSE)
+# write.csv(soc_nonsoc_age_bi_df, paste(data_dir, "soc_nonsoc_age_rej.csv", sep = "/"),
+#           row.names = FALSE)
 ```
 
-## fairness sensitivity and norm
+## rejction rate per offer size based fairness sensitivity and norm
 ```{r}
 reject_fairness_cols = c("subjID", "partner", "offer", "rejection")
 reject_fairness_df = data.frame(matrix(nrow = 0, ncol = length(reject_fairness_cols)))
@@ -181,7 +181,7 @@ reject_fairness_df <- reject_fairness_df %>%
   )
 ```
 
-### individual slope and intercept
+### individual slope (sensitivity) and intercept (norm)
 ```{r}
 fair_sense_cols = reject_fairness_cols = c("subjID", "partner", "slope", "intercept_5", "rejection_average")
 fair_sense_df = data.frame(matrix(nrow = 0, ncol = length(fair_sense_cols)))
@@ -229,7 +229,7 @@ sensitivity_df = merge(L3_plain_df, slope_fair_sense_wide_df, by.x = "subjID")
 norm_df =   merge(L3_plain_df, intercept_5_fair_sense_wide_df, by.x = "subjID")
 ```
 
-### sensitivity
+### sensitivity (slope) for L3 cov
 ```{r}
 sensitivity_df = sensitivity_df %>% 
   mutate(
@@ -243,7 +243,7 @@ sensitivity_df = sensitivity_df %>%
   )
 ```
 
-#### in_out_age_bi_df
+#### in_out_age_bi_df (intercept)
 ```{r}
 in_out_age_bi_df = sensitivity_df %>% 
   mutate(in_out_young = in_out_demean*young,
@@ -267,8 +267,7 @@ write.csv(soc_nonsoc_age_bi_df, paste(data_dir, "soc_nonsoc_age_sensitivity.csv"
           row.names = FALSE)
 ```
 
-
-### norm for L3
+### norm (intercept) for L3 cov
 ```{r}
 norm_df = norm_df %>% 
   mutate(
@@ -305,3 +304,7 @@ soc_nonsoc_age_bi_df = norm_df %>%
 write.csv(soc_nonsoc_age_bi_df, paste(data_dir, "soc_nonsoc_age_norm.csv", sep = "/"),
           row.names = FALSE)
 ```
+
+## logistic regression based sensitivity and norm
+### sensitivity (slope)
+### norm (intercept)

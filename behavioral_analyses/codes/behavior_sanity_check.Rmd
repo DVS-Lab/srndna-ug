@@ -178,7 +178,7 @@ fig_color = "#117733"
 w = 5
 h = 4
 
-# p_line = 
+p_line =
   ggplot(offer_accept_df, aes(x = offer, y = accept_rate, color = age_old, group = subID)) +
   # theme(legend.position = "none") +
   labs(x = "offer size in $", y = "% accept", color = "age group") +
