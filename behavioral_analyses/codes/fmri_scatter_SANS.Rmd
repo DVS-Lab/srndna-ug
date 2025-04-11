@@ -110,6 +110,9 @@ axis_label = 14
 legend_all = 12
 alpha_level = 0.8
 fig_color = "#117733"
+annotate_text = 4
+line_width = 1
+point_size = 3
 
 w = 5
 h = 4
@@ -183,13 +186,15 @@ ggplot(summary_table, aes(x = partner, y = mean)) +
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 
         axis.title.x = element_text(size = axis_title, face="bold"), 
-        axis.title.y = element_text(size = axis_title, face="bold"))
+        axis.title.y = element_text(size = axis_title, face="bold"),
+        legend.title = element_text(size = axis_text, face = "bold"),
+        legend.text = element_text(size = axis_text))
 # legend.position="bottom left", legend.box = "horizontal")
 # legend.position="none")
 p_bar
 
 ggsave(paste(figure_dir, paste(brain_name, "bar.png", sep = "_"), 
-             sep = "/"), p_bar, width = w, height = h)
+             sep = "/"), p_bar, width = w*1.2, height = h)
 ```
 
 
