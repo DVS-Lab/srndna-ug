@@ -1,0 +1,242 @@
+---
+title: "fairness normitivty based on lmer results"
+author: "Jen Yang"
+date: "2025-4-10, last modified 2025-4-10"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    hightlight: zenburn
+    toc_depth: 6
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+# Load libraries
+```{r libraries, message=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(interactions)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+# library(raincloudplots)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(ggpubr)
+library(lubridate)
+library(readxl)
+library(gridExtra)
+library(scales)
+library(rstudioapi)
+library(jsonlite)
+library(rjson)
+library(readr)
+library(hBayesDM)
+library(brms)
+```
+
+# dir and sub info
+```{r}
+gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
+
+data_dir = paste(gitrepo_path,"data", sep = "/")
+codes_dir = paste(gitrepo_path, "codes", sep = "/")
+fit_dir = paste(gitrepo_path,"fits", sep = "/")
+figure_dir = paste(gitrepo_path,"figures", sep = "/")
+```
+
+# load behavior data
+```{r}
+all_trials_df = read.csv(file = paste(data_dir, "all_trials_brains.csv", sep = "/"), header = TRUE)
+all_trials_df = all_trials_df[all_trials_df$missed == 0, ]
+
+indiv_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = TRUE)  %>%
+  mutate(age_bi = case_when(age <= 36 ~ "younger",
+                            age > 36 ~ "older"))
+
+all_trials_df = merge(all_trials_df, indiv_df, by.x = "subjID", by.y = "participant_id")
+
+L3_47_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE)
+
+sublist_final = L3_47_df %>% dplyr::select(subjID)
+
+all_trials_df = all_trials_df[all_trials_df$subjID %in% sublist_final$subjID,] 
+
+all_trials_df = all_trials_df %>% 
+  mutate(ingroup = relevel(as.factor(ingroup), ref = "0"),
+         human = relevel(as.factor(human), ref = "0"),
+         age_bi = relevel(as.factor(age_bi), ref = "younger"),
+         block_fair = relevel(as.factor(block_fair), ref = "0"),
+         accept = relevel(as.factor(accept), ref = "0"),
+         offer_3 = offer-3) %>% 
+  dplyr::select(subjID, offer_3, accept, human, ingroup, block_fair, age_bi, missed)
+
+all_trials_human_df = all_trials_df[all_trials_df$human == 1,]
+
+```
+
+# norm
+## human only
+```{r}
+## ingroup offer norm
+ingroup_df = all_trials_human_df[all_trials_human_df$ingroup == 1,]
+ingroup_mlm = glmer(accept ~ offer_3 + (1+offer_3|subjID), 
+                 data = ingroup_df, 
+                 family = binomial)
+summary(ingroup_mlm)
+
+# ingroup_df = all_trials_human_df[all_trials_human_df$ingroup == 1,]
+# ingroup_mlm_2 = glmer(accept ~ offer_3 + (1+offer||subjID), 
+#                  data = ingroup_df, 
+#                  family = binomial)
+# summary(ingroup_mlm_2)
+# anova(ingroup_mlm_1, ingroup_mlm_2, refit = F)
+
+ingroup_random_effects <- ranef(ingroup_mlm, condVar = FALSE) %>% 
+  as.data.frame() %>%  filter(term == "(Intercept)") %>%
+  mutate(ingroup = condval,
+         subjID = grp) %>% 
+  dplyr::select(subjID, ingroup)
+
+## outgroup offer norm
+outgroup_df = all_trials_human_df[all_trials_human_df$ingroup == 0,]
+outgroup_mlm = glmer(accept ~ offer_3 + (1+offer_3|subjID), 
+                    data = outgroup_df, 
+                    family = binomial)
+summary(outgroup_mlm)
+
+outgroup_random_effects <- ranef(outgroup_mlm, condVar = FALSE) %>% 
+  as.data.frame() %>%  filter(term == "(Intercept)") %>% 
+  mutate(outgroup = condval,
+         subjID = grp) %>% 
+  dplyr::select(subjID, outgroup)
+
+## in-out
+in_out_rand_df = merge(ingroup_random_effects, outgroup_random_effects, by = "subjID") %>% 
+  mutate(in_out_logit = ingroup - outgroup,
+         in_out_prob = (exp(ingroup) / (1 + exp(ingroup))) - exp(outgroup) / (1 + exp(outgroup))) %>% 
+  dplyr::select(subjID, in_out_logit, in_out_prob)
+```
+
+## computer
+```{r}
+## computer offer norm
+computer_df = all_trials_human_df[all_trials_df$human == 0,]
+computer_mlm = glmer(accept ~ offer_3 + (1+offer_3|subjID), 
+                     data = computer_df, 
+                     family = binomial)
+summary(computer_mlm)
+
+computer_random_effects <- ranef(computer_mlm, condVar = FALSE) %>% 
+  as.data.frame() %>% filter(term == "(Intercept)") %>% 
+  mutate(computer = condval,
+         subjID = grp) %>% 
+  dplyr::select(subjID, computer)
+
+## human offer norm
+human_df = all_trials_human_df[all_trials_df$human == 1,]
+human_mlm = glmer(accept ~ offer_3 + (1+offer_3|subjID), 
+                     data = human_df, 
+                     family = binomial)
+# summary(human_mlm)
+
+human_random_effects <- ranef(human_mlm, condVar = FALSE) %>% 
+  as.data.frame() %>% filter(term == "(Intercept)") %>%
+  mutate(human = condval,
+         subjID = grp) %>% 
+  dplyr::select(subjID, human)
+
+## soc-nonsoc
+soc_nonsoc_rand_df = merge(computer_random_effects, human_random_effects, by = "subjID") %>% 
+  mutate(soc_nonsoc_logit = human - computer,
+         soc_nonsoc_prob = (exp(human) / (1 + exp(human))) - exp(computer) / (1 + exp(computer))) %>% 
+  dplyr::select(subjID, soc_nonsoc_logit, soc_nonsoc_prob)
+```
+
+# in_out_norm_df for L3 w/ cov
+```{r}
+in_out_norm_df = in_out_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
+  mutate(in_out_demean = in_out_logit - mean(in_out_logit),
+         in_out_young = in_out_demean*younger,
+         in_out_old = in_out_demean*older,
+         ones = 1) %>% 
+  select(subjID, ones, ismale, tsnr, fd_mean, RT, 
+         younger, older,
+         in_out_young, in_out_old)
+write.csv(in_out_norm_df, paste(data_dir, "L3_cov_in_out_norm_logit.csv", sep = "/"),
+          row.names = FALSE)
+```
+
+# soc_nonsoc_norm_df for L3 w/ cov
+```{r}
+soc_nonsoc_norm_df = soc_nonsoc_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
+  mutate(soc_nonsoc_demean = soc_nonsoc_logit - mean(soc_nonsoc_logit),
+         soc_nonsoc_young = soc_nonsoc_demean*younger,
+         soc_nonsoc_old = soc_nonsoc_demean*older,
+         ones = 1) %>% 
+  select(subjID, ones, ismale, tsnr, fd_mean, RT, 
+         younger, older,
+         soc_nonsoc_young, soc_nonsoc_old)
+write.csv(soc_nonsoc_norm_df, paste(data_dir, "L3_cov_soc_nonsoc_norm_logit.csv", sep = "/"),
+          row.names = FALSE)
+```
+
+# in_out_norm_df for L3 w/ cov
+```{r}
+in_out_norm_df = in_out_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
+  mutate(in_out_demean = in_out_prob - mean(in_out_prob),
+         in_out_young = in_out_demean*younger,
+         in_out_old = in_out_demean*older,
+         ones = 1) %>% 
+  select(subjID, ones, ismale, tsnr, fd_mean, RT, 
+         younger, older,
+         in_out_young, in_out_old)
+write.csv(in_out_norm_df, paste(data_dir, "L3_cov_in_out_norm_prob.csv", sep = "/"),
+          row.names = FALSE)
+```
+
+# soc_nonsoc_norm_df for L3 w/ cov
+```{r}
+soc_nonsoc_norm_df = soc_nonsoc_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
+  mutate(soc_nonsoc_demean = soc_nonsoc_prob - mean(soc_nonsoc_prob),
+         soc_nonsoc_young = soc_nonsoc_demean*younger,
+         soc_nonsoc_old = soc_nonsoc_demean*older,
+         ones = 1) %>% 
+  select(subjID, ones, ismale, tsnr, fd_mean, RT, 
+         younger, older,
+         soc_nonsoc_young, soc_nonsoc_old)
+write.csv(soc_nonsoc_norm_df, paste(data_dir, "L3_cov_soc_nonsoc_norm_prob.csv", sep = "/"),
+          row.names = FALSE)
+```
