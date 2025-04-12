@@ -34,7 +34,7 @@ mkdir -p $MAINOUTPUT
 ### --- Two groups with covariates ------------------------------
 # set outputs and check for existing
 cnum_pad=`zeropad ${copenum} 2`
-OUTPUT=${MAINOUTPUT}/L3_task-${task}_${REPLACEME}_cnum-${cnum_pad}_cname-${copename}_twogroup_wCovs_soc-nonsoc_sensitivity2_logit
+OUTPUT=${MAINOUTPUT}/L3_task-${task}_${REPLACEME}_cnum-${cnum_pad}_cname-${copename}_twogroup_wCovs_in-out_norm2_logit
 if [ -e ${OUTPUT}.gfeat/cope1.feat/cluster_mask_zstat1.nii.gz ]; then
 
 	# run randomise if output doesn't exist and the contrasts (copes) are valid
@@ -51,8 +51,8 @@ else # try to run feat and clean up previous effort with partial output
 	# create template and run FEAT analyses
 #	ITEMPLATE=${maindir}/templates/L3_template_n${N}_${task}_twogroup_wCovs.fsf
 
-	ITEMPLATE=${maindir}/templates/L3_template_n${N}_${task}_twogroup_wCovs_soc-nonsoc_sensitivity2_logit.fsf
-	OTEMPLATE=${MAINOUTPUT}/L3_task-${task}_${REPLACEME}_copenum-${copenum}_twogroup_wCovs_soc-nonsoc_sensitivity2_logit.fsf
+	ITEMPLATE=${maindir}/templates/L3_template_n${N}_${task}_twogroup_wCovs_in-out_norm2_logit.fsf
+	OTEMPLATE=${MAINOUTPUT}/L3_task-${task}_${REPLACEME}_copenum-${copenum}_twogroup_wCovs_in-out_norm2_logit.fsf
 	
 	sed -e 's@OUTPUT@'$OUTPUT'@g' \
 	-e 's@COPENUM@'$copenum'@g' \

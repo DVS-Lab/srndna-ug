@@ -18,9 +18,11 @@ mkdir -p $outputdir
 #for ROI in 'hum-com_alpha_ageBI_act' 'in-out_alpha_ageBI_act'; do
 #for ROI in 'dmn_p_in-out_y-o'; do
 for ROI in 'ecn_p_in-out_o-y_sens-logit'; do
+#for ROI in 'act_p_soc-nonsoc'; do
+
 	MASK=${maindir}/masks_SANS/${ROI}.nii.gz
-	TYPE='nppi-dmn'
-#	TYPE='nppi-ecn'
+#	TYPE='nppi-dmn'
+	TYPE='nppi-ecn'
 #	TYPE='act'
 	for COPENUM in 2 4 6; do # acts
 		cnum_padded=`zeropad ${COPENUM} 2`
