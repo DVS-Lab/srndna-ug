@@ -173,7 +173,6 @@ axis_text = 12
 axis_label = 14
 legend_all = 12
 alpha_level = 0.8
-fig_color = "#117733"
 
 w = 5
 h = 4
@@ -193,8 +192,6 @@ p_line =
   coord_cartesian(xlim=c(1, 10), ylim = c(0,1)) +
   scale_color_discrete(limits = c("0","1"), labels = c("18-35", "65-80")) +
   # ylim(0,1) + xlim(1,10) +
-  # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
-  # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 

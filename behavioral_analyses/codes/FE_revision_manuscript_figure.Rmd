@@ -1,0 +1,884 @@
+---
+title: "layered_plot"
+author: "Jen Yang"
+date: "2024-7-17"
+output: html_document
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+```{r restart R session, include=FALSE, results='hide'}
+# .rs.restartR()
+```
+# Load libraries
+```{r libraries, message=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(ggtext)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(interactions)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+# library(raincloudplots)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(RColorBrewer)
+library(svglite)
+library(latex2exp)
+```
+
+# Global chunk setting
+```{r chunkGlobal, include=FALSE}
+# global chunk setting
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, cache = FALSE)
+```
+# Load functions
+```{r load_functons, include=FALSE}
+source("raincloud_IV1IV2continuous_mean_plot_fun.R", local = knitr::knit_global())
+source("raincloud_main_mean_plot_fun.R", local = knitr::knit_global())
+```
+
+# Load data
+```{r , include=FALSE}
+# .csv file folder
+file_folder = 
+  "/Users/Momocco/Documents/GitHub/Financial_Exploitation/Financial_Exploitation/ANALYSES/DATA_PROCESSED"
+fig_folder = "/Users/Momocco/Documents/GitHub/Financial_Exploitation/Financial_Exploitation/ANALYSES/PLOTS/revision_manu_figs"
+```
+
+## Study 1
+```{r}
+study1_file_name = "study_1_data_clean_processed_selected.csv"
+study1_IV_names = "study1_IVs_list.csv"
+
+# read csv
+study1_data_raw <- read.csv(paste(file_folder, study1_file_name, sep = "/"))
+
+study1_IVs_list <- read.csv(study1_IV_names)
+study1_N_IVs = nrow(study1_IVs_list)
+study1_IVs_list <- as.character(study1_IVs_list[,1])
+recode_gender_cat = study1_data_raw$gender == 1
+study1_data_raw$gender_cat[recode_gender_cat] = 'Male'
+study1_data_raw$gender_cat[!recode_gender_cat] = 'Female'
+study1_data_raw$gender_cat = as.factor(study1_data_raw$gender_cat)
+recode_race = study1_data_raw$race_binary == 1
+study1_data_raw$race_cat[recode_race] = 'minority'
+study1_data_raw$race_cat[!recode_race] = 'non-minority'
+study1_data_raw$race_binary = as.numeric(study1_data_raw$race_binary)
+```
+
+## Study 2
+```{r}
+study2_file_name = "study_2_data_clean_processed_selected_OAFEM_recode.csv"
+study2_IV_names = "study2_IVs_list.csv"
+
+# read csv
+study2_data_raw <- read.csv(paste(file_folder, study2_file_name, sep = "/"))
+
+recode_gender = study2_data_raw$gender == 1
+study2_data_raw$gender_cat[recode_gender] = 'Male'
+study2_data_raw$gender_cat[!recode_gender] = 'Female'
+study2_data_raw$gender[!recode_gender] = 0
+study2_data_raw$gender_cat = as.factor(study2_data_raw$gender_cat)
+recode_race = study2_data_raw$race_binary == 1
+study2_data_raw$race_cat[recode_race] = 'minority'
+study2_data_raw$race_cat[!recode_race] = 'non-minority'
+study2_data_raw$race_cat = as.factor(study2_data_raw$race_cat)
+study2_IVs_list <- read.csv(study2_IV_names)
+N_IVs = nrow(study2_IVs_list)
+study2_IVs_list <- as.character(study2_IVs_list[,1])
+```
+
+## Study 3
+```{r directories and data, include=FALSE}
+# csv file name
+study3_file_name = "study_3_data_clean_processed_selected_OAFEM_recode.csv"
+study3_IV_names = "study3_IVs_list.csv"
+
+# read csv
+study3_data_raw <- read.csv(paste(file_folder, study3_file_name, sep = "/"))
+
+# keep only subs with similar oafem and fevs ratings
+study3_data_raw_FEVSfiltered = study3_data_raw[study3_data_raw$oafem_fevs_cat!='',]
+
+# recode some categorical data
+recode_gender = study3_data_raw_FEVSfiltered$gender == 1
+study3_data_raw_FEVSfiltered$gender_cat[recode_gender] = 'Male'
+study3_data_raw_FEVSfiltered$gender_cat[!recode_gender] = 'Female'
+study3_data_raw_FEVSfiltered$gender[!recode_gender] = 0
+study3_data_raw_FEVSfiltered$gender_cat = as.factor(study3_data_raw_FEVSfiltered$gender_cat)
+# study3_data_raw_FEVSfiltered$Ugame_unfair_reject = as.factor(study3_data_raw_FEVSfiltered$Ugame_unfair_reject)
+recode_race = study3_data_raw_FEVSfiltered$race_binary == 1
+study3_data_raw_FEVSfiltered$race_cat[recode_race] = 'minority'
+study3_data_raw_FEVSfiltered$race_cat[!recode_race] = 'non-minority'
+study3_data_raw_FEVSfiltered$race_cat = as.factor(study3_data_raw_FEVSfiltered$race_cat)
+
+# no OAFEM-FEVS filter
+recode_gender = study3_data_raw$gender == 1
+study3_data_raw$gender_cat[recode_gender] = 'Male'
+study3_data_raw$gender_cat[!recode_gender] = 'Female'
+study3_data_raw$gender[!recode_gender] = 0
+study3_data_raw$gender_cat = as.factor(study3_data_raw$gender_cat)
+# study3_data_raw$Ugame_unfair_reject = as.factor(study3_data_raw$Ugame_unfair_reject)
+recode_race = study3_data_raw$race_binary == 1
+study3_data_raw$race_cat[recode_race] = 'minority'
+study3_data_raw$race_cat[!recode_race] = 'non-minority'
+study3_data_raw$race_cat = as.factor(study3_data_raw$race_cat)
+study3_IVs_list <- read.csv(study3_IV_names)
+N_IVs = nrow(study3_IVs_list)
+study3_IVs_list <- as.character(study3_IVs_list[,1])
+
+study3_data_raw = study3_data_raw %>% mutate(oafem_sum_z = scale(oafem_sum, center = TRUE, scale = TRUE),
+                                            fevs_sum_z = scale(fevs_sum, center = TRUE, scale = TRUE),
+                                            oafem_fevs_z_diff = abs(oafem_sum_z - fevs_sum_z))
+study3_data_z2_filtered = study3_data_raw[study3_data_raw$oafem_fevs_z_diff<=2,]
+
+study3_data_z2_filtered$age_current = study3_data_z2_filtered$age_check
+study3_data_z2_filtered$education_control = study3_data_z2_filtered$education_degree
+```
+
+# Load study123 results big table
+```{r}
+study123_interaction_ageControl_regression_results_raw = readRDS("study123_interaction_regression_results_raw.rds")
+study123_mainEffect_regression_results_raw = readRDS("study123_mainEffect_regression_results_raw.rds")
+
+study123_interaction_ageControl_regression_results_844 = readRDS("study123_interaction_regression_results_844.rds")
+```
+
+# figure dimension
+```{r}
+w = 7
+h = 5
+axis_title = 10
+axis_ticks = 8
+axis_text = 10
+legend_all = 10
+```
+
+# Study 1
+## parameters
+```{r}
+Study_ID = "1"
+Study_title = "Study_1_"
+# mydata = study1_data_raw
+DV_str = 'oafem_sum'
+DV_ylabel_str = 'OAFEM' # DV_ylabel_str = 'Self-Reported \nFinancial Exploitation (OAFEM)'
+```
+
+## Intrinsic Affect-Worsening * SES
+```{r}
+IV1_str = "intrinsic_worsening_avg"
+IV1_xlabel_str = 'Intrinsic Affect-Worsening'
+IV1_xticks_str = c("smaller amount", "larger amount")
+
+mod_str = "SES_global_sum"
+mod_legend_title_str = 'SES'
+
+mydata = study1_data_raw[,c(DV_str, IV1_str, mod_str, "age_current", "gender", "race_binary")] %>% 
+  na.omit()
+
+model_rlm_full = rlm(oafem_sum ~ intrinsic_worsening_avg * SES_global_sum + age_current + gender + race_binary, study1_data_raw)
+summary(model_rlm_full)
+vif(model_rlm_full)
+
+model_rlm_full_s2 = rlm(oafem_sum ~ intrinsic_worsening_avg * ses_2 + age_current + gender + race_binary, study2_data_raw)
+summary(model_rlm_full_s2)
+vif(model_rlm_full_s2)
+
+
+interact_plot(model_rlm_full, 
+              pred = intrinsic_worsening_avg,
+              modx = SES_global_sum,
+              plot.points = TRUE,
+              jitter = c(0.05,0),
+              data = mydata,
+              partial.residuals = FALSE,
+              point.alpha = 0.3,
+              point.size = 0.7,
+              x.label = IV1_xlabel_str,
+              y.label = DV_ylabel_str,
+              pred.labels = NULL,
+              modx.labels = c(),
+              mod2.labels = NULL,
+              main.title = NULL,
+              legend.main = mod_legend_title_str) +
+  ylim(0,50) + # four points larger than 50 are not shown in the figure
+  scale_x_continuous(
+    breaks = c(1.5, 4),
+    labels = IV1_xticks_str) +
+  theme(
+        # plot.subtitle=element_text(size = 14+4),
+        # legend.position = c(.95, .95),
+        # legend.position="top",
+        legend.position="right",
+        # legend.justification = c("right", "top"),
+        # legend.box.just = "right",
+        # legend.margin = margin(6, 6, 6, 6),
+        legend.margin = margin(0, 2, 0, -6),
+        legend.title=element_text(size=legend_all),
+        legend.text=element_text(size=legend_all-2, margin = margin(l = 0.5)),
+        # legend.spacing.y = unit(0.5, 'cm'),
+        axis.line = element_line(size = 0.5, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face = "bold"), axis.title.y = element_text(size = axis_title, face = "bold"),
+        # panel.grid.minor = element_line(size = 0.25, linetype = 'dotted',
+                                        # colour = "black"),
+        panel.grid = element_blank(),
+        panel.background = element_blank())
+
+save_name = paste("revision", mod_str, "INTER", IV1_str, sep = "_")
+save_name = paste(Study_title, save_name, ".png", sep = "")
+ggsave(paste(fig_folder,save_name, sep = "/"), width = w-3, height = h-2)
+```
+
+# Study 2
+## parameters
+```{r}
+Study_ID = "2"
+Study_title = "Study_2_"
+mydata = study2_data_raw
+DV_str = 'oafem_sum'
+DV_ylabel_str = 'OAFEM' # DV_ylabel_str = 'Self-Reported \nFinancial Exploitation (OAFEM)'
+```
+
+## 1. everyday cognitive decline * SES
+```{r}
+mod_str ='ses_2'
+mod_legend_title_str = 'SES'
+IV1_xticks_str = c("smaller decline", "larger decline")
+
+IV1_str = 'everyday_cog_avg'
+IV1_xlabel_str = 'Everyday Cognitive Decline'
+###
+
+mydata = study2_data_raw[,c(DV_str, IV1_str, mod_str, "age_current", "gender", "race_binary")] %>% 
+  na.omit()
+
+model_rlm_full = rlm(oafem_sum ~ everyday_cog_avg * ses_2 + age_current + gender + race_binary, mydata)
+
+plot_11 = interact_plot(model_rlm_full, 
+              pred = everyday_cog_avg,
+              modx = ses_2,
+              plot.points = TRUE,
+              jitter = c(0.05,0),
+              data = mydata,
+              partial.residuals = FALSE,
+              point.alpha = 0.3,
+              point.size = 0.7,
+              x.label = IV1_xlabel_str,
+              y.label = DV_ylabel_str,
+              pred.labels = NULL,
+              modx.labels = NULL,
+              mod2.labels = NULL,
+              main.title = NULL,
+              legend.main = mod_legend_title_str) +
+  ylim(0,40) + # 3 points not shown
+  scale_x_continuous(
+    # limits = c(1,4),
+    breaks = c(1.5, 3),
+    labels = IV1_xticks_str) +
+  theme(
+        # plot.subtitle=element_text(size = 14+4),
+        # legend.position = c(.95, .95),
+        # legend.position="top",
+        legend.position="right",
+        # legend.justification = c("right", "top"),
+        # legend.box.just = "right",
+        # legend.margin = margin(6, 6, 6, 6),
+        legend.margin = margin(0, 2, 0, -6),
+        legend.title=element_text(size=legend_all),
+        legend.text=element_text(size=legend_all-2, margin = margin(l = 0.5)),
+        # legend.spacing.y = unit(0.5, 'cm'),
+        axis.line = element_line(size = 0.5, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face = "bold"), axis.title.y = element_text(size = axis_title, face = "bold"),
+        # panel.grid.minor = element_line(size = 0.25, linetype = 'dotted',
+                                        # colour = "black"),
+        panel.grid = element_blank(),
+        panel.background = element_blank())
+
+plot_11
+save_name = paste("revision", mod_str, "INTER", IV1_str, sep = "_")
+save_name = paste(Study_title, save_name, ".png", sep = "")
+ggsave(paste(fig_folder,save_name, sep = "/"), width = w-3, height = h-2)
+```
+
+## 2. persuadability * SES
+```{r}
+mod_str ='ses_2'
+mod_legend_title_str = 'SES'
+
+IV1_str = 'gull_persuasive_avg'
+IV1_xticks_str = c('less persuadable',
+                   'more persuadable')
+IV1_xlabel_str = 'Persuadability'
+
+mydata = study2_data_raw[,c(DV_str, IV1_str, mod_str, "age_current", "gender", "race_binary")] %>% 
+  na.omit()
+
+model_rlm_full = rlm(oafem_sum ~ gull_persuasive_avg * ses_2 + age_current + gender + race_binary, mydata, maxit = 100)
+
+plot_12 = interact_plot(model_rlm_full, 
+              pred = gull_persuasive_avg,
+              modx = ses_2,
+              plot.points = TRUE,
+              jitter = c(0.05,0),
+              data = mydata,
+              partial.residuals = FALSE,
+              point.alpha = 0.3,
+              point.size = 0.7,
+              x.label = IV1_xlabel_str,
+              y.label = DV_ylabel_str,
+              pred.labels = NULL,
+              modx.labels = NULL,
+              mod2.labels = NULL,
+              main.title = NULL,
+              legend.main = mod_legend_title_str) +
+  ylim(0,40) + # 3 points not shown
+  # xlim(1,7) +
+  scale_x_continuous(
+    breaks = c(2, 6),
+    labels = IV1_xticks_str) +
+  theme(
+        # plot.subtitle=element_text(size = 14+4),
+        # legend.position = c(.95, .95),
+        # legend.position="top",
+        legend.position="right",
+        # legend.justification = c("right", "top"),
+        # legend.box.just = "right",
+        # legend.margin = margin(6, 6, 6, 6),
+        legend.margin = margin(0, 2, 0, -6),
+        legend.title=element_text(size=legend_all),
+        legend.text=element_text(size=legend_all-2, margin = margin(l = 0.5)),
+        # legend.spacing.y = unit(0.5, 'cm'),
+        axis.line = element_line(size = 0.5, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face = "bold"), axis.title.y = element_text(size = axis_title, face = "bold"),
+        # panel.grid.minor = element_line(size = 0.25, linetype = 'dotted',
+                                        # colour = "black"),
+        panel.grid = element_blank(),
+        panel.background = element_blank())
+
+plot_12
+save_name = paste("revision", mod_str, "INTER", IV1_str, sep = "_")
+save_name = paste(Study_title, save_name, ".png", sep = "")
+ggsave(paste(fig_folder,save_name, sep = "/"), width = w-3, height = h-2)
+```
+
+## 3. making others feel worse * SES
+```{r}
+mod_str ='ses_2'
+mod_legend_title_str = 'SES'
+
+IV1_str = 'extrinsic_worsening_avg'
+IV1_xticks_str = c('smaller amount',
+                   'greater amount')
+IV1_xlabel_str = 'Extrinsic Affect-Worsening'
+
+mydata = study2_data_raw[,c(DV_str, IV1_str, mod_str, "age_current", "gender", "race_binary")] %>% 
+  na.omit()
+
+model_rlm_full = rlm(oafem_sum ~ extrinsic_worsening_avg * ses_2 + age_current + gender + race_binary, mydata, maxit = 100)
+
+plot_21 = interact_plot(model_rlm_full, 
+              pred = extrinsic_worsening_avg,
+              modx = ses_2,
+              plot.points = TRUE,
+              jitter = c(0.05,0),
+              data = mydata,
+              partial.residuals = FALSE,
+              point.alpha = 0.3,
+              point.size = 0.7,
+              x.label = IV1_xlabel_str,
+              y.label = DV_ylabel_str,
+              pred.labels = NULL,
+              modx.labels = NULL,
+              mod2.labels = NULL,
+              main.title = NULL,
+              legend.main = mod_legend_title_str) +
+  ylim(0,40) + # 3 points not shown
+  scale_x_continuous(
+    # limits = c(1,5),
+    breaks = c(1.5, 4),
+    labels = IV1_xticks_str) +
+  theme(
+        # plot.subtitle=element_text(size = 14+4),
+        # legend.position = c(.95, .95),
+        # legend.position="top",
+        legend.position="right",
+        # legend.justification = c("right", "top"),
+        # legend.box.just = "right",
+        # legend.margin = margin(6, 6, 6, 6),
+        legend.margin = margin(0, 2, 0, -6),
+        legend.title=element_text(size=legend_all),
+        legend.text=element_text(size=legend_all-2, margin = margin(l = 0.5)),
+        # legend.spacing.y = unit(0.5, 'cm'),
+        axis.line = element_line(size = 0.5, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face = "bold"), axis.title.y = element_text(size = axis_title, face = "bold"),
+        # panel.grid.minor = element_line(size = 0.25, linetype = 'dotted',
+                                        # colour = "black"),
+        panel.grid = element_blank(),
+        panel.background = element_blank())
+
+plot_21
+save_name = paste("revision", mod_str, "INTER", IV1_str, sep = "_")
+save_name = paste(Study_title, save_name, ".png", sep = "")
+ggsave(paste(fig_folder,save_name, sep = "/"), width = w-3, height = h-2)
+
+```
+
+## 4. making oneself feel worse * SES
+```{r}
+mod_str ='ses_2'
+mod_legend_title_str = 'SES'
+
+IV1_str = 'intrinsic_worsening_avg'
+IV1_xticks_str = c('smaller amount',
+                   'greater amount')
+IV1_xlabel_str = 'Intrinsic Affect-Worsening'
+
+mydata = study2_data_raw[,c(DV_str, IV1_str, mod_str, "age_current", "gender", "race_binary")] %>% 
+  na.omit()
+
+model_rlm_full = rlm(oafem_sum ~ intrinsic_worsening_avg * ses_2 + age_current + gender + race_binary, mydata, maxit = 100)
+
+plot_22 = interact_plot(model_rlm_full, 
+              pred = intrinsic_worsening_avg,
+              modx = ses_2,
+              plot.points = TRUE,
+              jitter = c(0.05,0),
+              data = mydata,
+              partial.residuals = FALSE,
+              point.alpha = 0.3,
+              point.size = 0.7,
+              x.label = IV1_xlabel_str,
+              y.label = DV_ylabel_str,
+              pred.labels = NULL,
+              modx.labels = NULL,
+              mod2.labels = NULL,
+              main.title = NULL,
+              legend.main = mod_legend_title_str) +
+  ylim(0,40) + # 3 points not shown
+  scale_x_continuous(
+    # limits = c(1,5),
+    breaks = c(1.5, 3.5),
+    labels = IV1_xticks_str) +
+  theme(
+        # plot.subtitle=element_text(size = 14+4),
+        # legend.position = c(.95, .95),
+        # legend.position="top",
+        legend.position="right",
+        # legend.justification = c("right", "top"),
+        # legend.box.just = "right",
+        # legend.margin = margin(6, 6, 6, 6),
+        legend.margin = margin(0, 2, 0, -6),
+        legend.title=element_text(size=legend_all),
+        legend.text=element_text(size=legend_all-2, margin = margin(l = 0.5)),
+        # legend.spacing.y = unit(0.5, 'cm'),
+        axis.line = element_line(size = 0.5, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face = "bold"), axis.title.y = element_text(size = axis_title, face = "bold"),
+        # panel.grid.minor = element_line(size = 0.25, linetype = 'dotted',
+                                        # colour = "black"),
+        panel.grid = element_blank(),
+        panel.background = element_blank())
+
+plot_22
+save_name = paste("revision", mod_str, "INTER", IV1_str, sep = "_")
+save_name = paste(Study_title, save_name, ".png", sep = "")
+ggsave(paste(fig_folder,save_name, sep = "/"), width = w-3, height = h-2)
+```
+
+## figure with all panels
+```{r}
+ggarrange(plot_11, plot_12, plot_21, plot_22, 
+          ncol = 2, nrow = 2, labels="AUTO", common.legend = TRUE)
+
+ggsave(paste(fig_folder, "revision_study2_inter.png", sep = "/"), width = w, height = h)
+```
+
+# Study 3, z-diff, OAFEM
+## parameters
+```{r}
+Study_ID = "3 all"
+Study_title = "Study_3_OAFEM_"
+DV_str = 'oafem_sum'
+# DV_lim = c(0, 124) # max = 124
+DV_lim = c(0, 40) # max = 124
+DV_ylabel_str = 'OAFEM' # DV_ylabel_str = 'Self-Reported \nFinancial Exploitation (OAFEM)'
+```
+
+## 1. persuadability * age
+```{r}
+mod_str ='age_current'
+mod_legend_title_str = 'Age'
+
+IV1_str = 'gull_persuasive_avg'
+IV1_xticks_str = c('less', 'more')
+IV1_xlabel_str = 'Persuadability'
+
+mydata = study3_data_z2_filtered[,c(DV_str, IV1_str, mod_str, "gender", "race_binary", "education_control")] %>% 
+  na.omit()
+
+model_rlm_full = rlm(oafem_sum ~ gull_persuasive_avg * age_current + gender + race_binary + education_control, mydata, maxit = 100)
+
+plot_31 =
+  interact_plot(model_rlm_full, 
+              pred = gull_persuasive_avg,
+              modx = age_current,
+              plot.points = TRUE,
+              jitter = c(0.05,0),
+              data = mydata,
+              partial.residuals = FALSE,
+              point.alpha = 0.3,
+              point.size = 0.7,
+              x.label = IV1_xlabel_str,
+              y.label = DV_ylabel_str,
+              pred.labels = NULL,
+              modx.labels = NULL,
+              mod2.labels = NULL,
+              main.title = NULL,
+              legend.main = mod_legend_title_str) +
+  # ylim(0,100) + # 6 points not shown
+  scale_x_continuous(
+    # limits = c(1,7),
+    breaks = c(2, 6),
+    labels = IV1_xticks_str) +
+  theme(
+        # plot.subtitle=element_text(size = 14+4),
+        # legend.position = c(.95, .95),
+        # legend.position="top",
+        legend.position="right",
+        # legend.justification = c("right", "top"),
+        # legend.box.just = "right",
+        # legend.margin = margin(6, 6, 6, 6),
+        legend.margin = margin(0, 2, 0, -6),
+        legend.title=element_text(size=legend_all),
+        legend.text=element_text(size=legend_all-2, margin = margin(l = 0)),
+        legend.key.width = unit(1, 'cm'), #change legend key width
+        # legend.spacing.y = unit(0.5, 'cm'),
+        axis.line = element_line(size = 0.5, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face = "bold"), axis.title.y = element_text(size = axis_title, face = "bold"),
+        # panel.grid.minor = element_line(size = 0.25, linetype = 'dotted',
+                                        # colour = "black"),
+        panel.grid = element_blank(),
+        panel.background = element_blank())
+
+plot_31
+save_name = paste("revision_OAFEM", mod_str, "INTER", IV1_str, sep = "_")
+save_name = paste(Study_title, save_name, ".png", sep = "")
+ggsave(paste(fig_folder,save_name, sep = "/"), width = w-3, height = h-2)
+```
+
+## 2. persuadability * SES
+```{r}
+mod_str ='SES_global_sum'
+mod_legend_title_str = 'SES'
+
+IV1_str = 'gull_persuasive_avg'
+IV1_xticks_str = c('less', 'more')
+IV1_xlabel_str = 'Persuadability'
+
+mydata = study3_data_z2_filtered[,c(DV_str, IV1_str, mod_str, "age_current", "gender", "race_binary")] %>% 
+  na.omit()
+
+model_rlm_full = rlm(oafem_sum ~ gull_persuasive_avg * SES_global_sum + age_current + gender + race_binary, mydata, maxit = 100)
+
+plot_32 =
+  interact_plot(model_rlm_full, 
+              pred = gull_persuasive_avg,
+              modx = SES_global_sum,
+              plot.points = TRUE,
+              jitter = c(0.05,0),
+              data = mydata,
+              partial.residuals = FALSE,
+              point.alpha = 0.3,
+              point.size = 0.7,
+              x.label = IV1_xlabel_str,
+              y.label = DV_ylabel_str,
+              pred.labels = NULL,
+              modx.labels = NULL,
+              mod2.labels = NULL,
+              main.title = NULL,
+              legend.main = mod_legend_title_str) +
+  # ylim(0,40) + # 3 points not shown
+  # xlim(1,7) +
+  scale_x_continuous(
+    breaks = c(2, 6),
+    labels = IV1_xticks_str) +
+  theme(
+        # plot.subtitle=element_text(size = 14+4),
+        # legend.position = c(.95, .95),
+        # legend.position="top",
+        legend.position="right",
+        # legend.justification = c("right", "top"),
+        # legend.box.just = "right",
+        # legend.margin = margin(6, 6, 6, 6),
+        legend.margin = margin(0, 2, 0, -6),
+        legend.title=element_text(size=legend_all),
+        legend.text=element_text(size=legend_all-2, margin = margin(l = 0.5)),
+        legend.key.width = unit(1, 'cm'), #change legend key width
+        # legend.spacing.y = unit(0.5, 'cm'),
+        axis.line = element_line(size = 0.5, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face = "bold"), axis.title.y = element_text(size = axis_title, face = "bold"),
+        # panel.grid.minor = element_line(size = 0.25, linetype = 'dotted',
+                                        # colour = "black"),
+        panel.grid = element_blank(),
+        panel.background = element_blank())
+
+plot_32
+save_name = paste("revision_OAFEM", mod_str, "INTER", IV1_str, sep = "_")
+save_name = paste(Study_title, save_name, ".png", sep = "")
+ggsave(paste(fig_folder,save_name, sep = "/"), width = w-3, height = h-2)
+```
+
+## 3. insensitivity to trustworthiness cues * age
+```{r}
+mod_str ='age_current'
+mod_legend_title_str = 'Age'
+
+IV1_str = 'gull_insensitive_avg'
+IV1_xticks_str = c('less', 'more')
+IV1_xlabel_str = 'Insensitivity to\nTrustworthiness Cues'
+
+mydata = study3_data_z2_filtered[,c(DV_str, IV1_str, mod_str, "gender", "race_binary", "education_control")] %>% 
+  na.omit()
+
+model_rlm_full = rlm(oafem_sum ~ gull_insensitive_avg * age_current + gender + race_binary + education_control, mydata, maxit = 100)
+
+plot_33 =
+  interact_plot(model_rlm_full, 
+              pred = gull_insensitive_avg,
+              modx = age_current,
+              plot.points = TRUE,
+              jitter = c(0.05,0),
+              data = mydata,
+              partial.residuals = FALSE,
+              point.alpha = 0.3,
+              point.size = 0.7,
+              x.label = IV1_xlabel_str,
+              y.label = DV_ylabel_str,
+              pred.labels = NULL,
+              modx.labels = NULL,
+              mod2.labels = NULL,
+              main.title = NULL,
+              legend.main = mod_legend_title_str) +
+  # ylim(0,40) + # 3 points not shown
+  # xlim(1,7) +
+  scale_x_continuous(
+    breaks = c(2, 6),
+    labels = IV1_xticks_str) +
+  theme(
+        # plot.subtitle=element_text(size = 14+4),
+        # legend.position = c(.95, .95),
+        # legend.position="top",
+        legend.position="right",
+        # legend.justification = c("right", "top"),
+        # legend.box.just = "right",
+        # legend.margin = margin(6, 6, 6, 6),
+        legend.margin = margin(0, 2, 0, -6),
+        legend.title=element_text(size=legend_all),
+        legend.text=element_text(size=legend_all-2, margin = margin(l = 0.5)),
+        legend.key.width = unit(1, 'cm'), #change legend key width
+        # legend.spacing.y = unit(0.5, 'cm'),
+        axis.line = element_line(size = 0.5, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face = "bold"), axis.title.y = element_text(size = axis_title, face = "bold"),
+        # panel.grid.minor = element_line(size = 0.25, linetype = 'dotted',
+                                        # colour = "black"),
+        panel.grid = element_blank(),
+        panel.background = element_blank())
+
+plot_33
+save_name = paste("revision_OAFEM", mod_str, "INTER", IV1_str, sep = "_")
+save_name = paste(Study_title, save_name, ".png", sep = "")
+ggsave(paste(fig_folder,save_name, sep = "/"), width = w-3, height = h-2)
+
+```
+
+## figure with all panels
+```{r}
+ggarrange(plot_31, plot_32, plot_33, 
+          ncol = 2, nrow = 2, labels="AUTO", common.legend = FALSE)
+
+ggsave(paste(fig_folder, "revision_study3_OAFEM_inter.png", sep = "/"), width = w, height = h)
+```
+
+# Study 3, z-diff, FEVS
+## parameters
+```{r}
+Study_ID = "3 all"
+Study_title = "Study_3_FEVS_"
+mydata = study3_data_z2_filtered
+DV_str = 'fevs_sum'
+DV_ylabel_str = 'FEVS' # DV_ylabel_str = 'Financial Exploitation \nVulnerability'
+```
+
+## 1. persuadability * everyday cognitive decline
+```{r}
+mod_str ='everyday_cog_avg'
+mod_legend_title_str = 'Everyday Cognitive Decline'
+
+###
+IV1_str = 'gull_persuasive_avg'
+IV1_xticks_str = c('less persuadable', 'more persuadable')
+IV1_xlabel_str = 'Persuadability'
+###
+
+mydata = study3_data_z2_filtered[,c(DV_str, IV1_str, mod_str, "age_current", "gender", "race_binary", "education_control")] %>% 
+  na.omit()
+
+model_rlm_full = rlm(fevs_sum ~ gull_persuasive_avg * everyday_cog_avg + age_current + gender + race_binary + education_control, 
+                     mydata, maxit = 100)
+
+plot_41 =
+  interact_plot(model_rlm_full, 
+              pred = gull_persuasive_avg,
+              modx = everyday_cog_avg,
+              plot.points = TRUE,
+              jitter = c(0.05,0.1),
+              data = mydata,
+              partial.residuals = FALSE,
+              point.alpha = 0.3,
+              point.size = 0.7,
+              x.label = IV1_xlabel_str,
+              y.label = DV_ylabel_str,
+              pred.labels = NULL,
+              modx.labels = NULL,
+              mod2.labels = NULL,
+              main.title = NULL,
+              legend.main = mod_legend_title_str) +
+  scale_x_continuous(
+    breaks = c(2, 6),
+    labels = IV1_xticks_str) +
+  theme(
+        # plot.subtitle=element_text(size = 14+4),
+        # legend.position = c(.95, .95),
+        # legend.position="top",
+        legend.position="right",
+        # legend.justification = c("right", "top"),
+        # legend.box.just = "right",
+        # legend.margin = margin(6, 6, 6, 6),
+        legend.margin = margin(0, 2, 0, -6),
+        legend.title=element_text(size=legend_all),
+        legend.text=element_text(size=legend_all-2, margin = margin(l = 0.5)),
+        # legend.spacing.y = unit(0.5, 'cm'),
+        axis.line = element_line(size = 0.5, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face = "bold"), axis.title.y = element_text(size = axis_title, face = "bold"),
+        # panel.grid.minor = element_line(size = 0.25, linetype = 'dotted',
+                                        # colour = "black"),
+        panel.grid = element_blank(),
+        panel.background = element_blank())
+
+plot_41
+save_name = paste("revision_FEVS", mod_str, "INTER", IV1_str, sep = "_")
+save_name = paste(Study_title, save_name, ".png", sep = "")
+ggsave(paste(fig_folder,save_name, sep = "/"), width = w-3, height = h-2)
+```
+
+## 2. insensitivity to trustworthiness cues * everyday cognitive decline
+```{r}
+mod_str ='everyday_cog_avg'
+mod_legend_title_str = 'Everyday Cognitive Decline'
+
+###
+IV1_str = 'gull_insensitive_avg'
+IV1_xticks_str = c('less insensitive', 'more insensitive')
+IV1_xlabel_str = 'Insensitivity to Trustworthiness Cues'
+
+mydata = study3_data_z2_filtered[,c(DV_str, IV1_str, mod_str, "age_current", "gender", "race_binary", "education_control")] %>% 
+  na.omit()
+
+model_rlm_full = rlm(fevs_sum ~ gull_insensitive_avg * everyday_cog_avg + age_current + gender + race_binary + education_control,
+                     mydata, maxit = 100)
+
+plot_42 =
+  interact_plot(model_rlm_full, 
+              pred = gull_insensitive_avg,
+              modx = everyday_cog_avg,
+              plot.points = TRUE,
+              jitter = c(0.05,0.1),
+              data = mydata,
+              partial.residuals = FALSE,
+              point.alpha = 0.3,
+              point.size = 0.7,
+              # colors = c("red", "blue", "green"),
+              x.label = IV1_xlabel_str,
+              y.label = DV_ylabel_str,
+              pred.labels = NULL,
+              modx.labels = NULL,
+              mod2.labels = NULL,
+              main.title = NULL,
+              legend.main = mod_legend_title_str) +
+  scale_x_continuous(
+    breaks = c(2, 5),
+    labels = IV1_xticks_str) +
+  theme(
+        # plot.subtitle=element_text(size = 14+4),
+        # legend.position = c(.95, .95),
+        # legend.position="top",
+        legend.position="right",
+        # legend.justification = c("right", "top"),
+        # legend.box.just = "right",
+        # legend.margin = margin(6, 6, 6, 6),
+        legend.margin = margin(0, 2, 0, -6),
+        legend.title=element_text(size=legend_all),
+        legend.text=element_text(size=legend_all-2, margin = margin(l = 0.5)),
+        # legend.spacing.y = unit(0.5, 'cm'),
+        axis.line = element_line(size = 0.5, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face = "bold"), axis.title.y = element_text(size = axis_title, face = "bold"),
+        # panel.grid.minor = element_line(size = 0.25, linetype = 'dotted',
+                                        # colour = "black"),
+        panel.grid = element_blank(),
+        panel.background = element_blank())
+
+plot_42
+save_name = paste("revision_FEVS", mod_str, "INTER", IV1_str, sep = "_")
+save_name = paste(Study_title, save_name, ".png", sep = "")
+ggsave(paste(fig_folder,save_name, sep = "/"), width = w-3, height = h-2)
+```
+
+## figure with all panels
+```{r}
+ggarrange(plot_41, plot_42, 
+          ncol = 2, nrow = 1, labels="AUTO", common.legend = TRUE)
+
+ggsave(paste(fig_folder, "revision_study3_FEVS_inter.png", sep = "/"), width = w, height = h-2)
+```
+
+
+
+
