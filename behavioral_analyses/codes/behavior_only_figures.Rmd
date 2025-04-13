@@ -1,0 +1,332 @@
+---
+title: "SRNDNR UG figure"
+author: "Jen Yang"
+date: "2025-04-09, last modified 2025-04-09"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    hightlight: zenburn
+    toc_depth: 6
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+# Load libraries
+```{r libraries, message=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(interactions)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+# library(raincloudplots)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(ggpubr)
+library(lubridate)
+library(readxl)
+library(gridExtra)
+library(scales)
+library(rstudioapi)
+library(jsonlite)
+library(rjson)
+library(readr)
+library(hBayesDM)
+library(brms)
+library(emmeans)
+library(mediation)
+library(here)
+library(lme4)
+library(broom.mixed)
+library(easyRT)
+library(parameters)
+library(effectsize)
+library(effects)
+library(lmerTest)
+library(ez)
+library(sjPlot)
+library(parameters)
+library(effectsize)
+library(effects)
+library(lmerTest)
+library(ez)
+library(afex)
+library(marginaleffects)
+```
+
+# set up paths
+```{r}
+gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
+
+data_dir = paste(gitrepo_path,"data", sep = "/")
+codes_dir = paste(gitrepo_path, "codes", sep = "/")
+fit_dir = paste(gitrepo_path,"fits", sep = "/")
+figure_dir = paste(gitrepo_path,"figures", sep = "/")
+```
+
+# load and prepare data
+```{r}
+# load subs
+all_trials_df = 
+  read.csv(paste(data_dir, "all_trials_brains.csv", sep = "/"), 
+                         header = TRUE) %>%   .[.$missed == 0,]
+
+colnames(all_trials_df)[colnames(all_trials_df) == "subjID"] <- "participant_id"
+indiv_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = TRUE)  %>%
+  mutate(age_bi = case_when(age <= 36 ~ "younger",
+                            age > 36 ~ "older"))
+
+all_trials_df = merge(all_trials_df, indiv_df, by.x = "participant_id", by.y = "participant_id")
+
+sublist_final = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE)
+
+all_trials_df = all_trials_df[all_trials_df$participant_id %in% sublist_final$subjID,]
+
+## add a categorical variable that differentiate three groups
+all_trials_df = all_trials_df %>% 
+  mutate(group_tri = as.factor(case_when(human == 0 ~ 0, # computer
+                               human == 1 & ingroup == 0 ~ 1, # outgroup
+                               human == 1 & ingroup == 1 ~ 2))) # ingroup
+
+all_trials_df = all_trials_df %>% mutate(human = as.factor(human))
+
+all_trials_df$group_tri = relevel(all_trials_df$group_tri, ref = "0") # computer
+# all_trials_df$group_tri = relevel(all_trials_df$group_tri, ref = "1") # outgroup
+
+all_trials_df$age_bi = relevel(as.factor(all_trials_df$age_bi), ref = "younger")
+
+all_trials_df$block_fair = relevel(as.factor(all_trials_df$block_fair), ref = "0")
+
+all_trials_df$ingroup = relevel(as.factor(all_trials_df$ingroup), ref = "0") # outgroup as reference group
+
+all_trials_df = all_trials_df %>% 
+  mutate(age_bi_dummy = case_when(age_bi == "younger" ~ 0,
+                                  age_bi == "older" ~ 1)
+         )
+
+all_trials_human_df = all_trials_df[all_trials_df$human == 1,]
+
+participant_demo_df = merge(sublist_final, indiv_df, by.x = "subjID", by.y = "participant_id") %>% 
+  select(subjID, younger, older, age, sex)
+```
+
+# figure param
+```{r}
+axis_title = 16
+axis_ticks = 10
+axis_text = 12
+axis_label = 14
+legend_all = 12
+alpha_level = 0.8
+annotate_text = 4
+line_width = 1
+point_size = 3
+w = 5
+h = 4
+```
+
+
+# model, human vs computer, to add
+
+## model, three groups
+```{r}
+# won't converge
+# model_three_fit = glmer(accept ~ offer * age_bi * group_tri +
+#                     (1|participant_id), 
+#                   data = all_trials_df, family = binomial)
+
+# age * group_tri not sig
+model_three_fit = glmer(accept ~ offer * age_bi * group_tri  -
+                             offer:age_bi:group_tri +
+                    (1|participant_id), 
+                  data = all_trials_df, family = binomial)
+summary(model_three_fit)
+```
+
+## model, three groups, offer * age only
+```{r}
+model_offer_age_fit = glmer(accept ~ offer * age_bi + 
+                    (1|participant_id), 
+                  data = all_trials_df, family = binomial)
+summary(model_offer_age_fit)
+```
+
+## plot, human vs computer, to double check
+```{r}
+# pred_offer_age_prob <-Effect(c("age_bi", "offer"), model_offer_age_fit, 
+#                              xlevels = list(offer = 1:10) )
+# pred_offer_age_prob_df<-data.frame(pred_offer_age_prob)
+# 
+# m_params = model_parameters(model_offer_age_fit, effects = "fixed")
+# 
+# p_val = m_params[m_params$Parameter == "offer:age_biolder", "p"]
+# 
+# plot_offer_age <-
+#   ggplot(pred_offer_age_prob_df, aes(x=offer,y=fit,color=age_bi)) +
+#   geom_line(linewidth = line_width) +
+#   geom_point(size = point_size-1) +
+#   geom_errorbar(aes(ymin = fit-0.5*se, ymax = fit+0.5*se),
+#                 width=.1) +
+#   scale_color_manual(values = c("#F8766D", "#00BFC4")) +
+#   # scale_color_manual(values = c("#E69F00", "#56B4E9", "#009E73")) +
+#   labs(x = "Offer Size in $", y = "Predicted P(Accept)", color = "Age", 
+#        title = "Offer Acceptance Probability, Human",) + 
+#   coord_cartesian(xlim=c(1, 10), ylim = c(0,1)) +
+#   labs(x = "Offer Size in $", y = "Predicted P(Accept)", color = "Age") + 
+#   coord_cartesian(xlim=c(1, 10), ylim = c(0,1)) +
+#   annotate("text", 
+#            x = -Inf, y = Inf, 
+#            label = sprintf("p = %.3f", p_val), 
+#            hjust = -0.2,
+#            vjust = 2, 
+#            size = annotate_text, color = "black") +
+#   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+#         axis.text.x = element_text(size = axis_text), 
+#         axis.text.y = element_text(size = axis_text), 
+#         axis.title.x = element_text(size = axis_title, face="bold"), 
+#         axis.title.y = element_text(size = axis_title, face="bold"))
+# plot_offer_age
+# ggsave(paste(figure_dir, "behavior_offer_age_ComHum.png", sep = "/"),
+#        plot_offer_age, width = w*1.5, height = h)
+```
+
+# human only, accept ~ offer * age + ingroup * age
+## filter data, human only
+```{r}
+all_trials_human_df = all_trials_df[all_trials_df$human == 1,]
+```
+
+## model
+```{r}
+## converged, three-way interaction not sig
+# model_ingroup_fit = glmer(accept ~ 
+#                             offer * age_bi * ingroup +
+#                     (1|participant_id), 
+#                   data = all_trials_human_df, 
+#                   family = binomial)
+
+## only offer * age sig
+# model_ingroup_fit = glmer(accept ~
+#                             offer * age_bi * ingroup -
+#                             offer:age_bi:ingroup -
+#                     (1|participant_id),
+#                   data = all_trials_human_df,
+#                   family = binomial)
+
+model_ingroup_fit = glmer(accept ~ 
+                            offer * age_bi + (1|participant_id), 
+                          data = all_trials_human_df, 
+                          family = binomial)
+summary(model_ingroup_fit)
+```
+
+## plot, offer * age
+```{r}
+pred_offer_age_prob <-Effect(c("age_bi", "offer"), model_ingroup_fit, 
+                             xlevels = list(offer = 1:10) )
+pred_offer_age_prob_df<-data.frame(pred_offer_age_prob)
+
+m_params = model_parameters(model_ingroup_fit, effects = "fixed")
+
+p_val = m_params[m_params$Parameter == "offer:age_biolder", "p"]
+
+plot_offer_age = 
+ggplot(pred_offer_age_prob_df, aes(x=offer,y=fit,color=age_bi)) +
+  geom_line(linewidth = line_width) +
+  geom_point(size = point_size-1) +
+  geom_errorbar(aes(ymin = fit-0.5*se, ymax = fit+0.5*se),
+                width=.1) +
+  scale_color_manual(values = c("#F8766D", "#00BFC4")) +
+  # scale_color_manual(values = c("#E69F00", "#56B4E9", "#009E73")) +
+  labs(x = "Offer Size in $", y = "Predicted P(Accept)", color = "Age", 
+       title = "Offer Acceptance Probability, Human",) + 
+  coord_cartesian(xlim=c(1, 10), ylim = c(0,1)) +
+  annotate("text", 
+           x = -Inf, y = Inf, 
+           label = sprintf("p = %.3f", p_val), 
+           hjust = -0.2,
+           vjust = 2, 
+           size = annotate_text, color = "black") +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+plot_offer_age
+ggsave(paste(figure_dir, "behavior_offer_age_HumOnly.png", sep = "/"),
+       plot_offer_age, width = w*1.5, height = h)
+```
+
+
+
+# rejection rate per partner, to abandon
+```{r}
+# computer_name = "act_cope7_con2_1_precueus_type-act_cope-02.txt"
+# in_name = "act_cope7_con2_1_precueus_type-act_cope-04.txt"
+# out_name = "act_cope7_con2_1_precueus_type-act_cope-06.txt"
+# 
+# computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F) %>% 
+#   mutate(subjID = list_fmri_df$subjID,
+#          type = "computer",
+#          age_bi = participant_demo_df$age_bi,
+#          V1_computer = V1) %>% 
+#   select(subjID, age_bi, V1_computer)
+# 
+# in_df = read.table(paste(data_dir,in_name,sep = '/'),sep=" ",header=F) %>% 
+#   mutate(subjID = list_fmri_df$subjID,
+#          type = "ingroup",
+#          V1_ingroup = V1) %>% 
+#   select(V1_ingroup)
+# 
+# out_df = read.table(paste(data_dir,out_name,sep = '/'),sep=" ",header=F) %>% 
+#   mutate(subjID = list_fmri_df$subjID,
+#          type = "outgroup",
+#          V1_outgroup = V1) %>% 
+#   select(V1_outgroup)
+# 
+# all_brain_df = cbind(computer_df,
+#                      in_df, out_df)
+# 
+# data_plot_df = all_brain_df %>% 
+#   merge(., rej_rates_df, by.x = "subjID") %>% 
+#   mutate(brain_contrast = V1_ingroup - V1_outgroup,
+#          rej_contrast = as.numeric(ingroup_rej_rate) - as.numeric(outgroup_rej_rate),
+#          age_bi = as.factor(age_bi)) %>% 
+#   select(subjID, age_bi, brain_contrast, rej_contrast)
+# 
+# data_plot_df$age_bi = relevel(data_plot_df$age_bi, ref = "younger")
+```
+
+
