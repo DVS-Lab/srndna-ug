@@ -101,10 +101,9 @@ participant_demo_df = merge(list_fmri_df, participant_check_df,
 
 ## load tsnr, fd_mean, and RT
 sub_control_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"),
-                          header = T)
+                          header = T) %>% 
+  select(subjID, tsnr, fd_mean, RT)
 ```
-
-
 
 # plot font setup
 ```{r}
@@ -125,16 +124,58 @@ h = 4
 ```
 
 # Para, dmn, cope7, in-out c3 y-o, paracingulate gyrus?, -13.3, 34, 27.8 (aCC?, COG -3.6 33.4 32.9)
+## prepare df for ggplot
 ```{r}
 in_name = "dmn_p_in-out_y-o_type-nppi-dmn_cope-04.txt"
 out_name = "dmn_p_in-out_y-o_type-nppi-dmn_cope-06.txt"
 
-in_df = read.table(paste(ROImean_dir, in_name, sep = '/'),sep=" ",header=F)
-out_df = read.table(paste(ROImean_dir, out_name, sep = '/'),sep=" ",header=F)
+in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'),sep=" ",header=F)
+out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'),sep=" ",header=F)
+
+in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+              in_ROI = in_ROI$V1)
+in_df = merge(in_df, sub_control_df, by = "subjID")
+
+out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+              out_ROI = out_ROI$V1)
+out_df = merge(out_df, sub_control_df, by = "subjID")
+
+p_df = in_df %>% 
+  mutate(out_ROI = out_df$out_ROI,
+         DV = in_ROI - out_ROI,
+         age_bi = relevel(as.factor(age_bi), ref = "younger")) %>% 
+  select(-in_ROI, -out_ROI)
+
+p_model = lm(DV~age_bi + tsnr + fd_mean + RT, p_df)
+summary(p_model)
+
+# partial_residual_p = 
+  interact_plot(model_rlm_full, 
+              pred = extrinsic_worsening_avg,
+              modx = ses_2,
+              plot.points = TRUE,
+              jitter = c(0.05,0),
+              data = mydata,
+              partial.residuals = FALSE,
+              point.alpha = 0.3,
+              point.size = 0.7,
+              x.label = IV1_xlabel_str,
+              y.label = DV_ylabel_str,
+              pred.labels = NULL,
+              modx.labels = NULL,
+              mod2.labels = NULL,
+              main.title = NULL,
+              legend.main = mod_legend_title_str)
+```
+
+## ggplot
+```{r}
 
 ```
 
+
 # Beh cov, para, act, in-out, norm_logit intercept * age, IPLD/IPLC
+## prepare df for ggplot
 ```{r}
 in_name = "cope-04.txt" # ingroup-04
 out_name = "cope-06.txt" # outgroup-06
@@ -143,6 +184,7 @@ computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=
 ```
 
 # Beh cov, para, ecn, in-out, sensitivity_logit * age, frontal pole/mpfc?
+## prepare df for ggplot
 ```{r}
 
 ```
