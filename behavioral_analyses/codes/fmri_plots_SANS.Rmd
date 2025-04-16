@@ -107,7 +107,7 @@ sub_control_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"),
 control_vars = colnames(sub_control_df)[-1]
 ```
 
-# plot font setup
+# plot param setup
 ```{r}
 # my_colors <- RColorBrewer::brewer.pal(9, "Blues")[c(5,8)]
 axis_title = 16
@@ -126,8 +126,9 @@ h = 4
 ```
 
 # Para, dmn, cope7, in-out c3 y-o, paracingulate gyrus?, -13.3, 34, 27.8 (aCC?, COG -3.6 33.4 32.9)
-## prepare df for ggplot
+## prep original data
 ```{r}
+## data prep
 in_name = "dmn_p_in-out_y-o_type-nppi-dmn_cope-04.txt"
 out_name = "dmn_p_in-out_y-o_type-nppi-dmn_cope-06.txt"
 
@@ -146,17 +147,14 @@ out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi,
                ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
                group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
 out_df = merge(out_df, sub_control_df, by = "subjID")
-```
 
-### Para, dmn, cope7, in-out c3 y-o
-```{r}
 plot_df = in_df %>% 
   mutate(out_ROI = out_df$out_ROI,
          DV = in_ROI - out_ROI) %>% 
   select("subjID", "DV", "age_bi", control_vars)
 ```
 
-#### get partial residuals
+## get partial residuals
 ```{r}
 LMM_df = plot_df
 formula_string = "DV ~ age_bi + tsnr + fd_mean + RT"
@@ -169,7 +167,7 @@ LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial",
                          variable = focal_var_names)
 ```
 
-#### prepare summary data for reg line and error bar
+## prepare partial residual summary for reg line and error bar
 ```{r}
 summary_LMM_df <- LMM_df %>%
   group_by(age_bi) %>%
@@ -177,35 +175,68 @@ summary_LMM_df <- LMM_df %>%
     se_DV = sd(DV, na.rm = TRUE) / sqrt(n()))
 ```
 
-# to continue
-
-#### ggplot
+## ggplot and save
 ```{r}
-ggplot() +
+x_label = "Age Group"
+y_label = "beta\n(partial residual)"
+title_label = "DMN-dACC Connectivity's Sensitivity to Fairness\nSimilar Partner > Disimilar Partner"
+color_label = "Age Group"
+figure_name = "DMN_dACC_in-out_age_NoBehCov"
+
+fmri_result_1 =
+  ggplot() +
   geom_jitter(data = LMM_df, aes(x = age_bi, y = DV, color = age_bi),
-              alpha = 0.5, width = 0.1, size = point_size) + # Adjust jitter width for categorical X
-  geom_point(data = summary_LMM_df, aes(x = age_bi, y = mean_DV, color = age_bi), 
-             size = 3) +
-  # Error bars (mean ± SE)
+              alpha = 1, width = 0.1, size = point_size*0.8) + # Adjust jitter width for categorical X
+  geom_point(data = summary_LMM_df, aes(x = age_bi, y = mean_DV), 
+             size = point_size, alpha = 1, shape = 18) +
   geom_errorbar(data = summary_LMM_df, 
-                aes(x = age_bi, ymin = mean_DV - se_DV, ymax = mean_DV + se_DV),
-    width = 0.1) +  # Adjust error bar width
-  # Connect means with a line
-  geom_line(data = summary_LMM_df, 
+                aes(x = age_bi, 
+                    ymin = mean_DV - se_DV, ymax = mean_DV + se_DV),
+                width = 0.1) +
+  labs(x = x_label, y = y_label, title = title_label, color = color_label) +
+  geom_line(data = summary_LMM_df, # Connect means with a line
             aes(x = as.numeric(age_bi), y = mean_DV), 
             color = "black", linewidth = 1) +
-   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+  # theme_classic() +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 
         axis.title.x = element_text(size = axis_title, face="bold"), 
-        axis.title.y = element_text(size = axis_title, face="bold"))
+        axis.title.y = element_text(size = axis_title, face="bold")) 
+  
         # legend.position="bottom left", legend.box = "horizontal")
         # legend.position="none")
-    
-    
-    
-  
+
+ggsave(paste(figure_dir, paste(figure_name, "scatter.png", sep = "_"),
+             sep = "/"), fmri_result_1, width = w*1.2, height = h)
 ```
+
+
+
+
+
+
+# Beh cov, para, act, in-out, norm_logit intercept * age, IPLD/IPLC
+## prepare df for ggplot
+## get partial residuals
+## prepare partial residual summary for reg line and errorbar
+## plot and save
+```{r}
+in_name = "cope-04.txt" # ingroup-04
+out_name = "cope-06.txt" # outgroup-06
+
+computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F)
+```
+
+# Beh cov, para, ecn, in-out, sensitivity_logit * age, frontal pole/mpfc?
+## prepare df for ggplot
+## get partial residuals
+## prepare partial residual summary for reg line and errorbar
+## plot and save
+```{r}
+
+```
+
 
 ### plot
 ```{r}
@@ -268,36 +299,6 @@ summary(plot_model)
               main.title = NULL,
               legend.main = :)
 ```
-
-### packed interaction, ggplot()
-```{r}
-plot_df = in_df %>% 
-  mutate(out_ROI = out_df$out_ROI,
-         DV = in_ROI - out_ROI,
-         age_bi = relevel(as.factor(age_bi), ref = "younger"))
-
-plot_model = lm(DV~age_bi + tsnr + fd_mean + RT, plot_df)
-summary(plot_model)
-```
-
-
-# Beh cov, para, act, in-out, norm_logit intercept * age, IPLD/IPLC
-## prepare df for ggplot
-```{r}
-in_name = "cope-04.txt" # ingroup-04
-out_name = "cope-06.txt" # outgroup-06
-
-computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F)
-```
-
-# Beh cov, para, ecn, in-out, sensitivity_logit * age, frontal pole/mpfc?
-## prepare df for ggplot
-```{r}
-
-```
-
-
-
 
 
 
