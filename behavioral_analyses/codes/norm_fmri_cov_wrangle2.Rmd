@@ -191,7 +191,11 @@ in_out_norm_df = in_out_rand_df %>% merge(., L3_47_df, by = "subjID") %>%
   mutate(in_out_demean = in_out_logit - mean(in_out_logit),
          in_out_young = in_out_demean*younger,
          in_out_old = in_out_demean*older,
-         ones = 1) %>% 
+         ones = 1)
+write.csv(in_out_norm_df, paste(data_dir, "in_out_norm_logit.csv", sep = "/"),
+          row.names = FALSE)
+
+in_out_norm_df = in_out_norm_df %>% 
   select(subjID, ones, ismale, tsnr, fd_mean, RT, 
          younger, older,
          in_out_young, in_out_old)
