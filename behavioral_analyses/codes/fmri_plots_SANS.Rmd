@@ -94,15 +94,17 @@ list_fmri_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"),
 
 participant_check_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = T)
 
-participant_demo_df = merge(list_fmri_df, participant_check_df, 
-                            by.x = "subjID", by.y = "participant_id", all.x = T) %>% 
-  mutate(age_bi = case_when(age <= 36 ~ "younger",
-                            age > 36 ~ "older"))
+participant_demo_df = 
+  merge(list_fmri_df, participant_check_df, y.x = "subjID", by.y = "participant_id", all.x = T) %>% 
+  mutate(age_bi = case_when(age <= 36 ~ "younger", age > 36 ~ "older"),
+         age_bi = relevel(as.factor(age_bi), ref = "younger"))
 
 ## load tsnr, fd_mean, and RT
 sub_control_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"),
                           header = T) %>% 
   select(subjID, tsnr, fd_mean, RT)
+
+control_vars = colnames(sub_control_df)[-1]
 ```
 
 # plot font setup
@@ -133,44 +135,141 @@ in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'),sep=" ",header=F)
 out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'),sep=" ",header=F)
 
 in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
-              in_ROI = in_ROI$V1)
+              in_ROI = in_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+              ROI = in_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+              group = as.factor("ingroup")) # for unpacked interaction, y axis = no-contrast brain activity
+
 in_df = merge(in_df, sub_control_df, by = "subjID")
 
 out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
-              out_ROI = out_ROI$V1)
+               out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+               ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+               group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
 out_df = merge(out_df, sub_control_df, by = "subjID")
+```
 
-p_df = in_df %>% 
+### Para, dmn, cope7, in-out c3 y-o
+```{r}
+plot_df = in_df %>% 
   mutate(out_ROI = out_df$out_ROI,
-         DV = in_ROI - out_ROI,
-         age_bi = relevel(as.factor(age_bi), ref = "younger")) %>% 
-  select(-in_ROI, -out_ROI)
+         DV = in_ROI - out_ROI) %>% 
+  select("subjID", "DV", "age_bi", control_vars)
+```
 
-p_model = lm(DV~age_bi + tsnr + fd_mean + RT, p_df)
-summary(p_model)
+#### get partial residuals
+```{r}
+LMM_df = plot_df
+formula_string = "DV ~ age_bi + tsnr + fd_mean + RT"
+formula_LMM = as.formula(formula_string)
+focal_var_names = c("(Intercept)", "age_bi")
+
+## compute partial residual using LMM
+pres_LMM_fit = lmm(formula_LMM, data = LMM_df)
+LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial", 
+                         variable = focal_var_names)
+```
+
+#### prepare summary data for reg line and error bar
+```{r}
+summary_LMM_df <- LMM_df %>%
+  group_by(age_bi) %>%
+  summarise(    mean_DV = mean(DV, na.rm = TRUE),
+    se_DV = sd(DV, na.rm = TRUE) / sqrt(n()))
+```
+
+# to continue
+
+#### ggplot
+```{r}
+ggplot(plot_df, aes(x = age_bi, y = DV)) +
+   geom_point(size = point_size, alpha = 0.3) 
+  geom_smooth(formula = "y~x", method = "lm", 
+              se = TRUE,
+              linetype = "solid",
+              linewidth = 2, 
+              epsilon = 0.2) +
+  labs(x = x_label, y = y_label, color = "Age Group") +
+  # coord_cartesian(xlim=c(-2, 2)) +
+  # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
+  # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+```
+
+### plot
+```{r}
+### setup
+x_label = "Inequality Senstivity, ingroup > outgroup"
+y_label = "Activation, ingroup > outgroup\n(fairness modulated)"
+brain_name = "in-out_alpha_age_act_z2_c1_type-act"
+
+# group_summary <- data_plot_df %>%
+#   group_by(type, age_bi) %>%
+#   summarise(mean = mean(V1), se = sd(V1)/sqrt(nrow(list_fmri_df)),
+#             .groups = "keep")
+
+p_scatter =
+  ggplot(data_plot_df, aes(alpha_contrast, brain_contrast, 
+                                     color = age_bi)) + 
+  geom_point(alpha = 0.6, size = 1.5) +
+  geom_smooth(formula = "y~x", method = "lm", 
+              se = TRUE,
+              linetype = "solid",
+              linewidth = 2, 
+              alpha = 0.2) +
+  labs(x = x_label, y = y_label, color = "Age Group") +
+  coord_cartesian(xlim=c(-1, 2)) +
+  # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
+  # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+        # legend.position="bottom left", legend.box = "horizontal")
+        # legend.position="none")
+
+ggsave(paste(figure_dir, paste(brain_name, "scatter.png", sep = "_"), 
+             sep = "/"), p_scatter, width = w, height = h)
+```
+```{r}
+plot_model = lm(DV~age_bi + tsnr + fd_mean + RT, plot_df)
+summary(plot_model)
+
+plot_model = lm(DV ~ age_bi * group + tsnr + fd_mean + RT, plot_df)
+summary(plot_model)
 
 # partial_residual_p = 
-  interact_plot(model_rlm_full, 
-              pred = extrinsic_worsening_avg,
-              modx = ses_2,
+  interact_plot(plot_model, 
+              pred = age_bi,
+              modx = NA,
               plot.points = TRUE,
-              jitter = c(0.05,0),
-              data = mydata,
-              partial.residuals = FALSE,
+              # jitter = c(0.05,0),
+              data = plot_df,
+              partial.residuals = TRUE, # partial residual setting, must turn on when there are control vars
               point.alpha = 0.3,
               point.size = 0.7,
-              x.label = IV1_xlabel_str,
-              y.label = DV_ylabel_str,
+              x.label = "IV1_xlabel_str",
+              y.label = "DV_ylabel_str",
               pred.labels = NULL,
               modx.labels = NULL,
               mod2.labels = NULL,
               main.title = NULL,
-              legend.main = mod_legend_title_str)
+              legend.main = :)
 ```
 
-## ggplot
+### packed interaction, ggplot()
 ```{r}
+plot_df = in_df %>% 
+  mutate(out_ROI = out_df$out_ROI,
+         DV = in_ROI - out_ROI,
+         age_bi = relevel(as.factor(age_bi), ref = "younger"))
 
+plot_model = lm(DV~age_bi + tsnr + fd_mean + RT, plot_df)
+summary(plot_model)
 ```
 
 
