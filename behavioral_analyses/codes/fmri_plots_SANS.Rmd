@@ -181,22 +181,30 @@ summary_LMM_df <- LMM_df %>%
 
 #### ggplot
 ```{r}
-ggplot(plot_df, aes(x = age_bi, y = DV)) +
-   geom_point(size = point_size, alpha = 0.3) 
-  geom_smooth(formula = "y~x", method = "lm", 
-              se = TRUE,
-              linetype = "solid",
-              linewidth = 2, 
-              epsilon = 0.2) +
-  labs(x = x_label, y = y_label, color = "Age Group") +
-  # coord_cartesian(xlim=c(-2, 2)) +
-  # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
-  # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
-  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+ggplot() +
+  geom_jitter(data = LMM_df, aes(x = age_bi, y = DV, color = age_bi),
+              alpha = 0.5, width = 0.1, size = point_size) + # Adjust jitter width for categorical X
+  geom_point(data = summary_LMM_df, aes(x = age_bi, y = mean_DV, color = age_bi), 
+             size = 3) +
+  # Error bars (mean ± SE)
+  geom_errorbar(data = summary_LMM_df, 
+                aes(x = age_bi, ymin = mean_DV - se_DV, ymax = mean_DV + se_DV),
+    width = 0.1) +  # Adjust error bar width
+  # Connect means with a line
+  geom_line(data = summary_LMM_df, 
+            aes(x = as.numeric(age_bi), y = mean_DV), 
+            color = "black", linewidth = 1) +
+   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 
         axis.title.x = element_text(size = axis_title, face="bold"), 
         axis.title.y = element_text(size = axis_title, face="bold"))
+        # legend.position="bottom left", legend.box = "horizontal")
+        # legend.position="none")
+    
+    
+    
+  
 ```
 
 ### plot
