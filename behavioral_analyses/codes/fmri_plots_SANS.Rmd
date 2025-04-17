@@ -95,7 +95,7 @@ list_fmri_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"),
 participant_check_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = T)
 
 participant_demo_df = 
-  merge(list_fmri_df, participant_check_df, y.x = "subjID", by.y = "participant_id", all.x = T) %>% 
+  merge(list_fmri_df, participant_check_df, by.x = "subjID", by.y = "participant_id", all.x = T) %>% 
   mutate(age_bi = case_when(age <= 36 ~ "younger", age > 36 ~ "older"),
          age_bi = relevel(as.factor(age_bi), ref = "younger"))
 
@@ -109,17 +109,22 @@ control_vars = colnames(sub_control_df)[-1]
 
 # plot param setup
 ```{r}
-# my_colors <- RColorBrewer::brewer.pal(9, "Blues")[c(5,8)]
 axis_title = 16
 axis_ticks = 10
 axis_text = 12
 axis_label = 14
+
 legend_all = 12
-alpha_level = 0.8
-fig_color = "#117733"
+
 annotate_text = 4
-line_width = 1
-point_size = 3
+axis_line_width = 1
+fit_line_width = 2 ## to update ggplot element format variables
+
+data_point_alpha = 0.8
+data_point_size = 3*0.8
+
+summary_point_alpha = 1
+summary_point_size = 3
 
 w = 5
 h = 4
@@ -179,16 +184,17 @@ summary_LMM_df <- LMM_df %>%
 ```{r}
 x_label = "Age Group"
 y_label = "beta\n(partial residual)"
-title_label = "DMN-dACC Connectivity's Sensitivity to Fairness\nSimilar Partner > Disimilar Partner"
+title_label = "DMN-dACC Connectivity's Sensitivity to Fairness\nSimilar > Disimilar"
 color_label = "Age Group"
 figure_name = "DMN_dACC_in-out_age_NoBehCov"
 
-fmri_result_1 =
+p_scatter =
   ggplot() +
   geom_jitter(data = LMM_df, aes(x = age_bi, y = DV, color = age_bi),
-              alpha = 1, width = 0.1, size = point_size*0.8) + # Adjust jitter width for categorical X
+              alpha = data_point_alpha, 
+              width = 0.1, size = data_point_size) + # Adjust jitter width for categorical X
   geom_point(data = summary_LMM_df, aes(x = age_bi, y = mean_DV), 
-             size = point_size, alpha = 1, shape = 18) +
+             size = point_size, alpha = data_point_alpha, shape = 18) +
   geom_errorbar(data = summary_LMM_df, 
                 aes(x = age_bi, 
                     ymin = mean_DV - se_DV, ymax = mean_DV + se_DV),
@@ -196,9 +202,9 @@ fmri_result_1 =
   labs(x = x_label, y = y_label, title = title_label, color = color_label) +
   geom_line(data = summary_LMM_df, # Connect means with a line
             aes(x = as.numeric(age_bi), y = mean_DV), 
-            color = "black", linewidth = 1) +
+            color = "black", linewidth = line_width) +
   # theme_classic() +
-  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+  theme(axis.line = element_line(linewidth = line_width, colour = "black", linetype=1),
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 
         axis.title.x = element_text(size = axis_title, face="bold"), 
@@ -208,61 +214,77 @@ fmri_result_1 =
         # legend.position="none")
 
 ggsave(paste(figure_dir, paste(figure_name, "scatter.png", sep = "_"),
-             sep = "/"), fmri_result_1, width = w*1.2, height = h)
+             sep = "/"), p_scatter, width = w*1.2, height = h)
 ```
 
 
-
-
-
-
-# Beh cov, para, act, in-out, norm_logit intercept * age, IPLD/IPLC
-## prepare df for ggplot
-## get partial residuals
-## prepare partial residual summary for reg line and errorbar
-## plot and save
-```{r}
-in_name = "cope-04.txt" # ingroup-04
-out_name = "cope-06.txt" # outgroup-06
-
-computer_df = read.table(paste(data_dir,computer_name,sep = '/'),sep=" ",header=F)
-```
 
 # Beh cov, para, ecn, in-out, sensitivity_logit * age, frontal pole/mpfc?
 ## prepare df for ggplot
-## get partial residuals
-## prepare partial residual summary for reg line and errorbar
-## plot and save
 ```{r}
+## data prep
+in_name = "ecn_p_in-out_o-y_sens-logit_type-nppi-ecn_cope-04.txt"
+out_name = "ecn_p_in-out_o-y_sens-logit_type-nppi-ecn_cope-06.txt"
 
+in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'), sep=" ",header=F)
+out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'), sep=" ",header=F)
+
+sensitivity_name = "in_out_sensitivity_logit.csv"
+sensitivity_df = read.csv(paste(data_dir, sensitivity_name, sep = '/'), header = T)
+
+
+in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+              in_ROI = in_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+              ROI = in_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+              group = as.factor("ingroup")) # for unpacked interaction, y axis = no-contrast brain activity
+
+in_df = merge(in_df, sub_control_df, by = "subjID")
+
+out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+               out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+               ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+               group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
+
+out_df = merge(out_df, sub_control_df, by = "subjID")
+
+plot_df = in_df %>% 
+  mutate(out_ROI = out_df$out_ROI,
+         DV = in_ROI - out_ROI,
+         sensitivity_in_out = sensitivity_df$in_out_logit) %>% 
+  select("subjID", "DV", "age_bi", "sensitivity_in_out", control_vars)
 ```
 
-
-### plot
+## get partial residuals
 ```{r}
-### setup
-x_label = "Inequality Senstivity, ingroup > outgroup"
-y_label = "Activation, ingroup > outgroup\n(fairness modulated)"
-brain_name = "in-out_alpha_age_act_z2_c1_type-act"
+LMM_df = plot_df
+formula_string = "DV ~ age_bi * sensitivity_in_out + tsnr + fd_mean + RT"
+formula_LMM = as.formula(formula_string)
+focal_var_names = c("(Intercept)", 
+                    "age_bi", "sensitivity_in_out")
 
-# group_summary <- data_plot_df %>%
-#   group_by(type, age_bi) %>%
-#   summarise(mean = mean(V1), se = sd(V1)/sqrt(nrow(list_fmri_df)),
-#             .groups = "keep")
+## compute partial residual using LMM
+pres_LMM_fit = lmm(formula_LMM, data = LMM_df)
+LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial", 
+                         variable = focal_var_names)
+```
+
+## plot and save
+```{r}
+x_label = "Fairness Senstivity (logit)\nSimilar > Disimilar"
+y_label = "beta\n(partial residual)"
+title_label = "ECN-mPFC Connectivity's Sensitivity to Fairness\nSimilar > Disimilar"
+color_label = "Age Group"
+figure_name = "ECN_mPFC_in-out_age_BehFairSensitivity"
 
 p_scatter =
-  ggplot(data_plot_df, aes(alpha_contrast, brain_contrast, 
-                                     color = age_bi)) + 
-  geom_point(alpha = 0.6, size = 1.5) +
+  ggplot(plot_df, aes(x = sensitivity_in_out, y = DV, color = age_bi)) + 
+  geom_point(alpha = data_point_alpha, size = data_point_size) +
   geom_smooth(formula = "y~x", method = "lm", 
               se = TRUE,
               linetype = "solid",
               linewidth = 2, 
               alpha = 0.2) +
-  labs(x = x_label, y = y_label, color = "Age Group") +
-  coord_cartesian(xlim=c(-1, 2)) +
-  # scale_color_manual(name = "Make Others Feel Worse", values = fig_color) +
-  # scale_fill_manual(name = "Make Others Feel Worse", values = fig_color) +
+  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 
@@ -271,34 +293,85 @@ p_scatter =
         # legend.position="bottom left", legend.box = "horizontal")
         # legend.position="none")
 
-ggsave(paste(figure_dir, paste(brain_name, "scatter.png", sep = "_"), 
-             sep = "/"), p_scatter, width = w, height = h)
+ggsave(paste(figure_dir, paste(figure_name, "scatter.png", sep = "_"), 
+             sep = "/"), p_scatter, width = w*1.2, height = h)
 ```
+
+# Beh cov, para, act, in-out, norm_logit intercept * age, IPLD/IPLC
+## prepare df for ggplot
 ```{r}
-plot_model = lm(DV~age_bi + tsnr + fd_mean + RT, plot_df)
-summary(plot_model)
+## data prep
+in_name = "act_p_in-out_o-y_norm-logit_type-act_cope-04.txt"
+out_name = "act_p_in-out_o-y_norm-logit_type-act_cope-06.txt"
 
-plot_model = lm(DV ~ age_bi * group + tsnr + fd_mean + RT, plot_df)
-summary(plot_model)
+in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'), sep=" ",header=F)
+out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'), sep=" ",header=F)
 
-# partial_residual_p = 
-  interact_plot(plot_model, 
-              pred = age_bi,
-              modx = NA,
-              plot.points = TRUE,
-              # jitter = c(0.05,0),
-              data = plot_df,
-              partial.residuals = TRUE, # partial residual setting, must turn on when there are control vars
-              point.alpha = 0.3,
-              point.size = 0.7,
-              x.label = "IV1_xlabel_str",
-              y.label = "DV_ylabel_str",
-              pred.labels = NULL,
-              modx.labels = NULL,
-              mod2.labels = NULL,
-              main.title = NULL,
-              legend.main = :)
+norm_name = "in_out_norm_logit.csv"
+norm_df = read.csv(paste(data_dir, norm_name, sep = '/'), header = T)
+
+in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+              in_ROI = in_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+              ROI = in_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+              group = as.factor("ingroup")) # for unpacked interaction, y axis = no-contrast brain activity
+
+in_df = merge(in_df, sub_control_df, by = "subjID")
+
+out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+               out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+               ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+               group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
+
+out_df = merge(out_df, sub_control_df, by = "subjID")
+
+plot_df = in_df %>% 
+  mutate(out_ROI = out_df$out_ROI,
+         DV = in_ROI - out_ROI,
+         norm_in_out = norm_df$in_out_logit) %>% 
+  select("subjID", "DV", "age_bi", "norm_in_out", control_vars)
+```
+
+## get partial residuals
+```{r}
+LMM_df = plot_df
+formula_string = "DV ~ age_bi * norm_in_out + tsnr + fd_mean + RT"
+formula_LMM = as.formula(formula_string)
+focal_var_names = c("(Intercept)", 
+                    "age_bi", "norm_in_out")
+
+## compute partial residual using LMM
+pres_LMM_fit = lmm(formula_LMM, data = LMM_df)
+LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial", 
+                                     variable = focal_var_names)
 ```
 
 
+## plot and save
+```{r}
+x_label = "Fairness Senstivity (logit)\nSimilar > Disimilar"
+y_label = "beta\n(partial residual)"
+title_label = "Posterior Supramarginal Gyrus norm to Fairness\nSimilar > Disimilar"
+color_label = "Age Group"
+figure_name = "pSupramarginalGyrus_in-out_age_BehFairNorm"
+
+p_scatter =
+  ggplot(plot_df, aes(x = norm_in_out, y = DV, color = age_bi)) + 
+  geom_point(alpha = 1, size = point_size*0.8) +
+  geom_smooth(formula = "y~x", method = "lm", 
+              se = TRUE,
+              linetype = "solid",
+              linewidth = 2, 
+              alpha = 0.2) +
+  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+# legend.position="bottom left", legend.box = "horizontal")
+# legend.position="none")
+
+ggsave(paste(figure_dir, paste(figure_name, "scatter.png", sep = "_"), 
+             sep = "/"), p_scatter, width = w*1.2, height = h)
+```
 
