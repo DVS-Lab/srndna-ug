@@ -180,13 +180,13 @@ LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial",
 ```{r}
 summary_LMM_df <- LMM_df %>%
   group_by(age_bi) %>%
-  summarise(    mean_DV = mean(DV, na.rm = TRUE),
-    se_DV = sd(DV, na.rm = TRUE) / sqrt(n()))
+  summarise(mean_partial = mean(partial_residual, na.rm = TRUE),
+    se_partial = sd(partial_residual, na.rm = TRUE) / sqrt(n()))
 ```
 
 ## ggplot and save
 ```{r}
-x_label = "Age Group"
+x_label = "Age Group\n"
 y_label = "beta\n(partial residual)"
 title_label = "DMN-dACC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
 
@@ -197,22 +197,24 @@ figure_name = "DMN_dACC_in-out_age_NoBehCov"
 
 p_scatter =
   ggplot() +
-  geom_jitter(data = LMM_df, aes(x = age_bi, y = DV, color = age_bi),
+  geom_jitter(data = LMM_df, aes(x = age_bi, y = partial_residual, color = age_bi),
               alpha = data_point_alpha, 
               width = 0.1, size = data_point_size) + # Adjust jitter width for categorical X
-  geom_point(data = summary_LMM_df, aes(x = age_bi, y = mean_DV), 
+  geom_point(data = summary_LMM_df, aes(x = age_bi, y = mean_partial), 
              size = mean_point_size, alpha = data_point_alpha, shape = 18) +
   geom_errorbar(data = summary_LMM_df, 
                 aes(x = age_bi, 
-                    ymin = mean_DV - se_DV, ymax = mean_DV + se_DV),
+                    ymin = mean_partial - se_partial, ymax = mean_partial + se_partial),
                 width = 0.1) +
   scale_color_manual(values = color_age) +
-  labs(x = x_label, y = y_label, title = title_label, color = color_label) +
+  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
   geom_line(data = summary_LMM_df, # Connect means with a line
-            aes(x = as.numeric(age_bi), y = mean_DV), 
+            aes(x = as.numeric(age_bi), y = mean_partial), 
             color = "black", linewidth = fit_line_width) +
-  # theme_classic() +
+  theme_classic() +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        legend.title = element_text(face = "bold"),
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 
         axis.title.x = element_text(size = axis_title, face="bold"), 
@@ -221,11 +223,9 @@ p_scatter =
         # legend.position="bottom left", legend.box = "horizontal")
         # legend.position="none")
 
-ggsave(paste(figure_dir, paste(figure_name, "scatter.png", sep = "_"),
-             sep = "/"), p_scatter, width = w*1.2, height = h)
+ggsave(paste(figure_dir, paste(figure_name, "scatter_classic_titleNULL.png", sep = "_"),
+             sep = "/"), p_scatter, width = w*1.1, height = h)
 ```
-
-
 
 # ecn, in-out, sensitivity_logit * age, frontal pole/mpfc?
 ## prepare df for ggplot
@@ -287,17 +287,22 @@ color_age = c("older" = "#003c66", "younger"= "#0098ff")
 
 figure_name = "ECN_mPFC_in-out_age_BehFairSensitivity"
 
-p_scatter =
-  ggplot(plot_df, aes(x = sensitivity_in_out, y = DV, color = age_bi)) + 
-  geom_point(alpha = data_point_alpha, size = data_point_size) +
+# p_scatter =
+  ggplot(LMM_df, aes(x = sensitivity_in_out, y = partial_residual, color = age_bi)) +
+  geom_point(alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
   geom_smooth(formula = "y~x", method = "lm", 
               se = TRUE,
               linetype = "solid",
               linewidth = 2, 
               alpha = 0.2) +
   scale_color_manual(values = color_age) +
+  guides(color = guide_legend(override.aes = list(fill = NA))) +
+  theme_classic() +
   labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
+  guides(color = guide_legend(override.aes = list(fill = NA))) +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        legend.title = element_text(face = "bold"),
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 
         axis.title.x = element_text(size = axis_title, face="bold"), 
@@ -305,8 +310,8 @@ p_scatter =
         # legend.position="bottom left", legend.box = "horizontal")
         # legend.position="none")
 
-ggsave(paste(figure_dir, paste(figure_name, "scatter.png", sep = "_"),
-             sep = "/"), p_scatter, width = w*1.2, height = h)
+ggsave(paste(figure_dir, paste(figure_name, "scatter_classic_titleNULL.png", sep = "_"),
+             sep = "/"), p_scatter, width = w*1.1, height = h)
 ```
 
 # act, in-out, norm_logit intercept * age, IPLD/IPLC
@@ -369,8 +374,8 @@ color_age = c("older" = "#7f0000", "younger"= "#ff7f7f")
 
 figure_name = "act_pSupramarginalGyrus_in-out_age_BehFairNorm"
 
-# p_scatter =
-  ggplot(plot_df, aes(x = norm_in_out, y = DV, color = age_bi)) + 
+p_scatter =
+  ggplot(LMM_df, aes(x = norm_in_out, y = partial_residual, color = age_bi)) + 
   geom_point(alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
   geom_smooth(formula = "y~x", method = "lm", 
               se = TRUE,
@@ -379,7 +384,9 @@ figure_name = "act_pSupramarginalGyrus_in-out_age_BehFairNorm"
               alpha = 0.2) +
   scale_color_manual(values = color_age) +
   labs(x = x_label, y = y_label, color = color_label, title = title_label) +
-  theme_classic2() +
+  # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
+  guides(color = guide_legend(override.aes = list(fill = NA))) +
+  theme_classic() +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
         legend.title = element_text(face = "bold"),
         axis.text.x = element_text(size = axis_text), 
@@ -389,7 +396,10 @@ figure_name = "act_pSupramarginalGyrus_in-out_age_BehFairNorm"
 # legend.position="bottom left", legend.box = "horizontal")
 # legend.position="none")
 
-ggsave(paste(figure_dir, paste(figure_name, "scatter.png", sep = "_"), 
-             sep = "/"), p_scatter, width = w*1.2, height = h)
+ggsave(paste(figure_dir, paste(figure_name, "scatter_classic_titleNULL.png", sep = "_"), 
+             sep = "/"), p_scatter, width = w*1.1, height = h)
 ```
 
+
+
+# end of code
