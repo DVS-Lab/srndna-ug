@@ -118,13 +118,17 @@ legend_all = 12
 
 annotate_text = 4
 axis_line_width = 1
-fit_line_width = 2 ## to update ggplot element format variables
+fit_line_width = 2
 
-data_point_alpha = 0.8
+data_point_alpha = 0.5
 data_point_size = 3*0.8
+
+mean_point_size = 3
 
 summary_point_alpha = 1
 summary_point_size = 3
+
+annotate_text = 4
 
 w = 5
 h = 4
@@ -187,7 +191,7 @@ y_label = "beta\n(partial residual)"
 title_label = "DMN-dACC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
 
 color_label = "Age Group"
-color_age = c("older" = "#994d00", "younger"= "#ff8200") 
+color_age = c("older" = "#006900", "younger"= "#00d000") # "#37ff37"
 
 figure_name = "DMN_dACC_in-out_age_NoBehCov"
 
@@ -197,7 +201,7 @@ p_scatter =
               alpha = data_point_alpha, 
               width = 0.1, size = data_point_size) + # Adjust jitter width for categorical X
   geom_point(data = summary_LMM_df, aes(x = age_bi, y = mean_DV), 
-             size = point_size, alpha = data_point_alpha, shape = 18) +
+             size = mean_point_size, alpha = data_point_alpha, shape = 18) +
   geom_errorbar(data = summary_LMM_df, 
                 aes(x = age_bi, 
                     ymin = mean_DV - se_DV, ymax = mean_DV + se_DV),
@@ -206,9 +210,9 @@ p_scatter =
   labs(x = x_label, y = y_label, title = title_label, color = color_label) +
   geom_line(data = summary_LMM_df, # Connect means with a line
             aes(x = as.numeric(age_bi), y = mean_DV), 
-            color = "black", linewidth = line_width) +
+            color = "black", linewidth = fit_line_width) +
   # theme_classic() +
-  theme(axis.line = element_line(linewidth = line_width, colour = "black", linetype=1),
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 
         axis.title.x = element_text(size = axis_title, face="bold"), 
@@ -365,16 +369,19 @@ color_age = c("older" = "#7f0000", "younger"= "#ff7f7f")
 
 figure_name = "act_pSupramarginalGyrus_in-out_age_BehFairNorm"
 
-p_scatter =
+# p_scatter =
   ggplot(plot_df, aes(x = norm_in_out, y = DV, color = age_bi)) + 
-  geom_point(alpha = 1, size = point_size*0.8) +
+  geom_point(alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
   geom_smooth(formula = "y~x", method = "lm", 
               se = TRUE,
               linetype = "solid",
-              linewidth = 2, 
+              linewidth = fit_line_width, 
               alpha = 0.2) +
+  scale_color_manual(values = color_age) +
   labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  theme_classic2() +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        legend.title = element_text(face = "bold"),
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 
         axis.title.x = element_text(size = axis_title, face="bold"), 
