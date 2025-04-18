@@ -130,7 +130,7 @@ w = 5
 h = 4
 ```
 
-# Para, dmn, cope7, in-out c3 y-o, paracingulate gyrus?, -13.3, 34, 27.8 (aCC?, COG -3.6 33.4 32.9)
+# dmn, cope7, in-out c3 y-o, paracingulate gyrus?, -13.3, 34, 27.8 (aCC?, COG -3.6 33.4 32.9)
 ## prep original data
 ```{r}
 ## data prep
@@ -184,8 +184,11 @@ summary_LMM_df <- LMM_df %>%
 ```{r}
 x_label = "Age Group"
 y_label = "beta\n(partial residual)"
-title_label = "DMN-dACC Connectivity's Sensitivity to Fairness\nSimilar > Disimilar"
+title_label = "DMN-dACC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+
 color_label = "Age Group"
+color_age = c("older" = "#994d00", "younger"= "#ff8200") 
+
 figure_name = "DMN_dACC_in-out_age_NoBehCov"
 
 p_scatter =
@@ -199,6 +202,7 @@ p_scatter =
                 aes(x = age_bi, 
                     ymin = mean_DV - se_DV, ymax = mean_DV + se_DV),
                 width = 0.1) +
+  scale_color_manual(values = color_age) +
   labs(x = x_label, y = y_label, title = title_label, color = color_label) +
   geom_line(data = summary_LMM_df, # Connect means with a line
             aes(x = as.numeric(age_bi), y = mean_DV), 
@@ -219,7 +223,7 @@ ggsave(paste(figure_dir, paste(figure_name, "scatter.png", sep = "_"),
 
 
 
-# Beh cov, para, ecn, in-out, sensitivity_logit * age, frontal pole/mpfc?
+# ecn, in-out, sensitivity_logit * age, frontal pole/mpfc?
 ## prepare df for ggplot
 ```{r}
 ## data prep
@@ -270,10 +274,13 @@ LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial",
 
 ## plot and save
 ```{r}
-x_label = "Fairness Senstivity (logit)\nSimilar > Disimilar"
+x_label = "Fairness Senstivity (logit)\nIngroup > Outgroup"
 y_label = "beta\n(partial residual)"
-title_label = "ECN-mPFC Connectivity's Sensitivity to Fairness\nSimilar > Disimilar"
+title_label = "ECN-mPFC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+
 color_label = "Age Group"
+color_age = c("older" = "#003c66", "younger"= "#0098ff")
+
 figure_name = "ECN_mPFC_in-out_age_BehFairSensitivity"
 
 p_scatter =
@@ -284,6 +291,7 @@ p_scatter =
               linetype = "solid",
               linewidth = 2, 
               alpha = 0.2) +
+  scale_color_manual(values = color_age) +
   labs(x = x_label, y = y_label, color = color_label, title = title_label) +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
         axis.text.x = element_text(size = axis_text), 
@@ -293,11 +301,11 @@ p_scatter =
         # legend.position="bottom left", legend.box = "horizontal")
         # legend.position="none")
 
-ggsave(paste(figure_dir, paste(figure_name, "scatter.png", sep = "_"), 
+ggsave(paste(figure_dir, paste(figure_name, "scatter.png", sep = "_"),
              sep = "/"), p_scatter, width = w*1.2, height = h)
 ```
 
-# Beh cov, para, act, in-out, norm_logit intercept * age, IPLD/IPLC
+# act, in-out, norm_logit intercept * age, IPLD/IPLC
 ## prepare df for ggplot
 ```{r}
 ## data prep
@@ -348,11 +356,14 @@ LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial",
 
 ## plot and save
 ```{r}
-x_label = "Fairness Senstivity (logit)\nSimilar > Disimilar"
+x_label = "Fairness Senstivity (logit)\nIngroup > Outgroup"
 y_label = "beta\n(partial residual)"
-title_label = "Posterior Supramarginal Gyrus norm to Fairness\nSimilar > Disimilar"
+title_label = "Posterior Supramarginal Gyrus norm to Fairness\nIngroup > Outgroup"
+
 color_label = "Age Group"
-figure_name = "pSupramarginalGyrus_in-out_age_BehFairNorm"
+color_age = c("older" = "#7f0000", "younger"= "#ff7f7f")
+
+figure_name = "act_pSupramarginalGyrus_in-out_age_BehFairNorm"
 
 p_scatter =
   ggplot(plot_df, aes(x = norm_in_out, y = DV, color = age_bi)) + 
