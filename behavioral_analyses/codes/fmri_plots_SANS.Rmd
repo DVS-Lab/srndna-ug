@@ -76,6 +76,7 @@ library(effectsize)
 library(effects)
 library(lmerTest)
 library(ez)
+library(LMMstar)
 ```
 
 # load tsv and prolific raw data
@@ -223,7 +224,7 @@ p_scatter =
         # legend.position="bottom left", legend.box = "horizontal")
         # legend.position="none")
 
-ggsave(paste(figure_dir, paste(figure_name, "scatter_classic_titleNULL.png", sep = "_"),
+ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"),
              sep = "/"), p_scatter, width = w*1.1, height = h)
 ```
 
@@ -310,7 +311,7 @@ p_scatter =
         # legend.position="bottom left", legend.box = "horizontal")
         # legend.position="none")
 
-ggsave(paste(figure_dir, paste(figure_name, "scatter_classic_titleNULL.png", sep = "_"),
+ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"),
              sep = "/"), p_scatter, width = w*1.1, height = h)
 ```
 
@@ -396,7 +397,7 @@ p_scatter =
 # legend.position="bottom left", legend.box = "horizontal")
 # legend.position="none")
 
-ggsave(paste(figure_dir, paste(figure_name, "scatter_classic_titleNULL.png", sep = "_"), 
+ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"), 
              sep = "/"), p_scatter, width = w*1.1, height = h)
 ```
 
