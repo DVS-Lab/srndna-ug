@@ -287,7 +287,7 @@ color_age = c("older" = "#003c66", "younger"= "#0098ff")
 
 figure_name = "ECN_mPFC_in-out_age_BehFairSensitivity"
 
-# p_scatter =
+p_scatter =
   ggplot(LMM_df, aes(x = sensitivity_in_out, y = partial_residual, color = age_bi)) +
   geom_point(alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
   geom_smooth(formula = "y~x", method = "lm", 
