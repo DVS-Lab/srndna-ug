@@ -222,8 +222,6 @@ soc_nonsoc_rand_df = merge(computer_random_effects, human_random_effects, by = "
 ```
 
 
-
-
 # in_out_sens_df for L3 w/ cov
 ```{r}
 ## random sensitivity only

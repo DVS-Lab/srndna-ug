@@ -101,7 +101,7 @@ all_trials_df = all_trials_df %>%
          block_fair = relevel(as.factor(block_fair), ref = "0"),
          accept = relevel(as.factor(accept), ref = "0"),
          offer_3 = offer-3) %>% 
-  dplyr::select(subjID, offer_3, accept, human, ingroup, block_fair, age_bi, missed)
+  dplyr::select(subjID, offer, accept, human, ingroup, block_fair, age_bi, missed)
 
 all_trials_human_df = all_trials_df[all_trials_df$human == 1,]
 
@@ -112,7 +112,7 @@ all_trials_human_df = all_trials_df[all_trials_df$human == 1,]
 ```{r}
 ## ingroup offer norm
 ingroup_df = all_trials_human_df[all_trials_human_df$ingroup == 1,]
-ingroup_mlm = glmer(accept ~ offer_3 + (1+offer_3|subjID), 
+ingroup_mlm = glmer(accept ~ offer + (1+offer|subjID), 
                  data = ingroup_df, 
                  family = binomial)
 summary(ingroup_mlm)
@@ -124,30 +124,65 @@ summary(ingroup_mlm)
 # summary(ingroup_mlm_2)
 # anova(ingroup_mlm_1, ingroup_mlm_2, refit = F)
 
-ingroup_random_effects <- ranef(ingroup_mlm, condVar = FALSE) %>% 
+## extract random intercept and slope
+ingroup_random_intercept <- ranef(ingroup_mlm, condVar = FALSE) %>% 
   as.data.frame() %>%  filter(term == "(Intercept)") %>%
-  mutate(ingroup = condval,
+  mutate(ingroup_randIntercept = condval,
          subjID = grp) %>% 
-  dplyr::select(subjID, ingroup)
+  dplyr::select(subjID, ingroup_randIntercept)
+
+ingroup_random_slope <- ranef(ingroup_mlm, condVar = FALSE) %>% 
+  as.data.frame() %>%  filter(term == "offer") %>%
+  mutate(ingroup_randSlope = condval,
+         subjID = grp) %>% 
+  dplyr::select(subjID, ingroup_randSlope)
+
+## extract fixed intgercept and slope
+ingroup_fixed_effects <- fixef(ingroup_mlm) %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "fixed")
+
+ingroup_fixedIntercept = ingroup_fixed_effects$.[ingroup_fixed_effects$fixed == "(Intercept)"]
+
+ingroup_fixedSlope = ingroup_fixed_effects$.[ingroup_fixed_effects$fixed == "offer"]
 
 ## outgroup offer norm
 outgroup_df = all_trials_human_df[all_trials_human_df$ingroup == 0,]
-outgroup_mlm = glmer(accept ~ offer_3 + (1+offer_3|subjID), 
+outgroup_mlm = glmer(accept ~ offer + (1+offer|subjID), 
                     data = outgroup_df, 
                     family = binomial)
 summary(outgroup_mlm)
 
-outgroup_random_effects <- ranef(outgroup_mlm, condVar = FALSE) %>% 
-  as.data.frame() %>%  filter(term == "(Intercept)") %>% 
-  mutate(outgroup = condval,
+outgroup_random_intercept <- ranef(outgroup_mlm, condVar = FALSE) %>% 
+  as.data.frame() %>%  filter(term == "(Intercept)") %>%
+  mutate(outgroup_randIntercept = condval,
          subjID = grp) %>% 
-  dplyr::select(subjID, outgroup)
+  dplyr::select(subjID, outgroup_randIntercept)
+
+outgroup_random_slope <- ranef(outgroup_mlm, condVar = FALSE) %>% 
+  as.data.frame() %>%  filter(term == "offer") %>%
+  mutate(outgroup_randSlope = condval,
+         subjID = grp) %>% 
+  dplyr::select(subjID, outgroup_randSlope)
+
+outgroup_fixed_effects <- fixef(outgroup_mlm) %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "fixed")
+
+outgroup_fixedIntercept = outgroup_fixed_effects$.[outgroup_fixed_effects$fixed == "(Intercept)"]
+
+outgroup_fixedSlope = outgroup_fixed_effects$.[outgroup_fixed_effects$fixed == "offer"]
 
 ## in-out
-in_out_rand_df = merge(ingroup_random_effects, outgroup_random_effects, by = "subjID") %>% 
-  mutate(in_out_logit = ingroup - outgroup,
-         in_out_prob = (exp(ingroup) / (1 + exp(ingroup))) - exp(outgroup) / (1 + exp(outgroup))) %>% 
-  dplyr::select(subjID, in_out_logit, in_out_prob)
+in_out_norm_full_df = merge(ingroup_random_intercept, outgroup_random_intercept, by = "subjID") %>% 
+  mutate(outgroup_randIntercept = outgroup_random_intercept$outgroup_randIntercept,
+         ingroup_randSlope = ingroup_random_slope$ingroup_randSlope, 
+         outgroup_randSlope = outgroup_random_slope$outgroup_randSlope,
+         ingroup_norm = 
+           (ingroup_randIntercept + ingroup_fixedIntercept) / (ingroup_randSlope + ingroup_fixedSlope),
+         outgroup_norm =
+           (outgroup_randIntercept + outgroup_fixedIntercept) / (outgroup_randSlope + outgroup_fixedSlope),
+         in_out_logit = ingroup_norm - outgroup_norm)
 ```
 
 ## computer
@@ -185,62 +220,64 @@ soc_nonsoc_rand_df = merge(computer_random_effects, human_random_effects, by = "
   dplyr::select(subjID, soc_nonsoc_logit, soc_nonsoc_prob)
 ```
 
-# in_out_norm_df for L3 w/ cov
+# logit
+## in_out_norm_df for L3 w/ cov
 ```{r}
-in_out_norm_df = in_out_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
+in_out_norm_df = in_out_norm_full_df %>% merge(., L3_47_df, by = "subjID") %>% 
   mutate(in_out_demean = in_out_logit - mean(in_out_logit),
          in_out_young = in_out_demean*younger,
          in_out_old = in_out_demean*older,
          ones = 1)
-write.csv(in_out_norm_df, paste(data_dir, "in_out_norm_logit.csv", sep = "/"),
+write.csv(in_out_norm_df, paste(data_dir, "in_out_norm_full_logit.csv", sep = "/"),
           row.names = FALSE)
 
-in_out_norm_df = in_out_norm_df %>% 
+in_out_norm_df = in_out_norm_full_df %>% 
   select(subjID, ones, ismale, tsnr, fd_mean, RT, 
          younger, older,
          in_out_young, in_out_old)
-write.csv(in_out_norm_df, paste(data_dir, "L3_cov_in_out_norm_logit.csv", sep = "/"),
+write.csv(in_out_norm_df, paste(data_dir, "L3_cov_in_out_norm_full_logit.csv", sep = "/"),
           row.names = FALSE)
 ```
 
-# soc_nonsoc_norm_df for L3 w/ cov
+## soc_nonsoc_norm_df for L3 w/ cov
 ```{r}
-soc_nonsoc_norm_df = soc_nonsoc_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
-  mutate(soc_nonsoc_demean = soc_nonsoc_logit - mean(soc_nonsoc_logit),
-         soc_nonsoc_young = soc_nonsoc_demean*younger,
-         soc_nonsoc_old = soc_nonsoc_demean*older,
-         ones = 1) %>% 
-  select(subjID, ones, ismale, tsnr, fd_mean, RT, 
-         younger, older,
-         soc_nonsoc_young, soc_nonsoc_old)
-write.csv(soc_nonsoc_norm_df, paste(data_dir, "L3_cov_soc_nonsoc_norm_logit.csv", sep = "/"),
-          row.names = FALSE)
+# soc_nonsoc_norm_df = soc_nonsoc_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
+#   mutate(soc_nonsoc_demean = soc_nonsoc_logit - mean(soc_nonsoc_logit),
+#          soc_nonsoc_young = soc_nonsoc_demean*younger,
+#          soc_nonsoc_old = soc_nonsoc_demean*older,
+#          ones = 1) %>% 
+#   select(subjID, ones, ismale, tsnr, fd_mean, RT, 
+#          younger, older,
+#          soc_nonsoc_young, soc_nonsoc_old)
+# write.csv(soc_nonsoc_norm_df, paste(data_dir, "L3_cov_soc_nonsoc_norm_logit.csv", sep = "/"),
+#           row.names = FALSE)
 ```
 
-# in_out_norm_df for L3 w/ cov
+# prob
+## in_out_norm_df for L3 w/ cov
 ```{r}
-in_out_norm_df = in_out_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
-  mutate(in_out_demean = in_out_prob - mean(in_out_prob),
-         in_out_young = in_out_demean*younger,
-         in_out_old = in_out_demean*older,
-         ones = 1) %>% 
-  select(subjID, ones, ismale, tsnr, fd_mean, RT, 
-         younger, older,
-         in_out_young, in_out_old)
-write.csv(in_out_norm_df, paste(data_dir, "L3_cov_in_out_norm_prob.csv", sep = "/"),
-          row.names = FALSE)
+# in_out_norm_df = in_out_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
+#   mutate(in_out_demean = in_out_prob - mean(in_out_prob),
+#          in_out_young = in_out_demean*younger,
+#          in_out_old = in_out_demean*older,
+#          ones = 1) %>% 
+#   select(subjID, ones, ismale, tsnr, fd_mean, RT, 
+#          younger, older,
+#          in_out_young, in_out_old)
+# write.csv(in_out_norm_df, paste(data_dir, "L3_cov_in_out_norm_prob.csv", sep = "/"),
+#           row.names = FALSE)
 ```
 
-# soc_nonsoc_norm_df for L3 w/ cov
+## soc_nonsoc_norm_df for L3 w/ cov
 ```{r}
-soc_nonsoc_norm_df = soc_nonsoc_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
-  mutate(soc_nonsoc_demean = soc_nonsoc_prob - mean(soc_nonsoc_prob),
-         soc_nonsoc_young = soc_nonsoc_demean*younger,
-         soc_nonsoc_old = soc_nonsoc_demean*older,
-         ones = 1) %>% 
-  select(subjID, ones, ismale, tsnr, fd_mean, RT, 
-         younger, older,
-         soc_nonsoc_young, soc_nonsoc_old)
-write.csv(soc_nonsoc_norm_df, paste(data_dir, "L3_cov_soc_nonsoc_norm_prob.csv", sep = "/"),
-          row.names = FALSE)
+# soc_nonsoc_norm_df = soc_nonsoc_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
+#   mutate(soc_nonsoc_demean = soc_nonsoc_prob - mean(soc_nonsoc_prob),
+#          soc_nonsoc_young = soc_nonsoc_demean*younger,
+#          soc_nonsoc_old = soc_nonsoc_demean*older,
+#          ones = 1) %>% 
+#   select(subjID, ones, ismale, tsnr, fd_mean, RT, 
+#          younger, older,
+#          soc_nonsoc_young, soc_nonsoc_old)
+# write.csv(soc_nonsoc_norm_df, paste(data_dir, "L3_cov_soc_nonsoc_norm_prob.csv", sep = "/"),
+#           row.names = FALSE)
 ```
