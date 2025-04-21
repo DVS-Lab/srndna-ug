@@ -65,6 +65,8 @@ library(rjson)
 library(readr)
 library(hBayesDM)
 library(brms)
+library(lme4)
+library(lmerTest)
 ```
 
 # dir and sub info
@@ -123,32 +125,47 @@ summary(ingroup_mlm)
 # summary(ingroup_mlm_2)
 # anova(ingroup_mlm_1, ingroup_mlm_2, refit = F)
 
+ingroup_fixed_effects <- fixef(ingroup_mlm) %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "fixed")
+
 ingroup_random_effects <- ranef(ingroup_mlm, condVar = FALSE) %>% 
   as.data.frame()
+
 ingroup_random_effects = ingroup_random_effects[ingroup_random_effects$term == "offer",] %>% 
   mutate(ingroup = condval,
+         ingroup_fixed_rand = 
+           condval + ingroup_fixed_effects$.[ingroup_fixed_effects$fixed == "offer"],
          subjID = grp) %>% 
-  dplyr::select(subjID, ingroup)
+  dplyr::select(subjID, ingroup, ingroup_fixed_rand)
 
 ## outgroup offer sensitivity
 outgroup_df = all_trials_human_df[all_trials_human_df$ingroup == 0,]
 outgroup_mlm = glmer(accept ~ offer + (1+offer|subjID), 
                     data = outgroup_df, 
                     family = binomial)
-# summary(outgroup_mlm)
+summary(outgroup_mlm)
+
+outgroup_fixed_effects <- fixef(outgroup_mlm) %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "fixed")
 
 outgroup_random_effects <- ranef(outgroup_mlm, condVar = FALSE) %>% 
   as.data.frame()
+
 outgroup_random_effects = outgroup_random_effects[outgroup_random_effects$term == "offer",] %>% 
   mutate(outgroup = condval,
+         outgroup_fixed_rand = 
+           condval + outgroup_fixed_effects$.[outgroup_fixed_effects$fixed == "offer"],
          subjID = grp) %>% 
-  dplyr::select(subjID, outgroup)
+  dplyr::select(subjID, outgroup, outgroup_fixed_rand)
 
 ## in-out
 in_out_rand_df = merge(ingroup_random_effects, outgroup_random_effects, by = "subjID") %>% 
   mutate(in_out_logit = ingroup - outgroup,
-         in_out_prob = (exp(ingroup) / (1 + exp(ingroup))) - exp(outgroup) / (1 + exp(outgroup))) %>% 
-  dplyr::select(subjID, in_out_logit, in_out_prob)
+         in_out_full_logit = ingroup_fixed_rand - outgroup_fixed_rand,
+         in_out_prob = (exp(ingroup) / (1 + exp(ingroup))) - exp(outgroup) / (1 + exp(outgroup))) %>%
+  dplyr::select(subjID, in_out_logit, in_out_full_logit, in_out_prob)
 ```
 
 ## computer
@@ -209,6 +226,7 @@ soc_nonsoc_rand_df = merge(computer_random_effects, human_random_effects, by = "
 
 # in_out_sens_df for L3 w/ cov
 ```{r}
+## random sensitivity only
 in_out_sens_df = in_out_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
   mutate(in_out_demean = in_out_logit - mean(in_out_logit),
          in_out_young = in_out_demean*younger,
@@ -222,6 +240,22 @@ in_out_sens_df = in_out_sens_df %>%
          younger, older,
          in_out_young, in_out_old)
 write.csv(in_out_sens_df, paste(data_dir, "L3_cov_in_out_sensitivity_logit.csv", sep = "/"),
+          row.names = FALSE)
+
+## full slope, rand + fixed
+in_out_sens_df = in_out_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
+  mutate(in_out_demean = in_out_full_logit - mean(in_out_full_logit),
+         in_out_young = in_out_demean*younger,
+         in_out_old = in_out_demean*older,
+         ones = 1)
+write.csv(in_out_sens_df, paste(data_dir, "in_out_sensitivity_full_logit.csv", sep = "/"),
+          row.names = FALSE)
+
+in_out_sens_df = in_out_sens_df %>% 
+  select(subjID, ones, ismale, tsnr, fd_mean, RT, 
+         younger, older,
+         in_out_young, in_out_old)
+write.csv(in_out_sens_df, paste(data_dir, "L3_cov_in_out_sensitivity_full_logit.csv", sep = "/"),
           row.names = FALSE)
 ```
 

@@ -239,8 +239,8 @@ in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'), sep=" ",header=F)
 out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'), sep=" ",header=F)
 
 sensitivity_name = "in_out_sensitivity_logit.csv"
+sensitivity_name = "in_out_sensitivity_full_logit.csv"
 sensitivity_df = read.csv(paste(data_dir, sensitivity_name, sep = '/'), header = T)
-
 
 in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
               in_ROI = in_ROI$V1, # for packed interaction, y axis = contrasted brain activity
@@ -286,7 +286,8 @@ title_label = "ECN-mPFC Connectivity's Sensitivity to Fairness\nIngroup > Outgro
 color_label = "Age Group"
 color_age = c("older" = "#003c66", "younger"= "#0098ff")
 
-figure_name = "ECN_mPFC_in-out_age_BehFairSensitivity"
+# figure_name = "ECN_mPFC_in-out_age_BehFairSensitivity"
+figure_name = "ECN_mPFC_in-out_age_BehFairSensitivityFull"
 
 p_scatter =
   ggplot(LMM_df, aes(x = sensitivity_in_out, y = partial_residual, color = age_bi)) +
