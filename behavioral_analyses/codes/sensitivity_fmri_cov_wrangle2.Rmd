@@ -110,6 +110,7 @@ all_trials_human_df = all_trials_df[all_trials_df$human == 1,]
 
 # sensitivity
 ## human only
+### ingroup
 ```{r}
 ## ingroup offer sensitivity
 ingroup_df = all_trials_human_df[all_trials_human_df$ingroup == 1,]
@@ -138,7 +139,10 @@ ingroup_random_effects = ingroup_random_effects[ingroup_random_effects$term == "
            condval + ingroup_fixed_effects$.[ingroup_fixed_effects$fixed == "offer"],
          subjID = grp) %>% 
   dplyr::select(subjID, ingroup, ingroup_fixed_rand)
+```
 
+### outgroup
+```{r}
 ## outgroup offer sensitivity
 outgroup_df = all_trials_human_df[all_trials_human_df$ingroup == 0,]
 outgroup_mlm = glmer(accept ~ offer + (1+offer|subjID), 
@@ -159,13 +163,15 @@ outgroup_random_effects = outgroup_random_effects[outgroup_random_effects$term =
            condval + outgroup_fixed_effects$.[outgroup_fixed_effects$fixed == "offer"],
          subjID = grp) %>% 
   dplyr::select(subjID, outgroup, outgroup_fixed_rand)
+```
 
+```{r}
 ## in-out
 in_out_rand_df = merge(ingroup_random_effects, outgroup_random_effects, by = "subjID") %>% 
-  mutate(in_out_logit = ingroup - outgroup,
+  mutate(in_out_rand_logit = ingroup - outgroup,
          in_out_full_logit = ingroup_fixed_rand - outgroup_fixed_rand,
          in_out_prob = (exp(ingroup) / (1 + exp(ingroup))) - exp(outgroup) / (1 + exp(outgroup))) %>%
-  dplyr::select(subjID, ingroup, outgroup, in_out_logit, in_out_full_logit, in_out_prob)
+  dplyr::select(subjID, ingroup_fixed_rand, outgroup_fixed_rand, in_out_rand_logit, in_out_full_logit, in_out_prob)
 ```
 
 ## computer
@@ -226,7 +232,7 @@ soc_nonsoc_rand_df = merge(computer_random_effects, human_random_effects, by = "
 ```{r}
 ## random sensitivity only
 in_out_sens_df = in_out_rand_df %>% merge(., L3_47_df, by = "subjID") %>% 
-  mutate(in_out_demean = in_out_logit - mean(in_out_logit),
+  mutate(in_out_demean = in_out_rand_logit - mean(in_out_rand_logit),
          in_out_young = in_out_demean*younger,
          in_out_old = in_out_demean*older,
          ones = 1)
