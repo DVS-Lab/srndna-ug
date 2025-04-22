@@ -196,6 +196,9 @@ out_plot_df = out_df %>%
 ```{r}
 plot_df = rbind(in_plot_df, out_plot_df)
 
+plot_df$group = relevel(plot_df$group, ref = "outgroup")
+plot_df$age_bi = relevel(plot_df$age_bi, ref = "younger")
+
 ## prepare summary data for plotting means, error bars, and lines
 summary_plot_df <- plot_df %>%
   group_by(age_bi, group) %>%
@@ -315,13 +318,13 @@ out_plot_df = out_df %>%
   select(subjID, ROI_pres, sensitivity_norm, age_bi, group)
 ```
 
-
-
 ## put together plotting df
 ```{r}
 plot_df = rbind(in_plot_df, out_plot_df)
-```
 
+plot_df$group = relevel(plot_df$group, ref = "outgroup")
+plot_df$age_bi = relevel(plot_df$group, ref = "younger")
+```
 
 ## plot and save
 ### group as facet column
