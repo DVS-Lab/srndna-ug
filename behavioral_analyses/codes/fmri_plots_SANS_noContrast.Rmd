@@ -322,8 +322,23 @@ out_plot_df = out_df %>%
 ```{r}
 plot_df = rbind(in_plot_df, out_plot_df)
 
+## reset referece group
 plot_df$group = relevel(plot_df$group, ref = "outgroup")
-plot_df$age_bi = relevel(plot_df$group, ref = "younger")
+plot_df$age_bi = relevel(plot_df$age_bi, ref = "younger")
+
+## create binary norm violation sensitivity column
+plot_df = plot_df %>% 
+  mutate(norm_violation_bi = 
+           case_when(sensitivity_norm <= median(sensitivity_norm) ~ "lower sensivitiy",
+                     sensitivity_norm > median(sensitivity_norm) ~ "higher sensivitiy"))
+
+plot_df$norm_violation_bi = relevel(as.factor(plot_df$norm_violation_bi), 
+                                    ref = "lower sensivitiy")
+
+summary_plot_df <- plot_df %>%
+  group_by(age_bi, group, norm_violation_bi) %>%
+  summarise(mean_ROI_pres = mean(ROI_pres, na.rm = TRUE),
+    se_ROI_pres = sd(ROI_pres, na.rm = TRUE) / sqrt(n()))
 ```
 
 ## plot and save
@@ -339,8 +354,8 @@ title_label = ""
 color_age_label = "Age"
 color_age = c("older" = "#003c66", "younger"= "#0098ff")
 
-color_partner_label = "Proposer Identity"
-color_partner = c("outgroup" = "#00BFC4", "ingroup" = "#F8766D")
+color_partner_label = "Proposer\nIdentity"
+color_partner = c("ingroup" = "#00BFC4", "outgroup" = "#F8766D")
 
 figure_name = "ECN_mPFC_in-out_age_BehFairSensitivityFull_facetGroup"
 
@@ -372,6 +387,7 @@ scale_color_manual(values = color_age) +
 ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"),
              sep = "/"), p_scatter, width = w*1.5, height = h)
 ```
+
 ### age as facet column
 ```{r}
 x_label = "Norm Violation Sensitivity"
@@ -383,8 +399,8 @@ title_label = ""
 color_age_label = "Age"
 color_age = c("older" = "#003c66", "younger"= "#0098ff")
 
-color_partner_label = "Proposer Identity"
-color_partner = c("outgroup" = "#00BFC4", "ingroup" = "#F8766D")
+color_partner_label = "Proposer\nIdentity"
+color_partner = c("ingroup" = "#00BFC4", "outgroup" = "#F8766D")
 
 figure_name = "ECN_mPFC_in-out_age_BehFairSensitivityFull_facetAge"
 
@@ -416,7 +432,61 @@ ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"),
              sep = "/"), p_scatter, width = w*1.5, height = h)
 ```
 
+### norm_bi * age_bi facet grid
+```{r}
+# x_label = "Norm Violation Sensitivity"
+x_label = ""
+y_label = "ECN-mPFC connectivity\nsensitivity to fairness"
 
+# title_label = "ECN-mPFC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+title_label = ""
+
+color_age_label = "Age Group"
+color_age = c("older" = "#003c66", "younger"= "#0098ff")
+
+color_partner_label = "Proposer\nIdentity"
+color_partner = c("ingroup" = "#00BFC4", "outgroup" = "#F8766D")
+
+figure_name = "ECN_mPFC_in-out_age_BehFairSensitivityFull_facetNormViolationSens"
+
+# p_scatter =
+ggplot() +
+  geom_jitter(data = plot_df, aes(x = group, y = ROI_pres, color = age_bi),
+              alpha = data_point_alpha, 
+              width = 0.1, size = data_point_size,
+              show.legend = FALSE) +
+  # geom_point(data = plot_df, aes(x = group, y = ROI_pres, color = age_bi),
+  #   alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
+  facet_grid(. ~ norm_violation_bi) +
+  geom_line(data = summary_plot_df, # Connect means with a line
+            aes(x = group, y = mean_ROI_pres, color = age_bi, group = age_bi), 
+            linewidth = fit_line_width) +
+  scale_color_manual(values = color_age) +
+  geom_point(data = summary_plot_df, aes(x = group, y = mean_ROI_pres),
+             size = mean_point_size, alpha = 1, shape = 18, color = "black") +
+  geom_errorbar(data = summary_plot_df, 
+                aes(x = group, 
+                    ymin = mean_ROI_pres-se_ROI_pres, ymax = mean_ROI_pres+se_ROI_pres),
+                width = 0.1,
+                inherit.aes = FALSE) +
+  guides(color = guide_legend(override.aes = list(fill = NA))) +
+  theme_classic() +
+  labs(x = x_label, y = y_label, color = color_age_label, title = title_label) +
+  guides(color = guide_legend(override.aes = list(fill = NA))) +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        legend.title = element_text(face = "bold"),
+        # legend.position = "none",
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold")
+        # strip.background = element_rect(colour="black", fill="white", 
+        #                                size=1.5, linetype="solid")
+  )
+
+ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"),
+             sep = "/"), p_scatter, width = w*1.5, height = h)
+```
 
 
 # end of code
