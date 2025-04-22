@@ -165,7 +165,7 @@ in_out_rand_df = merge(ingroup_random_effects, outgroup_random_effects, by = "su
   mutate(in_out_logit = ingroup - outgroup,
          in_out_full_logit = ingroup_fixed_rand - outgroup_fixed_rand,
          in_out_prob = (exp(ingroup) / (1 + exp(ingroup))) - exp(outgroup) / (1 + exp(outgroup))) %>%
-  dplyr::select(subjID, in_out_logit, in_out_full_logit, in_out_prob)
+  dplyr::select(subjID, ingroup, outgroup, in_out_logit, in_out_full_logit, in_out_prob)
 ```
 
 ## computer

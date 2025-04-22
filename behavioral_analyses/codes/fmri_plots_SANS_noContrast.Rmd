@@ -137,7 +137,7 @@ h = 4
 
 # dmn, cope7, in-out c3 y-o, paracingulate gyrus?, -13.3, 34, 27.8 (aCC?, COG -3.6 33.4 32.9)
 ## prep original data
-### ingroup
+### load data
 ```{r}
 ## data prep
 in_name = "dmn_p_in-out_y-o_type-nppi-dmn_cope-04.txt"
@@ -145,7 +145,10 @@ out_name = "dmn_p_in-out_y-o_type-nppi-dmn_cope-06.txt"
 
 in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'),sep=" ",header=F)
 out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'),sep=" ",header=F)
+```
 
+### ingroup
+```{r}
 in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
               in_ROI = in_ROI$V1, # for packed interaction, y axis = contrasted brain activity
               ROI = in_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
@@ -167,7 +170,7 @@ in_plot_df = in_df %>%
   select(subjID, ROI_pres, age_bi, group)
 ```
 
-
+### outgroup
 ```{r}
 out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
                out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
@@ -189,7 +192,7 @@ out_plot_df = out_df %>%
   select(subjID, ROI_pres, age_bi, group)
 ```
 
-### put together plotting df
+## put together plotting df
 ```{r}
 plot_df = rbind(in_plot_df, out_plot_df)
 
@@ -200,18 +203,19 @@ summary_plot_df <- plot_df %>%
     se_ROI_pres = sd(ROI_pres, na.rm = TRUE) / sqrt(n()))
 ```
 
-### ggplot and save
+## ggplot and save
 ```{r}
 x_label = ""
-y_label = "DMN-dACC Functional Connectivity"
-title_label = "DMN-dACC Connectivity Sensitivity to Norm Violation"
+y_label = "DMN-dACC PPI\nsensitivity to fairness"
+title_label = ""
 
 color_age_label = "Age"
 color_age = c("older" = "#006900", "younger"= "#00d000")
 
 figure_name = "DMN_dACC_in-out_age_NoBehCov_noContrast"
 
-ggplot() +
+p_scatter = 
+  ggplot() +
   geom_jitter(data = plot_df, aes(x = group, y = ROI_pres, color = age_bi),
               alpha = data_point_alpha, 
               width = 0.1, size = data_point_size) + # Adjust jitter width for categorical X
@@ -241,6 +245,7 @@ ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"),
 
 # ecn, in-out, sensitivity_logit * age, frontal pole/mpfc?
 ## prepare df for ggplot
+### load data
 ```{r}
 ## data prep
 in_name = "ecn_p_in-out_o-y_sens-logit_type-nppi-ecn_cope-04.txt"
@@ -249,10 +254,13 @@ out_name = "ecn_p_in-out_o-y_sens-logit_type-nppi-ecn_cope-06.txt"
 in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'), sep=" ",header=F)
 out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'), sep=" ",header=F)
 
-sensitivity_name = "in_out_sensitivity_logit.csv"
 sensitivity_name = "in_out_sensitivity_full_logit.csv"
-sensitivity_df = read.csv(paste(data_dir, sensitivity_name, sep = '/'), header = T)
 
+in_out_rand_df = read.csv(paste(data_dir, sensitivity_name, sep = "/"), header = TRUE)
+```
+
+### ingroup
+```{r}
 in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
               in_ROI = in_ROI$V1, # for packed interaction, y axis = contrasted brain activity
               ROI = in_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
@@ -260,74 +268,75 @@ in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi,
 
 in_df = merge(in_df, sub_control_df, by = "subjID")
 
+## get partial residual
+LMM_df = in_df
+formula_string = "ROI ~ age_bi + tsnr + fd_mean + RT"
+formula_LMM = as.formula(formula_string)
+focal_var_names = c("(Intercept)", "age_bi")
+
+pres_LMM_fit = lmm(formula_LMM, data = LMM_df)
+in_df$ROI_pres <- residuals(pres_LMM_fit, type = "partial", 
+                         variable = focal_var_names)
+
+in_plot_df = in_df %>% 
+  mutate(sensitivity_norm = in_out_rand_df$ingroup) %>% 
+  select(subjID, ROI_pres, sensitivity_norm, age_bi, group)
+```
+
+### outgroup
+```{r}
 out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
-               out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
-               ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
-               group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
+              out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+              ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+              group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
 
 out_df = merge(out_df, sub_control_df, by = "subjID")
 
-plot_df = in_df %>% 
-  mutate(out_ROI = out_df$out_ROI,
-         DV = in_ROI - out_ROI,
-         sensitivity_in_out = sensitivity_df$in_out_logit) %>% 
-  select("subjID", "DV", "age_bi", "sensitivity_in_out", control_vars)
-```
-
-## get partial residuals
-```{r}
-LMM_df = plot_df
-formula_string = "DV ~ age_bi * sensitivity_in_out + tsnr + fd_mean + RT"
+## get partial residual
+LMM_df = out_df
+formula_string = "ROI ~ age_bi + tsnr + fd_mean + RT"
 formula_LMM = as.formula(formula_string)
-focal_var_names = c("(Intercept)", 
-                    "age_bi", "sensitivity_in_out")
+focal_var_names = c("(Intercept)", "age_bi")
 
-## compute partial residual using LMM
 pres_LMM_fit = lmm(formula_LMM, data = LMM_df)
-LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial", 
-                         variable = focal_var_names)
+out_df$ROI_pres <- residuals(pres_LMM_fit, type = "partial", 
+                            variable = focal_var_names)
+
+out_plot_df = out_df %>% 
+  mutate(sensitivity_norm = in_out_rand_df$outgroup) %>% 
+  select(subjID, ROI_pres, sensitivity_norm, age_bi, group)
 ```
+
+## put together plotting df
+```{r}
+plot_df = rbind(in_plot_df, out_plot_df)
+```
+
 
 ## plot and save
 ```{r}
-color_partner_label = "Proposer Identity"
-color_partner = c("outgroup" = "#00BFC4", "ingroup" = "#F8766D")
-
-
-
-facet_age_label = "Age"
-facet_age = c("older" = "#006900", "younger"= "#00d000") # "#37ff37"
-
-
-
-
-
-
-
-
-
-x_label = "Fairness Senstivity (logit)\nIngroup > Outgroup"
-y_label = "beta\n(partial residual)"
+x_label = "Norm Violation Sensitivity"
+y_label = "ECN-mPFC connectivit\nsensitivity to fairness"
 title_label = "ECN-mPFC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
 
-color_label = "Age Group"
+color_age_label = "Age"
 color_age = c("older" = "#003c66", "younger"= "#0098ff")
 
-# figure_name = "ECN_mPFC_in-out_age_BehFairSensitivity"
 figure_name = "ECN_mPFC_in-out_age_BehFairSensitivityFull"
 
-p_scatter =
-  ggplot(LMM_df, aes(x = sensitivity_in_out, y = partial_residual, color = age_bi)) +
+# p_scatter =
+ggplot(plot_df, aes(x = sensitivity_norm, y = ROI_pres, color = age_bi)) +
   geom_point(alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
   geom_smooth(formula = "y~x", method = "lm", 
               se = TRUE,
               linetype = "solid",
               linewidth = 2, 
               alpha = 0.2) +
-  scale_color_manual(values = color_age) +
+  facet_grid(. ~ group) +
+scale_color_manual(values = color_age) +
   guides(color = guide_legend(override.aes = list(fill = NA))) +
   theme_classic() +
-  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  labs(x = x_label, y = y_label, color = color_age_label, title = title_label) +
   # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
   guides(color = guide_legend(override.aes = list(fill = NA))) +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
@@ -335,9 +344,10 @@ p_scatter =
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 
         axis.title.x = element_text(size = axis_title, face="bold"), 
-        axis.title.y = element_text(size = axis_title, face="bold"))
-        # legend.position="bottom left", legend.box = "horizontal")
-        # legend.position="none")
+        axis.title.y = element_text(size = axis_title, face="bold")
+        # strip.background = element_rect(colour="black", fill="white", 
+        #                                size=1.5, linetype="solid")
+        )
 
 ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"),
              sep = "/"), p_scatter, width = w*1.1, height = h)
