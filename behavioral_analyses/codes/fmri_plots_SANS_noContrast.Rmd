@@ -1,7 +1,7 @@
 ---
-title: "fmri plot for SANS talk"
+title: "fmri plot for SANS talk with brain contrasts broken down"
 author: "Jen Yang"
-date: "2025-04-10, last modified 2025-04-10"
+date: "2025-04-21, last modified 2025-04-21"
 output: 
   html_document:
     code_folding: hide
@@ -137,6 +137,7 @@ h = 4
 
 # dmn, cope7, in-out c3 y-o, paracingulate gyrus?, -13.3, 34, 27.8 (aCC?, COG -3.6 33.4 32.9)
 ## prep original data
+### ingroup
 ```{r}
 ## data prep
 in_name = "dmn_p_in-out_y-o_type-nppi-dmn_cope-04.txt"
@@ -152,67 +153,80 @@ in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi,
 
 in_df = merge(in_df, sub_control_df, by = "subjID")
 
+## get partial residual
+LMM_df = in_df
+formula_string = "ROI ~ age_bi + tsnr + fd_mean + RT"
+formula_LMM = as.formula(formula_string)
+focal_var_names = c("(Intercept)", "age_bi")
+
+pres_LMM_fit = lmm(formula_LMM, data = LMM_df)
+in_df$ROI_pres <- residuals(pres_LMM_fit, type = "partial", 
+                         variable = focal_var_names)
+
+in_plot_df = in_df %>% 
+  select(subjID, ROI_pres, age_bi, group)
+```
+
+
+```{r}
 out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
                out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
                ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
                group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
 out_df = merge(out_df, sub_control_df, by = "subjID")
 
-plot_df = in_df %>% 
-  mutate(out_ROI = out_df$out_ROI,
-         DV = in_ROI - out_ROI) %>% 
-  select("subjID", "DV", "age_bi", control_vars)
-```
-
-## get partial residuals
-```{r}
-LMM_df = plot_df
-formula_string = "DV ~ age_bi + tsnr + fd_mean + RT"
+## get partial residual
+LMM_df = out_df
+formula_string = "ROI ~ age_bi + tsnr + fd_mean + RT"
 formula_LMM = as.formula(formula_string)
 focal_var_names = c("(Intercept)", "age_bi")
 
-## compute partial residual using LMM
 pres_LMM_fit = lmm(formula_LMM, data = LMM_df)
-LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial", 
+out_df$ROI_pres <- residuals(pres_LMM_fit, type = "partial", 
                          variable = focal_var_names)
+
+out_plot_df = out_df %>% 
+  select(subjID, ROI_pres, age_bi, group)
 ```
 
-## prepare partial residual summary for reg line and error bar
+### put together plotting df
 ```{r}
-summary_LMM_df <- LMM_df %>%
-  group_by(age_bi) %>%
-  summarise(mean_partial = mean(partial_residual, na.rm = TRUE),
-    se_partial = sd(partial_residual, na.rm = TRUE) / sqrt(n()))
+plot_df = rbind(in_plot_df, out_plot_df)
+
+## prepare summary data for plotting means, error bars, and lines
+summary_plot_df <- plot_df %>%
+  group_by(age_bi, group) %>%
+  summarise(mean_ROI_pres = mean(ROI_pres, na.rm = TRUE),
+    se_ROI_pres = sd(ROI_pres, na.rm = TRUE) / sqrt(n()))
 ```
 
-## ggplot and save
+### ggplot and save
 ```{r}
-x_label = "Age Group\n"
-y_label = "beta\n(partial residual)"
-title_label = "DMN-dACC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+x_label = ""
+y_label = "DMN-dACC Functional Connectivity"
+title_label = "DMN-dACC Connectivity Sensitivity to Norm Violation"
 
-color_label = "Age Group"
-color_age = c("older" = "#006900", "younger"= "#00d000") # "#37ff37"
+color_age_label = "Age"
+color_age = c("older" = "#006900", "younger"= "#00d000")
 
-figure_name = "DMN_dACC_in-out_age_NoBehCov"
+figure_name = "DMN_dACC_in-out_age_NoBehCov_noContrast"
 
-p_scatter =
-  ggplot() +
-  geom_jitter(data = LMM_df, aes(x = age_bi, y = partial_residual, color = age_bi),
+ggplot() +
+  geom_jitter(data = plot_df, aes(x = group, y = ROI_pres, color = age_bi),
               alpha = data_point_alpha, 
               width = 0.1, size = data_point_size) + # Adjust jitter width for categorical X
-  geom_point(data = summary_LMM_df, aes(x = age_bi, y = mean_partial), 
+  geom_point(data = summary_plot_df, aes(x = group, y = mean_ROI_pres), 
              size = mean_point_size, alpha = data_point_alpha, shape = 18) +
-  geom_errorbar(data = summary_LMM_df, 
-                aes(x = age_bi, 
-                    ymin = mean_partial - se_partial, ymax = mean_partial + se_partial),
+  geom_errorbar(data = summary_plot_df, 
+                aes(x = group, 
+                    ymin = mean_ROI_pres - se_ROI_pres, ymax = mean_ROI_pres + se_ROI_pres),
                 width = 0.1) +
   scale_color_manual(values = color_age) +
-  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  labs(x = x_label, y = y_label, color = color_age_label, title = title_label) +
   # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
-  geom_line(data = summary_LMM_df, # Connect means with a line
-            aes(x = as.numeric(age_bi), y = mean_partial), 
-            color = "black", linewidth = fit_line_width) +
+  geom_line(data = summary_plot_df, # Connect means with a line
+            aes(x = group, y = mean_ROI_pres, group = age_bi, color = age_bi), 
+            linewidth = fit_line_width/2) +
   theme_classic() +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
         legend.title = element_text(face = "bold"),
@@ -276,6 +290,22 @@ LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial",
 
 ## plot and save
 ```{r}
+color_partner_label = "Proposer Identity"
+color_partner = c("outgroup" = "#00BFC4", "ingroup" = "#F8766D")
+
+
+
+facet_age_label = "Age"
+facet_age = c("older" = "#006900", "younger"= "#00d000") # "#37ff37"
+
+
+
+
+
+
+
+
+
 x_label = "Fairness Senstivity (logit)\nIngroup > Outgroup"
 y_label = "beta\n(partial residual)"
 title_label = "ECN-mPFC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
@@ -313,91 +343,6 @@ ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"),
              sep = "/"), p_scatter, width = w*1.1, height = h)
 ```
 
-# act, in-out, norm_logit intercept * age, IPLD/IPLC
-## prepare df for ggplot
-```{r}
-## data prep
-in_name = "act_p_in-out_o-y_norm-logit_type-act_cope-04.txt"
-out_name = "act_p_in-out_o-y_norm-logit_type-act_cope-06.txt"
-
-in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'), sep=" ",header=F)
-out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'), sep=" ",header=F)
-
-norm_name = "in_out_norm_logit.csv"
-norm_df = read.csv(paste(data_dir, norm_name, sep = '/'), header = T)
-
-in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
-              in_ROI = in_ROI$V1, # for packed interaction, y axis = contrasted brain activity
-              ROI = in_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
-              group = as.factor("ingroup")) # for unpacked interaction, y axis = no-contrast brain activity
-
-in_df = merge(in_df, sub_control_df, by = "subjID")
-
-out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
-               out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
-               ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
-               group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
-
-out_df = merge(out_df, sub_control_df, by = "subjID")
-
-plot_df = in_df %>% 
-  mutate(out_ROI = out_df$out_ROI,
-         DV = in_ROI - out_ROI,
-         norm_in_out = norm_df$in_out_logit) %>% 
-  select("subjID", "DV", "age_bi", "norm_in_out", control_vars)
-```
-
-## get partial residuals
-```{r}
-LMM_df = plot_df
-formula_string = "DV ~ age_bi * norm_in_out + tsnr + fd_mean + RT"
-formula_LMM = as.formula(formula_string)
-focal_var_names = c("(Intercept)", 
-                    "age_bi", "norm_in_out")
-
-## compute partial residual using LMM
-pres_LMM_fit = lmm(formula_LMM, data = LMM_df)
-LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial", 
-                                     variable = focal_var_names)
-```
-
-
-## plot and save
-```{r}
-x_label = "Fairness Senstivity (logit)\nIngroup > Outgroup"
-y_label = "beta\n(partial residual)"
-title_label = "Posterior Supramarginal Gyrus norm to Fairness\nIngroup > Outgroup"
-
-color_label = "Age Group"
-color_age = c("older" = "#7f0000", "younger"= "#ff7f7f")
-
-figure_name = "act_pSupramarginalGyrus_in-out_age_BehFairNorm"
-
-p_scatter =
-  ggplot(LMM_df, aes(x = norm_in_out, y = partial_residual, color = age_bi)) + 
-  geom_point(alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
-  geom_smooth(formula = "y~x", method = "lm", 
-              se = TRUE,
-              linetype = "solid",
-              linewidth = fit_line_width, 
-              alpha = 0.2) +
-  scale_color_manual(values = color_age) +
-  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
-  # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
-  guides(color = guide_legend(override.aes = list(fill = NA))) +
-  theme_classic() +
-  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
-        legend.title = element_text(face = "bold"),
-        axis.text.x = element_text(size = axis_text), 
-        axis.text.y = element_text(size = axis_text), 
-        axis.title.x = element_text(size = axis_title, face="bold"), 
-        axis.title.y = element_text(size = axis_title, face="bold"))
-# legend.position="bottom left", legend.box = "horizontal")
-# legend.position="none")
-
-ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"), 
-             sep = "/"), p_scatter, width = w*1.1, height = h)
-```
 
 
 
