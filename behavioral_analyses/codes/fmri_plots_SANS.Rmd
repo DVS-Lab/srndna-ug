@@ -187,9 +187,13 @@ summary_LMM_df <- LMM_df %>%
 
 ## ggplot and save
 ```{r}
-x_label = "Age Group\n"
-y_label = "beta\n(partial residual)"
-title_label = "DMN-dACC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+# x_label = "Age Group\n"
+# y_label = "beta\n(partial residual)"
+# title_label = "DMN-dACC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+
+x_label = ""
+y_label = "DMN-dACC PPI\nsensitivity to fairness"
+title_label = ""
 
 color_label = "Age Group"
 color_age = c("older" = "#006900", "younger"= "#00d000") # "#37ff37"
@@ -256,7 +260,7 @@ out_df = merge(out_df, sub_control_df, by = "subjID")
 plot_df = in_df %>% 
   mutate(out_ROI = out_df$out_ROI,
          DV = in_ROI - out_ROI,
-         sensitivity_in_out = sensitivity_df$in_out_logit) %>% 
+         sensitivity_in_out = sensitivity_df$in_out_full_logit) %>% 
   select("subjID", "DV", "age_bi", "sensitivity_in_out", control_vars)
 ```
 
@@ -276,9 +280,14 @@ LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial",
 
 ## plot and save
 ```{r}
-x_label = "Fairness Senstivity (logit)\nIngroup > Outgroup"
-y_label = "beta\n(partial residual)"
-title_label = "ECN-mPFC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+# x_label = "Fairness Senstivity (logit)\nIngroup > Outgroup"
+# y_label = "beta\n(partial residual)"
+# title_label = "ECN-mPFC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+
+x_label = ""
+y_label = "ECN-mPFC connectivity\nsensitivity to fairness"
+title_label = ""
+
 
 color_label = "Age Group"
 color_age = c("older" = "#003c66", "younger"= "#0098ff")
