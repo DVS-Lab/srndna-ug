@@ -1,0 +1,417 @@
+---
+title: "fmri plot for SANS talk"
+author: "Jen Yang"
+date: "2025-04-10, last modified 2025-04-10"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    hightlight: zenburn
+    toc_depth: 6
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+# Load libraries
+```{r libraries, message=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(interactions)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+# library(raincloudplots)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(ggpubr)
+library(lubridate)
+library(readxl)
+library(gridExtra)
+library(scales)
+library(rstudioapi)
+library(jsonlite)
+library(rjson)
+library(readr)
+library(hBayesDM)
+library(brms)
+library(emmeans)
+library(mediation)
+library(here)
+library(lme4)
+library(broom.mixed)
+library(easyRT)
+library(parameters)
+library(effectsize)
+library(effects)
+library(lmerTest)
+library(ez)
+library(LMMstar)
+```
+
+# load tsv and prolific raw data
+```{r}
+gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
+
+data_dir = paste(gitrepo_path,"data", sep = "/")
+codes_dir = paste(gitrepo_path, "codes", sep = "/")
+fit_dir = paste(gitrepo_path,"fits", sep = "/")
+figure_dir = paste(gitrepo_path,"figures", sep = "/")
+
+ROImean_dir = "/Users/momocco/Documents/GitHub/srndna-ug/imaging_plots_SANS"
+
+list_fmri_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"),
+                          header = T) %>% dplyr::select(subjID)
+
+participant_check_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = T)
+
+participant_demo_df = 
+  merge(list_fmri_df, participant_check_df, by.x = "subjID", by.y = "participant_id", all.x = T) %>% 
+  mutate(age_bi = case_when(age <= 36 ~ "younger", age > 36 ~ "older"),
+         age_bi = relevel(as.factor(age_bi), ref = "younger"))
+
+## load tsnr, fd_mean, and RT
+sub_control_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"),
+                          header = T) %>% 
+  select(subjID, tsnr, fd_mean, RT)
+
+control_vars = colnames(sub_control_df)[-1]
+```
+
+# plot param setup
+```{r}
+axis_title = 16
+axis_ticks = 10
+axis_text = 12
+axis_label = 14
+
+legend_all = 12
+
+annotate_text = 4
+axis_line_width = 1
+fit_line_width = 2
+
+data_point_alpha = 0.5
+data_point_size = 3*0.8
+
+mean_point_size = 3
+
+summary_point_alpha = 1
+summary_point_size = 3
+
+annotate_text = 4
+
+w = 5
+h = 4
+```
+
+# dmn, cope7, in-out c3 y-o, paracingulate gyrus?, -13.3, 34, 27.8 (aCC?, COG -3.6 33.4 32.9)
+## prep original data
+```{r}
+## data prep
+in_name = "dmn_p_in-out_y-o_type-nppi-dmn_cope-04.txt"
+out_name = "dmn_p_in-out_y-o_type-nppi-dmn_cope-06.txt"
+
+in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'),sep=" ",header=F)
+out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'),sep=" ",header=F)
+
+in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+              in_ROI = in_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+              ROI = in_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+              group = as.factor("ingroup")) # for unpacked interaction, y axis = no-contrast brain activity
+
+in_df = merge(in_df, sub_control_df, by = "subjID")
+
+out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+               out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+               ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+               group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
+out_df = merge(out_df, sub_control_df, by = "subjID")
+
+plot_df = in_df %>% 
+  mutate(out_ROI = out_df$out_ROI,
+         DV = in_ROI - out_ROI) %>% 
+  select("subjID", "DV", "age_bi", control_vars)
+```
+
+## get partial residuals
+```{r}
+LMM_df = plot_df
+formula_string = "DV ~ age_bi + tsnr + fd_mean + RT"
+formula_LMM = as.formula(formula_string)
+focal_var_names = c("(Intercept)", "age_bi")
+
+## compute partial residual using LMM
+pres_LMM_fit = lmm(formula_LMM, data = LMM_df)
+LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial", 
+                         variable = focal_var_names)
+```
+
+## prepare partial residual summary for reg line and error bar
+```{r}
+summary_LMM_df <- LMM_df %>%
+  group_by(age_bi) %>%
+  summarise(mean_partial = mean(partial_residual, na.rm = TRUE),
+    se_partial = sd(partial_residual, na.rm = TRUE) / sqrt(n()))
+```
+
+## ggplot and save
+### parameter setup
+```{r}
+# x_label = "Age Group\n"
+# y_label = "beta\n(partial residual)"
+# title_label = "DMN-dACC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+
+x_label = ""
+y_label = "DMN-dACC, similar > disimilar (β)\noffer size modulated"
+title_label = ""
+
+color_label = "Age Group"
+color_age = c("older" = "#006900", "younger"= "#00d000") # "#37ff37"
+
+figure_name = "DMN_dACC_in-out_age_NoBehCov"
+```
+
+### full figure
+```{r}
+set.seed(1234)
+p_scatter =
+  ggplot() +
+  geom_jitter(data = LMM_df, aes(x = age_bi, y = partial_residual, color = age_bi),
+              alpha = data_point_alpha, 
+              width = 0.1, size = data_point_size) + # Adjust jitter width for categorical X
+  geom_point(data = summary_LMM_df, aes(x = age_bi, y = mean_partial), 
+             size = mean_point_size, alpha = 1, shape = 18) +
+  geom_errorbar(data = summary_LMM_df, 
+                aes(x = age_bi, 
+                    ymin = mean_partial - se_partial, ymax = mean_partial + se_partial),
+                width = 0.1) +
+  scale_color_manual(values = color_age) +
+  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
+  geom_line(data = summary_LMM_df, # Connect means with a line
+            aes(x = as.numeric(age_bi), y = mean_partial), 
+            color = "black", linewidth = fit_line_width-0.5) +
+  theme_classic() +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        legend.title = element_text(face = "bold"),
+        axis.text.x = element_text(size = axis_text, face="bold"), 
+        axis.text.y = element_text(size = axis_text, face="bold"), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold")) 
+
+ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"),
+             sep = "/"), p_scatter, width = w*1.1, height = h)
+```
+
+### younger only
+```{r}
+## turn off the line that connects the two means
+set.seed(1234)
+p_scatter =
+  ggplot() +
+  geom_jitter(data = LMM_df, aes(x = age_bi, y = partial_residual, color = age_bi),
+              alpha = data_point_alpha, 
+              width = 0.1, size = data_point_size) + # Adjust jitter width for categorical X
+  geom_point(data = summary_LMM_df, aes(x = age_bi, y = mean_partial), 
+             size = mean_point_size, alpha = 1, shape = 18) +
+  geom_errorbar(data = summary_LMM_df, 
+                aes(x = age_bi, 
+                    ymin = mean_partial - se_partial, ymax = mean_partial + se_partial),
+                width = 0.1) +
+  scale_color_manual(values = color_age) +
+  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
+  # geom_line(data = summary_LMM_df, # Connect means with a line
+  #           aes(x = as.numeric(age_bi), y = mean_partial), 
+  #           color = "black", linewidth = fit_line_width) +
+  theme_classic() +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        legend.title = element_text(face = "bold"),
+        axis.text.x = element_text(size = axis_text, face="bold"), 
+        axis.text.y = element_text(size = axis_text, face="bold"), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold")) 
+
+ggsave(paste(figure_dir, paste(figure_name, "scatter_classic_noLine.png", sep = "_"),
+             sep = "/"), p_scatter, width = w*1.1, height = h)
+```
+
+# ecn, in-out, sensitivity_logit * age, frontal pole/mpfc?
+## prepare df for ggplot
+```{r}
+## data prep
+in_name = "ecn_p_in-out_o-y_sens-logit_type-nppi-ecn_cope-04.txt"
+out_name = "ecn_p_in-out_o-y_sens-logit_type-nppi-ecn_cope-06.txt"
+
+in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'), sep=" ",header=F)
+out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'), sep=" ",header=F)
+
+sensitivity_name = "in_out_sensitivity_logit.csv"
+sensitivity_name = "in_out_sensitivity_full_logit.csv"
+sensitivity_df = read.csv(paste(data_dir, sensitivity_name, sep = '/'), header = T)
+
+in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+              in_ROI = in_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+              ROI = in_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+              group = as.factor("ingroup")) # for unpacked interaction, y axis = no-contrast brain activity
+
+in_df = merge(in_df, sub_control_df, by = "subjID")
+
+out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+               out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+               ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+               group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
+
+out_df = merge(out_df, sub_control_df, by = "subjID")
+
+plot_df = in_df %>% 
+  mutate(out_ROI = out_df$out_ROI,
+         DV = in_ROI - out_ROI,
+         sensitivity_in_out = sensitivity_df$in_out_full_logit) %>% 
+  select("subjID", "DV", "age_bi", "sensitivity_in_out", control_vars)
+```
+
+## get partial residuals
+```{r}
+LMM_df = plot_df
+formula_string = "DV ~ age_bi * sensitivity_in_out + tsnr + fd_mean + RT"
+formula_LMM = as.formula(formula_string)
+focal_var_names = c("(Intercept)", 
+                    "age_bi", "sensitivity_in_out")
+
+## compute partial residual using LMM
+pres_LMM_fit = lmm(formula_LMM, data = LMM_df)
+LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial", 
+                         variable = focal_var_names)
+```
+
+## plot and save
+### parameter setup
+```{r}
+# x_label = "Fairness Senstivity (logit)\nIngroup > Outgroup"
+# y_label = "beta\n(partial residual)"
+# title_label = "ECN-mPFC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+
+x_label = ""
+y_label = "ECN-mPFC, similar > disimilar (β)\noffer size modulated"
+title_label = ""
+
+color_label = "Age Group"
+
+# figure_name = "ECN_mPFC_in-out_age_BehFairSensitivity"
+figure_name = "ECN_mPFC_in-out_age_BehFairSensitivityFull"
+```
+
+### full figure
+```{r}
+set.seed(1234)
+
+color_age = c("older" = "#003c66", "younger"= "#0098ff")
+
+p_scatter =
+  ggplot(LMM_df, aes(x = sensitivity_in_out, y = partial_residual, color = age_bi, fill = age_bi)) +
+  geom_point(alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
+  geom_smooth(formula = "y~x", method = "lm", 
+              se = TRUE,
+              linetype = "solid",
+              linewidth = 2, 
+              alpha = 0.2) +
+  scale_color_manual(values = color_age) +
+  scale_fill_manual(values = color_age) +
+  guides(color = guide_legend(override.aes = list(fill = NA))) +
+  theme_classic() +
+  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
+  guides(color = guide_legend(override.aes = list(fill = NA)), fill = "none") +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        legend.title = element_text(face = "bold"),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+        # legend.position="bottom left", legend.box = "horizontal")
+        # legend.position="none")
+
+ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"),
+             sep = "/"), p_scatter, width = w*1.1, height = h)
+```
+
+### younger only
+```{r}
+set.seed(1234)
+
+## print older in white
+color_age = c("older" = "white", "younger"= "#0098ff")
+
+## relevel older to ref to print older underneath younger
+LMM_df$age_bi = relevel(LMM_df$age_bi, ref = "older")
+
+p_scatter =
+  ggplot(LMM_df, aes(x = sensitivity_in_out, y = partial_residual, color = age_bi, fill = age_bi)) +
+  geom_point(
+    data = filter(LMM_df, age_bi == "younger"),
+             aes(x = sensitivity_in_out, y = partial_residual, color = age_bi),
+    alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
+    geom_point(
+    data = filter(LMM_df, age_bi == "older"),
+             aes(x = sensitivity_in_out, y = partial_residual, color = age_bi),
+    alpha = 0, size = data_point_size, show.legend = FALSE) +
+    geom_smooth(data = filter(LMM_df, age_bi == "younger"), 
+                aes(x = sensitivity_in_out, y = partial_residual, color = age_bi),
+                formula = "y~x", method = "lm", 
+                se = TRUE,
+                linetype = "solid",
+                linewidth = 2, 
+                alpha = 0.2) +
+  scale_color_manual(values = color_age) +
+  scale_fill_manual(values = color_age) +
+  guides(color = guide_legend(override.aes = list(fill = NA))) +
+  theme_classic() +
+  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
+  guides(color = guide_legend(override.aes = list(fill = NA)), fill = "none") +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        legend.title = element_text(face = "bold"),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+        # legend.position="bottom left", legend.box = "horizontal")
+        # legend.position="none")
+
+ggsave(paste(figure_dir, paste(figure_name, "scatter_classic_noOlder.png", sep = "_"),
+             sep = "/"), p_scatter, width = w*1.1, height = h)
+```
+
+# end of code

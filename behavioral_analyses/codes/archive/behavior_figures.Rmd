@@ -1,7 +1,7 @@
 ---
 title: "SRNDNR UG figure"
 author: "Jen Yang"
-date: "2025-04-09, last modified 2025-04-09"
+date: "2025-04-09, last modified 2025-04-24"
 output: 
   html_document:
     code_folding: hide
@@ -235,14 +235,42 @@ ggsave(paste(figure_dir, "behavior_offer_age_ComHum.png", sep = "/"),
 ```{r}
 all_trials_human_df = all_trials_df[all_trials_df$human == 1,]
 
-model_ingroup_fit = glmer(accept ~ 
+model_ingroup_offer_age_group_fit = glmer(accept ~ 
                             offer * age_bi + 
                     ingroup * age_bi +
-                    block_fair +
                     (1|participant_id), 
                   data = all_trials_human_df, 
                   family = binomial)
-summary(model_ingroup_fit)
+summary(model_ingroup_offer_age_group_fit)
+
+model_ingroup_offer_age_fit = glmer(accept ~ 
+                            offer * age_bi + 
+                    (1|participant_id), 
+                  data = all_trials_human_df, 
+                  family = binomial)
+summary(model_ingroup_offer_age_fit)
+
+### not sig
+model_ingroup_offer_group_fit = glmer(accept ~ 
+                            offer * ingroup + 
+                    (1|participant_id), 
+                  data = all_trials_human_df, 
+                  family = binomial)
+summary(model_ingroup_offer_group_fit)
+
+model_ingroup_age_group_fit = glmer(accept ~ 
+                            ingroup * age_bi + 
+                    (1|participant_id), 
+                  data = all_trials_human_df, 
+                  family = binomial)
+summary(model_ingroup_age_group_fit)
+
+model_ingroup_age_group_fit = glmer(accept ~ 
+                            ingroup * age_bi + offer +
+                    (1|participant_id), 
+                  data = all_trials_human_df, 
+                  family = binomial)
+summary(model_ingroup_age_group_fit)
 ```
 
 ## plot, offer * age
@@ -251,18 +279,21 @@ pred_offer_age_prob <-Effect(c("age_bi", "offer"), model_ingroup_fit,
                              xlevels = list(offer = 1:10) )
 pred_offer_age_prob_df<-data.frame(pred_offer_age_prob)
 
-m_params = model_parameters(model_ingroup_fit, effects = "fixed")
+m_params = model_parameters(model_ingroup_offer_age_fit, effects = "fixed")
 
 p_val = m_params[m_params$Parameter == "offer:age_biolder", "p"]
 
-plot_offer_age = 
+color_label = "Age Group"
+color_age = c("older" = "#7f0000", "younger"= "#ff7f7f")
+
+plot_offer_age =
 ggplot(pred_offer_age_prob_df, aes(x=offer,y=fit,color=age_bi)) +
   geom_line(linewidth = line_width) +
   geom_point(size = point_size-1) +
   geom_errorbar(aes(ymin = fit-0.5*se, ymax = fit+0.5*se),
                 width=.1) +
-  scale_color_manual(values = c("#F8766D", "#00BFC4")) +
-  # scale_color_manual(values = c("#E69F00", "#56B4E9", "#009E73")) +
+  # scale_color_manual(values = c("#F8766D", "#00BFC4")) +
+  scale_color_manual(values = color_age) +
   labs(x = "Offer Size in $", y = "Predicted P(Accept)", color = "Age", 
        title = "Offer Acceptance Probability, Human",) + 
   coord_cartesian(xlim=c(1, 10), ylim = c(0,1)) +
@@ -279,26 +310,31 @@ ggplot(pred_offer_age_prob_df, aes(x=offer,y=fit,color=age_bi)) +
         axis.title.y = element_text(size = axis_title, face="bold"))
 plot_offer_age
 ggsave(paste(figure_dir, "behavior_offer_age_HumOnly.png", sep = "/"),
-       plot_offer_age, width = w*1.5, height = h)
+       plot_offer_age, width = w*1.1, height = h)
 ```
 
 ## plot, ingroup * age
 ```{r}
+## computer partial residual
 pred_ingroup_age_prob <-Effect(c("age_bi", "ingroup"), 
                                model_ingroup_fit)
 pred_ingroup_age_prob_df<-data.frame(pred_ingroup_age_prob)
 
-m_params = model_parameters(model_ingroup_fit, effects = "fixed")
+m_params = model_parameters(model_ingroup_age_group_fit, effects = "fixed")
 
-p_val = m_params[m_params$Parameter == "age_biolder:ingroup1", "p"]
+p_val = m_params[m_params$Parameter == "ingroup1:age_biolder", "p"]
 
-plot_ingroup_age = 
+color_label = "Age Group"
+color_age = c("older" = "#7f0000", "younger"= "#ff7f7f")
+
+plot_ingroup_age =
 ggplot(pred_ingroup_age_prob_df, aes(x = ingroup, y = fit, color = age_bi)) +
   geom_line(linewidth = line_width, aes(group = age_bi)) +
   geom_point(size = point_size) +
   geom_errorbar(aes(ymin = fit-0.5*se, ymax = fit+0.5*se),
                 width=.1) +
-  scale_color_manual(values = c("#F8766D", "#00BFC4")) +
+  # scale_color_manual(values = c("#F8766D", "#00BFC4")) +
+  scale_color_manual(values = color_age) +
   labs(title = "Offer Acceptance Probability, Human",
     x = "Partner Identity",
     y = "Predicted P(Accept)",
@@ -319,48 +355,48 @@ ggplot(pred_ingroup_age_prob_df, aes(x = ingroup, y = fit, color = age_bi)) +
 plot_ingroup_age
 
 ggsave(paste(figure_dir, "behavior_ingroup_age_HumOnly.png", sep = "/"),
-       plot_ingroup_age, width = w*1.2, height = h)
+       plot_ingroup_age, width = w*1.1, height = h)
 ```
 
-## plot, block
-```{r}
-pred_block_prob <-Effect("block_fair", 
-                               model_ingroup_fit)
-pred_block_prob_df<-data.frame(pred_block_prob)
+<!-- ## plot, block -->
+<!-- ```{r} -->
+<!-- pred_block_prob <-Effect("block_fair",  -->
+<!--                                model_ingroup_fit) -->
+<!-- pred_block_prob_df<-data.frame(pred_block_prob) -->
 
-m_params = model_parameters(model_ingroup_fit, effects = "fixed")
+<!-- m_params = model_parameters(model_ingroup_fit, effects = "fixed") -->
 
-p_val = m_params[m_params$Parameter == "block_fair", "p"]
+<!-- p_val = m_params[m_params$Parameter == "block_fair", "p"] -->
 
-# plot_block = 
-  ggplot(pred_block_prob_df, aes(x = block_fair, y = fit)) +
-  geom_line(aes(x = as.numeric(block_fair), y = fit), linewidth = line_width) +
-  geom_point(size = point_size) +
-  geom_errorbar(aes(ymin = fit-0.5*se, ymax = fit+0.5*se),
-                width=.1) +
-  # scale_color_manual(values = c("#F8766D", "#00BFC4")) +
-  # labs(title = "Offer Acceptance Probability, Human",
-  #      x = "Partner Identity",
-  #      y = "Predicted P(Accept)",
-  #      color = "Age Group"
-  # )  +
-  scale_x_discrete(limits = c("0", "1"), labels = c("unfair", "fair")) +
-  annotate("text", 
-           x = -Inf, y = Inf, 
-           label = sprintf("p = %.3f", p_val), 
-           hjust = -0.2,
-           vjust = 2, 
-           size = annotate_text, color = "black") +
-  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
-        axis.text.x = element_text(size = axis_text), 
-        axis.text.y = element_text(size = axis_text), 
-        axis.title.x = element_text(size = axis_title, face="bold"), 
-        axis.title.y = element_text(size = axis_title, face="bold"))
-plot_block
+<!-- # plot_block =  -->
+<!--   ggplot(pred_block_prob_df, aes(x = block_fair, y = fit)) + -->
+<!--   geom_line(aes(x = as.numeric(block_fair), y = fit), linewidth = line_width) + -->
+<!--   geom_point(size = point_size) + -->
+<!--   geom_errorbar(aes(ymin = fit-0.5*se, ymax = fit+0.5*se), -->
+<!--                 width=.1) + -->
+<!--   # scale_color_manual(values = c("#F8766D", "#00BFC4")) + -->
+<!--   # labs(title = "Offer Acceptance Probability, Human", -->
+<!--   #      x = "Partner Identity", -->
+<!--   #      y = "Predicted P(Accept)", -->
+<!--   #      color = "Age Group" -->
+<!--   # )  + -->
+<!--   scale_x_discrete(limits = c("0", "1"), labels = c("unfair", "fair")) + -->
+<!--   annotate("text",  -->
+<!--            x = -Inf, y = Inf,  -->
+<!--            label = sprintf("p = %.3f", p_val),  -->
+<!--            hjust = -0.2, -->
+<!--            vjust = 2,  -->
+<!--            size = annotate_text, color = "black") + -->
+<!--   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1), -->
+<!--         axis.text.x = element_text(size = axis_text),  -->
+<!--         axis.text.y = element_text(size = axis_text),  -->
+<!--         axis.title.x = element_text(size = axis_title, face="bold"),  -->
+<!--         axis.title.y = element_text(size = axis_title, face="bold")) -->
+<!-- plot_block -->
 
-ggsave(paste(figure_dir, "behavior_block_HumOnly.png", sep = "/"),
-       plot_block, width = w*1.2, height = h)
-```
+<!-- ggsave(paste(figure_dir, "behavior_block_HumOnly.png", sep = "/"), -->
+<!--        plot_block, width = w*1.2, height = h) -->
+<!-- ``` -->
 
 # rejection rate per partner
 ```{r}
