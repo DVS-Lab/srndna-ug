@@ -69,11 +69,22 @@ library(lme4)
 library(lmerTest)
 ```
 
-# set directories
+# set directories and file names
 ```{r}
 # current code location
 gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses/codes/RF1_UGR"
 
+# subject list file names
+sublist_L3_name = "sublist_L3_example.csv"
+sublist_run_name = "sub_run_inclusion_example.csv"
+
+# raw behavior data directory
+UGR_behavior_raw_path =
+  "/Users/momocco/Documents/GitHub/rf1-sra/stimuli/Scan-Lets_Make_A_Deal/logs"
+```
+
+## define folder to save fit results
+```{r}
 # location to save fits
 fit_dir = paste(gitrepo_path,"fits", sep = "/")
 
@@ -81,19 +92,16 @@ fit_dir = paste(gitrepo_path,"fits", sep = "/")
 if (!dir.exists(fit_dir)) {
   dir.create(fit_dir)
 }
-
-UGR_behavior_raw_path =
-  "/Users/momocco/Documents/GitHub/rf1-sra/stimuli/Scan-Lets_Make_A_Deal/logs"
 ```
 
 # prepare behavior data
 ## load subject L3 list and subject-run check list
 ```{r}
 # load subject run inclusion list
-sub_L3_list = read.csv(paste(gitrepo_path, "sublist_L3_demo.csv", sep = "/"),
+sub_L3_list = read.csv(paste(gitrepo_path, sublist_L3_name, sep = "/"),
                        header = TRUE)
 
-sub_run_list = read.csv(paste(gitrepo_path, "sub_run_inclusion_demo.csv", sep = "/"),
+sub_run_list = read.csv(paste(gitrepo_path, sublist_run_name, sep = "/"),
                        header = TRUE)
 ```
 
@@ -103,7 +111,7 @@ set.seed(20250508)
 ```
 
 
-## compile data based on sub and run list
+## compile data based on sub L3 and run inclusion list
 ```{r}
 # create empty dataframe to save cleaned behavior data
 col_names = c('subjID', 'partner', 
