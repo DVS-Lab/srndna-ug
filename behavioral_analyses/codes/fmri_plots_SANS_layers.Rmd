@@ -323,7 +323,7 @@ LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial",
 # y_label = "beta\n(partial residual)"
 # title_label = "ECN-mPFC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
 
-x_label = ""
+x_label = "Norm Violation Senstivity\nsimilar > disimilar"
 y_label = "ECN-mPFC, similar > disimilar (β)\noffer size modulated"
 title_label = ""
 
@@ -337,7 +337,7 @@ figure_name = "ECN_mPFC_in-out_age_BehFairSensitivityFull"
 ```{r}
 set.seed(1234)
 
-color_age = c("older" = "#003c66", "younger"= "#0098ff")
+color_age = c("older" = "#003b99", "younger"= "#0098ff")
 
 p_scatter =
   ggplot(LMM_df, aes(x = sensitivity_in_out, y = partial_residual, color = age_bi, fill = age_bi)) +
