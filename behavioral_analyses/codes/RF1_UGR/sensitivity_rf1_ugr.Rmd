@@ -1,7 +1,7 @@
 ---
 title: "fairness sensitivty based on lmer results"
 author: "Jen Yang"
-date: "2025-5-08, last modified 2025-5-08"
+date: "2025-5-08, last modified 2025-5-09"
 output: 
   html_document:
     code_folding: hide
@@ -103,13 +103,15 @@ sub_L3_list = read.csv(paste(gitrepo_path, sublist_L3_name, sep = "/"),
 
 sub_run_list = read.csv(paste(gitrepo_path, sublist_run_name, sep = "/"),
                        header = TRUE)
+
+sub_L3_run_uni_list = merge(sub_L3_list, sub_run_list, 
+                            by.x = "subjID")
 ```
 
 ## set seed for reproducibility
 ```{r}
 set.seed(20250508)
 ```
-
 
 ## compile data based on sub L3 and run inclusion list
 ```{r}
@@ -119,15 +121,14 @@ col_names = c('subjID', 'partner',
               'offer_dollar', 'Endowment', "run")
 UGR_clean_all = data.frame(matrix(nrow = 0, ncol = length(col_names)))
 
-sub_N = nrow(sub_L3_list)
+sub_N = nrow(sub_L3_run_uni_list)
 
-
-for (s in 1:nrow(sub_L3_list)) { # start of sub loop
+for (s in 1:nrow(sub_L3_run_uni_list)) { # start of sub loop
   # s = 1
-  sub_s = sub_L3_list$subjID[s]
+  sub_s = sub_L3_run_uni_list$subjID[s]
   
   # extract run inclusion information
-  run_check = c(sub_run_list$run1[s], sub_run_list$run2[s])
+  run_check = c(sub_L3_run_uni_list$run1[s], sub_L3_run_uni_list$run2[s])
   
   ## run loop
   r_N = 2
