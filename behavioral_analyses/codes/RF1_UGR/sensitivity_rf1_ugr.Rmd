@@ -67,6 +67,7 @@ library(hBayesDM)
 library(brms)
 library(lme4)
 library(lmerTest)
+library(tidyselect)
 ```
 
 # set directories and file names
@@ -160,7 +161,7 @@ for (s in 1:nrow(sub_L3_run_uni_list)) { # start of sub loop
                                    Block == 3 ~ "Social"),
                subjID = sprintf("sub-%d", as.numeric(sub_s)),
                run = r) %>% 
-        select(col_names)
+        select(all_of(col_names))
       
       UGR_clean_all = rbind(UGR_clean_all, behavior_s_r_df)
     }
