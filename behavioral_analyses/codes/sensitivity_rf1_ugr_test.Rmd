@@ -152,7 +152,8 @@ for (s in 1:nrow(sub_L3_list)) { # start of sub loop
                                     resp == 1 & L_Option > 0 ~ "accept",
                                     resp == 2 & R_Option == 0 ~ "reject",
                                     resp == 2 & R_Option > 0 ~ "accept",
-                                    resp == 999 ~ NA),
+                                    resp == 999 ~ NA
+                                    ),
                offer_percent = (L_Option + R_Option)/Endowment,
                offer_dollar = L_Option + R_Option,
                partner = case_when(Block == 2 ~ "Nonsocial",
@@ -237,6 +238,45 @@ Nonsocial_effects = Nonsocial_random_effects[Nonsocial_random_effects$term == "o
          subjID = grp) %>% 
   dplyr::select(subjID, Nonsocial_random, Nonsocial_full)
 ```
+
+## fairness * partner random interaction? - 
+```{r}
+# # won't converge
+# inter_mlm_1 = glmer(decision ~ offer_percent * partner + 
+#                       (1 + offer_percent*partner | subjID), 
+#                      data = UGR_clean_all, 
+#                      family = binomial)
+# 
+# # won't converge
+# inter_mlm_1 = glmer(decision ~ offer_percent * partner + 
+#                       (1 + offer_percent*partner || subjID), 
+#                      data = UGR_clean_all, 
+#                      family = binomial)
+
+# # no sig benefit with random partner slople
+# inter_mlm_1 = glmer(decision ~ offer_percent * partner + 
+#                       (1 + offer_percent + partner || subjID), 
+#                      data = UGR_clean_all, 
+#                      family = binomial)
+
+# # assuming corr is better
+# inter_mlm_2 = glmer(decision ~ offer_percent * partner + 
+#                       (1 + offer_percent || subjID), 
+#                      data = UGR_clean_all, 
+#                      family = binomial)
+
+inter_mlm_22 = glmer(decision ~ offer_percent * partner + 
+                      (1 + offer_percent | subjID), 
+                     data = UGR_clean_all, 
+                     family = binomial)
+
+anova(inter_mlm_2, inter_mlm_22)
+
+summary(inter_mlm_1)
+```
+
+
+
 
 # save
 ```{r}
