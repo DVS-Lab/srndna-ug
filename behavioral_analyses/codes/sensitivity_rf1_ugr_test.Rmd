@@ -103,13 +103,15 @@ sub_L3_list = read.csv(paste(gitrepo_path, sublist_L3_name, sep = "/"),
 
 sub_run_list = read.csv(paste(gitrepo_path, sublist_run_name, sep = "/"),
                        header = TRUE)
+
+sub_L3_run_uni_list = merge(sub_L3_list, sub_run_list, 
+                            by.x = "subjID")
 ```
 
 ## set seed for reproducibility
 ```{r}
 set.seed(20250508)
 ```
-
 
 ## compile data based on sub L3 and run inclusion list
 ```{r}
@@ -119,15 +121,14 @@ col_names = c('subjID', 'partner',
               'offer_dollar', 'Endowment', "run")
 UGR_clean_all = data.frame(matrix(nrow = 0, ncol = length(col_names)))
 
-sub_N = nrow(sub_L3_list)
+sub_N = nrow(sub_L3_run_uni_list)
 
-
-for (s in 1:nrow(sub_L3_list)) { # start of sub loop
+for (s in 1:nrow(sub_L3_run_uni_list)) { # start of sub loop
   # s = 1
-  sub_s = sub_L3_list$subjID[s]
+  sub_s = sub_L3_run_uni_list$subjID[s]
   
   # extract run inclusion information
-  run_check = c(sub_run_list$run1[s], sub_run_list$run2[s])
+  run_check = c(sub_L3_run_uni_list$run1[s], sub_L3_run_uni_list$run2[s])
   
   ## run loop
   r_N = 2
@@ -152,15 +153,14 @@ for (s in 1:nrow(sub_L3_list)) { # start of sub loop
                                     resp == 1 & L_Option > 0 ~ "accept",
                                     resp == 2 & R_Option == 0 ~ "reject",
                                     resp == 2 & R_Option > 0 ~ "accept",
-                                    resp == 999 ~ NA
-                                    ),
+                                    resp == 999 ~ NA),
                offer_percent = (L_Option + R_Option)/Endowment,
                offer_dollar = L_Option + R_Option,
                partner = case_when(Block == 2 ~ "Nonsocial",
                                    Block == 3 ~ "Social"),
                subjID = sprintf("sub-%d", as.numeric(sub_s)),
                run = r) %>% 
-        select(col_names)
+        select(all_of(col_names))
       
       UGR_clean_all = rbind(UGR_clean_all, behavior_s_r_df)
     }
@@ -239,6 +239,18 @@ Nonsocial_effects = Nonsocial_random_effects[Nonsocial_random_effects$term == "o
   dplyr::select(subjID, Nonsocial_random, Nonsocial_full)
 ```
 
+# save
+```{r}
+soc_nonsoc_sens_df = merge(Social_effects, Nonsocial_effects, 
+                           by.x = "subjID", by.y = "subjID") %>% 
+  mutate(Soc_Nonsoc_diff =  Social_full - Nonsocial_full) %>% 
+  select(subjID, Social_full, Nonsocial_full, Soc_Nonsoc_diff)
+write.csv(soc_nonsoc_sens_df, 
+          paste(fit_dir, "RF1_UGR_sensitivity_logit.csv", sep = "/"),
+          row.names = FALSE)
+```
+
+# exploring...
 ## fairness * partner random interaction? - 
 ```{r}
 # # won't converge
@@ -275,16 +287,37 @@ anova(inter_mlm_2, inter_mlm_22)
 summary(inter_mlm_1)
 ```
 
-
-
-
-# save
+## offer size effect?
 ```{r}
-soc_nonsoc_sens_df = merge(Social_effects, Nonsocial_effects, 
-                           by.x = "subjID", by.y = "subjID") %>% 
-  mutate(Soc_Nonsoc_diff =  Social_full - Nonsocial_full) %>% 
-  select(subjID, Social_full, Nonsocial_full, Soc_Nonsoc_diff)
-write.csv(soc_nonsoc_sens_df, 
-          paste(fit_dir, "RF1_UGR_sensitivity_logit.csv", sep = "/"),
-          row.names = FALSE)
+UGR_clean_all = UGR_clean_all %>% 
+  mutate(offer_dollar_scaled = offer_dollar/20)
+
+size_mlm_1 = glmer(decision ~ offer_percent * partner  +
+                     offer_dollar_scaled +
+                      (1 + offer_percent + offer_dollar_scaled || subjID), 
+                     data = UGR_clean_all, 
+                     family = binomial)
+
+summary(size_mlm_1)
+
+# size_mlm_2 = glmer(decision ~ offer_percent * partner  +
+#                       (1 + offer_percent | subjID), 
+#                      data = UGR_clean_all, 
+#                      family = binomial)
+# 
+# summary(size_mlm_2)
+# 
+# anova(size_mlm_1, size_mlm_2)
+
+
 ```
+
+
+
+
+# end of code
+
+
+
+
+
