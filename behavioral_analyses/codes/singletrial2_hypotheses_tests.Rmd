@@ -78,6 +78,7 @@ library(lmerTest)
 library(ez)
 library(afex)
 library(marginaleffects)
+library(magrittr)
 ```
 
 ```{r}
@@ -110,7 +111,10 @@ all_trials_df = merge(all_trials_df, indiv_df, by.x = "participant_id", by.y = "
 sublist_final = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE)
 
 all_trials_df = all_trials_df[all_trials_df$participant_id %in% sublist_final$subjID,]
+```
 
+## recode group and age
+```{r}
 ## add a categorical variable that differentiate three groups
 all_trials_df = all_trials_df %>% 
   mutate(group_tri = as.factor(case_when(human == 0 ~ 0, # computer
@@ -130,63 +134,29 @@ all_trials_df = all_trials_df %>%
          )
 ```
 
-# prereg 2 single trial analyses
-## P2 BH3
-BH3) Acceptance rates for an individual offer will vary according to its consistency with other offers in a given block rather than the objective dollar amount of the offer. That is, there will be an offer amount by block interaction, such that acceptance of higher, unfair offers will be greater in unfair blocks, and acceptance of lower, fair offers will be lower in fair blocks, as opposed to participants always rejecting unfair offers and always accepting fair offers.
+## factorize vars as needed
 ```{r}
-## full model, won't converge
-# model_P2_3_fit <- glmer(accept ~ offer * group_tri * age_bi * block_fair +
-#                      (1|participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model_P2_3_fit <- glmer(
-#   accept ~ offer * group_tri * age_bi * block_fair - offer:group_tri:age_bi:block_fair +
-#                      (1|participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model_P2_3_fit <- glmer(accept ~ offer * age_bi * block_fair + group_tri +
-#                      (1|participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## won't converge
-# model_P2_3_fit <- glmer(accept ~ offer * age_bi * block_fair + group_tri * block_fair +
-#                      (1|participant_id),
-#                             data = all_trials_df,
-#                             family = binomial)
-
-## converged, block main sig
-model_P2_3_fit <- glmer(accept ~ offer * age_bi * block_fair + group_tri -
-                          offer:age_bi:block_fair +
-                     (1|participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-
-
-summary(model_P2_3_fit)
-
-block_effect<-Effect("block_fair", model_P2_3_fit)
-data.frame(block_effect)
-avg_slopes(model=model_P2_3_fit,re.form=NA)
-
-## further simplified model based on sig above, all unnecessary non-sig removed
-model_P2_31_fit <- glmer(accept ~ offer * age_bi + block_fair +
-                     (1|participant_id),
-                            data = all_trials_df,
-                            family = binomial)
-
-summary(model_P2_31_fit)
-
-block_effect<-Effect("block_fair", model_P2_31_fit)
-data.frame(block_effect)
-avg_slopes(model=model_P2_31_fit,re.form=NA)
+factor_col_names = c("participant_id", "run", "missed", "accept",
+                     "ingroup", "block_fair", "sex")
+all_trials_df[factor_col_names] %<>% lapply(., factor) 
 ```
 
-## P2 NH1A, group_tri & age_bi respectively
+## add fdmean, tsnr vars to data
+```{r}
+fmri_control_data = 
+  read.csv(paste(data_dir, "Task-ultimatum_Level-Run_Outlier-info.csv", 
+                 sep = "/"), header = TRUE) %>% 
+  filter(Sub %in% sublist_final$subjID == 1) %>% 
+  # mutate(subjID = Sub) %>% 
+  select(-task, -outlier_run_Custom1)
+
+all_trials_df = merge(all_trials_df, fmri_control_data, 
+                      by.x = c("participant_id", "run"),
+                      by.y = c("Sub", "run"))
+```
+
+
+# P2 NH1A, group_tri & age_bi respectively
 "NH1A) The anterior insula (ins), dorsal anterior cingulate cortex (dACC), ventromedial prefrontal cortex (vmPFC), and ventral striatum (VS) will be associated with choice." [ins, dACC, vmPFC, VS]
 
 accept ~ brain * age(or group) + (1|participant)
@@ -197,6 +167,18 @@ results_cols = c("brain", "mod", "Coef", "p", "p_check", "p_0125_check")
 results_df = data.frame(matrix(nrow = 4*(3+1), ncol = length(results_cols)))
 colnames(results_df) = results_cols
 ```
+
+## anterior insula
+### AI ~ choice * age * group3 + controls, full model
+#### human vs computer
+```{r}
+
+```
+
+#### ingroup vs outgroup
+
+
+
 
 ### anterior insula * age, strict prereg, not sig
 ```{r}
@@ -438,7 +420,6 @@ results_df$p[N_nonNA_results+1] = m_params$p[2]
 results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
 ```
 
-
 ### clean single trial results
 ```{r}
 results_df = results_df %>% 
@@ -450,22 +431,35 @@ results_df = results_df %>%
 ```
 
 
-## P2 NH1A, human vs computer
+# P2 NH1A, human vs computer
 "NH1A) The anterior insula (ins), dorsal anterior cingulate cortex (dACC), ventromedial prefrontal cortex (vmPFC), and ventral striatum (VS) will be associated with choice." [ins, dACC, vmPFC, VS]
 
 accept ~ brain * age(or group) + (1|participant)
 
-### prepare empty df to store results
+## prepare empty df to store results
 ```{r}
 results_cols = c("brain", "mod", "Coef", "p", "p_check", "p_0125_check")
 results_df = data.frame(matrix(nrow = 4*(3+1), ncol = length(results_cols)))
 colnames(results_df) = results_cols
 ```
 
-### anterior insula * age, strict prereg, not sig
+## anterior insula
+### AI ~ choice * age * group3 + controls, full model
+#### human vs computer
+```{r}
+
+```
+
+#### ingroup vs outgroup
+
+
+
+
+### AI * age, strict prereg, not sig
 ```{r}
 ## converge, no interaction
-model_P2_NH1_antIns_age_fit = glmer(accept ~ anteriorinsula_corrected * age_bi +
+model_P2_NH1_antIns_age_fit = 
+  glmer(accept ~ anteriorinsula_corrected * age_bi +
                                       (1|participant_id), 
                                     data = all_trials_df,
                                     family = binomial)
@@ -480,7 +474,7 @@ results_df$p[N_nonNA_results+1] = m_params$p[4]
 results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
 ```
 
-### anterior insula * group, strict prereg, sig
+### AI * group, strict prereg, sig
 ```{r}
 ## converge, no interaction
 model_P2_NH1_antIns_group_fit = glmer(accept ~ anteriorinsula_corrected * human +

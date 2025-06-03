@@ -110,7 +110,10 @@ all_trials_df = merge(all_trials_df, indiv_df, by.x = "participant_id", by.y = "
 sublist_final = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE)
 
 all_trials_df = all_trials_df[all_trials_df$participant_id %in% sublist_final$subjID,]
+```
 
+
+```{r}
 ## add a categorical variable that differentiate three groups
 all_trials_df = all_trials_df %>% 
   mutate(group_tri = as.factor(case_when(human == 0 ~ 0, # computer
@@ -128,6 +131,20 @@ all_trials_df = all_trials_df %>%
   mutate(age_bi_dummy = case_when(age_bi == "younger" ~ 0,
                                   age_bi == "older" ~ 1)
          )
+```
+
+## add fdmean, tsnr vars to data
+```{r}
+fmri_control_data = 
+  read.csv(paste(data_dir, "Task-ultimatum_Level-Run_Outlier-info.csv", 
+                 sep = "/"), header = TRUE) %>% 
+  filter(Sub %in% sublist_final$subjID == 1) %>% 
+  # mutate(subjID = Sub) %>% 
+  select(-task, -outlier_run_Custom1)
+
+all_trials_df = merge(all_trials_df, fmri_control_data, 
+                      by.x = c("participant_id", "run"),
+                      by.y = c("Sub", "run"))
 ```
 
 # prereg 2 single trial analyses
