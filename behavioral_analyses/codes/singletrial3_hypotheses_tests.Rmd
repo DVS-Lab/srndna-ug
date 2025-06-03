@@ -169,68 +169,150 @@ results_df = data.frame(matrix(nrow = 4*(3+1), ncol = length(results_cols)))
 colnames(results_df) = results_cols
 ```
 
-## anterior insula ~ choice * age * group3 + controls
+## anterior insula
+### choice ~ anterior insula * age * group3 + offer + controls
 ```{r}
-## singular warning
-# P2_NH1_AI_age_group_m1 = 
-#   lmer(anteriorinsula_corrected ~ accept * age_bi * group_tri +
-#          tsnr + fd_mean + response_time +
-#          (1 + accept + response_time || participant_id), 
-#        data = all_trials_df)
-# summary(P2_NH1_AI_age_group_m1)
-
-P2_NH1_AI_age_group_m2 = 
-  lm(anteriorinsula_corrected ~ accept * age_bi * group_tri +
-       tsnr + fd_mean + response_time, 
-                     data = all_trials_df)
-summary(P2_NH1_AI_age_group_m2)
-
-## same performeance, prefer more parsimonious P2_NH1_AI_age_group_m2
-# anova(P2_NH1_AI_age_group_m1, P2_NH1_AI_age_group_m2, refit = F)
-
-# temp_m = glmer(accept ~ 1 +
-#                      (1|participant_id), 
-#                      data = all_trials_df, family = binomial)
-# temp_m = lmer(anteriorinsula_corrected ~ 1 +
-#                      (1|participant_id), 
-#                      data = all_trials_df)
-# temp_m = lmer(response_time ~ 1 +
-#                      (1|participant_id),
-#                      data = all_trials_df)
-# summary(temp_m)
-# icc(temp_m)
+## won't converge
+P2_NH1_AI_age_group_m1 =
+  glmer(accept ~ anteriorinsula_corrected * age_bi * group_tri + offer +
+         tsnr + fd_mean + response_time +
+         (1 + anteriorinsula_corrected + response_time || participant_id),
+       data = all_trials_df,
+       family = binomial)
+summary(P2_NH1_AI_age_group_m1)
 ```
 
-## dACC ~ choice * age * group3 + controls, NON
+### choice ~ anterior insula * age + controls, NON
 ```{r}
-## singular warning
-# P2_NH1_dacc_age_group_m1 =
-#   lmer(dacc_corrected ~ accept * age_bi * group_tri +
-#          tsnr + fd_mean + response_time +
-#          (1 + accept + response_time || participant_id),
-#        data = all_trials_df)
-# summary(P2_NH1_dacc_age_group_m1)
+P2_NH1_AI_age_m1 =
+  glmer(accept ~ anteriorinsula_corrected * age_bi + offer +
+         tsnr + fd_mean + response_time +
+         (1 + anteriorinsula_corrected + response_time || participant_id),
+       data = all_trials_df,
+       family = binomial)
+summary(P2_NH1_AI_age_m1)
+```
 
-P2_NH1_dacc_age_group_m2 = 
-  lm(dacc_corrected ~ accept * age_bi * group_tri +
-       tsnr + fd_mean + response_time, 
-     data = all_trials_df)
-summary(P2_NH1_dacc_age_group_m2)
+### choice ~ anterior insula * group_tri + controls
+```{r}
+## won't converge
+P2_NH1_AI_group_m1 =
+  glmer(accept ~ anteriorinsula_corrected * group_tri + offer +
+         tsnr + fd_mean + response_time +
+         (1 + anteriorinsula_corrected + response_time || participant_id),
+       data = all_trials_df,
+       family = binomial)
+summary(P2_NH1_AI_group_m1)
+```
 
-## same performeance, prefer more parsimonious P2_NH1_dacc_age_group_m2
-# anova(P2_NH1_dacc_age_group_m1, P2_NH1_dacc_age_group_m2, refit = F)
+### choice ~ anterior insula * human + controls, SIG
+```{r}
+P2_NH1_AI_human_m1 =
+  glmer(accept ~ anteriorinsula_corrected * human + offer +
+         tsnr + fd_mean + response_time +
+         (1 | participant_id),
+         # (1 + anteriorinsula_corrected + response_time | participant_id), # won't converge
+         # (1 + response_time || participant_id), # won't converge
+       data = all_trials_df,
+       family = binomial)
+summary(P2_NH1_AI_human_m1)
+```
 
-# temp_m = glmer(accept ~ 1 +
-#                      (1|participant_id), 
-#                      data = all_trials_df, family = binomial)
-# temp_m = lmer(dacc_corrected ~ 1 +
-#                      (1|participant_id),
-#                      data = all_trials_df)
-# temp_m = lmer(response_time ~ 1 +
-#                      (1|participant_id),
-#                      data = all_trials_df)
-# summary(temp_m)
-# icc(temp_m)
+### choice ~ anterior insula * similar + controls, NON
+```{r}
+all_trials_similar_df = filter(all_trials_df, human == "1")
+P2_NH1_AI_similar_m1 =
+  glmer(accept ~ anteriorinsula_corrected * ingroup + offer +
+         tsnr + fd_mean + response_time +
+          (1 + response_time || participant_id),
+         # (1 + anteriorinsula_corrected + response_time || participant_id), # won't converge
+       data = all_trials_similar_df,
+       family = binomial)
+summary(P2_NH1_AI_similar_m1)
+```
+
+### choice ~ anterior insula + controls, NON
+```{r}
+all_trials_similar_df = filter(all_trials_df, human == "1")
+P2_NH1_AI_similar_m1 =
+  glmer(accept ~ anteriorinsula_corrected + offer + 
+         tsnr + fd_mean + response_time +
+         # (1 + anteriorinsula_corrected + response_time || participant_id),
+        (1 + response_time || participant_id),
+       data = all_trials_similar_df,
+       family = binomial)
+summary(P2_NH1_AI_similar_m1)
+```
+
+# to continue
+
+## dACC
+### choice ~ dACC * age * group3 + controls, fail converge
+```{r}
+## won't converge
+P2_NH1_dacc_age_group_m1 =
+  glmer(accept ~ dacc_corrected * age_bi * group_tri +
+         tsnr + fd_mean + response_time +
+         (1 + dacc_corrected + response_time || participant_id),
+       data = all_trials_df,
+       family = binomial)
+summary(P2_NH1_dacc_age_group_m1)
+```
+
+### choice ~ dACC * age + controls, NON
+```{r}
+P2_NH1_dacc_age_m1 =
+  glmer(accept ~ dacc_corrected * age_bi +
+         tsnr + fd_mean + response_time +
+         (1 + dacc_corrected + response_time || participant_id),
+       data = all_trials_df,
+       family = binomial)
+summary(P2_NH1_dacc_age_m1)
+```
+
+### choice ~ dACC * group3 + controls, NON
+```{r}
+## won't converge
+P2_NH1_dacc_group_m1 =
+  glmer(accept ~ dacc_corrected * group_tri +
+         tsnr + fd_mean + response_time +
+         (1 + dacc_corrected + response_time || participant_id),
+       data = all_trials_df,
+       family = binomial)
+summary(P2_NH1_dacc_group_m1)
+```
+
+### choice ~ dACC * human + controls, NON
+```{r}
+P2_NH1_dacc_human_m1 =
+  glmer(accept ~ dacc_corrected * human +
+         tsnr + fd_mean + response_time +
+         (1 + dacc_corrected + response_time || participant_id),
+       data = all_trials_df,
+       family = binomial)
+summary(P2_NH1_dacc_human_m1)
+```
+### choice ~ dacc * similar + controls, NON
+```{r}
+all_trials_similar_df = filter(all_trials_df, human == "1")
+P2_NH1_dacc_similar_m1 =
+  glmer(accept ~ dacc_corrected * ingroup +
+          tsnr + fd_mean + response_time +
+          (1 + dacc_corrected + response_time || participant_id),
+        data = all_trials_similar_df,
+        family = binomial)
+summary(P2_NH1_dacc_similar_m1)
+```
+
+### choice ~ dacc + controls, NON
+```{r}
+P2_NH1_dacc_m1 =
+  glmer(accept ~ dacc_corrected +
+          tsnr + fd_mean + response_time +
+          (1 + response_time || participant_id),
+        data = all_trials_df,
+        family = binomial)
+summary(P2_NH1_dacc_m1)
 ```
 
 ### dACC ~ choice * age + controls, NON
