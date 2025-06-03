@@ -295,7 +295,7 @@ summary(P2_NH1_VS_age_group_m2)
 ### VS ~ choice * age + controls, NON
 ```{r}
 P2_NH1_VS_age_m1 = 
-  lm(dacc_corrected ~ accept * age_bi +
+  lm(VS_corrected ~ accept * age_bi +
        tsnr + fd_mean + response_time, 
      data = all_trials_df)
 summary(P2_NH1_VS_age_m1)
@@ -304,7 +304,7 @@ summary(P2_NH1_VS_age_m1)
 ### VS ~ choice * group3 + controls, NON
 ```{r}
 P2_NH1_VS_group_m1 = 
-  lm(dacc_corrected ~ accept * group_tri +
+  lm(VS_corrected ~ accept * group_tri +
        tsnr + fd_mean + response_time, 
      data = all_trials_df)
 summary(P2_NH1_VS_group_m1)
@@ -313,73 +313,72 @@ summary(P2_NH1_VS_group_m1)
 ### VS ~ choice + controls, NON
 ```{r}
 P2_NH1_VS_choice_m1 = 
-  lm(dacc_corrected ~ accept +
+  lm(VS_corrected ~ accept +
        tsnr + fd_mean + response_time, 
      data = all_trials_df)
 summary(P2_NH1_VS_choice_m1)
 ```
 
-
-
-### vmpfc * age, strict prereg, sig
+## vmpfc ~ choice * age * group3 + controls, NON
 ```{r}
-## converged, no sig vmpfc_corrected * age_bi
-model_P2_NH1_vmpfc_age_fit <- glmer(accept ~ vmpfc_corrected * age_bi +
-                                     (1|participant_id),
-                                   data = all_trials_df,
-                                   family = binomial)
-summary(model_P2_NH1_vmpfc_age_fit)
+## singular warning
+P2_NH1_vmpfc_age_group_m1 =
+  lmer(vmpfc_corrected ~ accept * age_bi * group_tri +
+         tsnr + fd_mean + response_time +
+         (1 + accept + response_time || participant_id),
+       data = all_trials_df)
+summary(P2_NH1_vmpfc_age_group_m1)
 
-m_params = model_parameters(model_P2_NH1_vmpfc_age_fit, effects = "fixed")
+P2_NH1_vmpfc_age_group_m2 = 
+  lm(vmpfc_corrected ~ accept * age_bi * group_tri +
+       tsnr + fd_mean + response_time, 
+     data = all_trials_df)
+summary(P2_NH1_vmpfc_age_group_m2)
 
-N_nonNA_results = sum(!is.na(results_df$brain))
-results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
-results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
-results_df$p[N_nonNA_results+1] = m_params$p[4]
-results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[4]
+## same performeance, prefer more parsimonious P2_NH1_vmpfc_age_group_m2
+# anova(P2_NH1_vmpfc_age_group_m1, P2_NH1_vmpfc_age_group_m2, refit = F)
+
+# temp_m = glmer(accept ~ 1 +
+#                      (1|participant_id), 
+#                      data = all_trials_df, family = binomial)
+# temp_m = lmer(vmpfc_corrected ~ 1 +
+#                      (1|participant_id), 
+#                      data = all_trials_df)
+# temp_m = lmer(response_time ~ 1 +
+#                      (1|participant_id),
+#                      data = all_trials_df)
+# summary(temp_m)
+# icc(temp_m)
 ```
 
-### vmpfc * group, strict prereg, not sig
+### vmpfc ~ choice * age + controls, NON
 ```{r}
-## converged, no sig vmpfc_corrected * age_bi
-model_P2_NH1_vmpfc_group_fit <- glmer(accept ~ vmpfc_corrected * group_tri +
-                                       (1|participant_id),
-                                     data = all_trials_df,
-                                     family = binomial)
-summary(model_P2_NH1_vmpfc_group_fit)
-
-m_params = model_parameters(model_P2_NH1_vmpfc_group_fit, effects = "fixed")
-
-N_nonNA_results = sum(!is.na(results_df$brain))
-results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
-results_df$mod[N_nonNA_results+1] = m_params$Parameter[3]
-results_df$p[N_nonNA_results+1] = m_params$p[5]
-results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[5]
-
-N_nonNA_results = sum(!is.na(results_df$brain))
-results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
-results_df$mod[N_nonNA_results+1] = m_params$Parameter[4]
-results_df$p[N_nonNA_results+1] = m_params$p[6]
-results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[6]
+P2_NH1_vmpfc_age_m1 = 
+  lm(vmpfc_corrected ~ accept * age_bi +
+       tsnr + fd_mean + response_time, 
+     data = all_trials_df)
+summary(P2_NH1_vmpfc_age_m1)
 ```
 
-### vmpfc main, strict prereg, not sig
+### vmpfc ~ choice * group3 + controls, NON
 ```{r}
-## converged, no sig vmpfc_corrected * age_bi
-model_P2_NH1_vmpfc_main_fit <- glmer(accept ~ vmpfc_corrected +
-                                      (1|participant_id),
-                                    data = all_trials_df,
-                                    family = binomial)
-summary(model_P2_NH1_vmpfc_main_fit)
-
-m_params = model_parameters(model_P2_NH1_vmpfc_main_fit, effects = "fixed")
-
-N_nonNA_results = sum(!is.na(results_df$brain))
-results_df$brain[N_nonNA_results+1] = m_params$Parameter[2]
-results_df$mod[N_nonNA_results+1] = "main"
-results_df$p[N_nonNA_results+1] = m_params$p[2]
-results_df$Coef[N_nonNA_results+1] = m_params$Coefficient[2]
+P2_NH1_vmpfc_group_m1 = 
+  lm(vmpfc_corrected ~ accept * group_tri +
+       tsnr + fd_mean + response_time, 
+     data = all_trials_df)
+summary(P2_NH1_vmpfc_group_m1)
 ```
+
+### vmpfc ~ choice + controls, sig
+```{r}
+P2_NH1_vmpfc_choice_m1 = 
+  lm(vmpfc_corrected ~ accept +
+       tsnr + fd_mean + response_time, 
+     data = all_trials_df)
+summary(P2_NH1_vmpfc_choice_m1)
+```
+
+# to continue
 
 ### clean single trial results
 ```{r}
