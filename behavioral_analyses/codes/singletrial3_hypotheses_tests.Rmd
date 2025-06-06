@@ -218,6 +218,8 @@ P2_NH1_AI_human_m1 =
        data = all_trials_df,
        family = binomial)
 summary(P2_NH1_AI_human_m1)
+
+
 ```
 
 ### choice ~ anterior insula * similar + controls, NON
