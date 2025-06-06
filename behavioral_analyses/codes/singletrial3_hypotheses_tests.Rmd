@@ -156,6 +156,11 @@ all_trials_df = merge(all_trials_df, fmri_control_data,
                       by.y = c("Sub", "run"))
 ```
 
+## remove incomplete rows
+```{r}
+all_trials_df %<>% na.omit 
+```
+
 
 # P2 NH1A, group_tri & age_bi respectively
 "NH1A) The anterior insula (ins), dorsal anterior cingulate cortex (dACC), ventromedial prefrontal cortex (vmPFC), and ventral striatum (VS) will be associated with choice." [ins, dACC, vmPFC, VS]
@@ -218,8 +223,47 @@ P2_NH1_AI_human_m1 =
        data = all_trials_df,
        family = binomial)
 summary(P2_NH1_AI_human_m1)
+```
+
+#### plot
+```{r}
+# Compute partial residuals for X
+# Step 1: Residualize y by Z and random effects
+P2_NH1_AI_human_m1_pr_y = glmer(accept ~ human + offer +
+                                tsnr + fd_mean + response_time +
+                                (1 | participant_id),
+                              data = all_trials_df,
+                              family = binomial)
 
 
+res.accept_pr <- residuals(P2_NH1_AI_human_m1_pr_y)
+
+# # Step 2: Residualize X by Z and random effects
+P2_NH1_AI_human_m1_pr_x = lmer(anteriorinsula_corrected ~ human + offer +
+                                tsnr + fd_mean + response_time +
+                                (1 | participant_id),
+                              data = all_trials_df)
+res.AI_pr <- residuals(P2_NH1_AI_human_m1_pr_x)
+
+# Create partial residual plot
+pr_plot_df = data.frame(res.x = res.AI_pr,
+                        res.y = res.accept_pr,
+                        AI = all_trials_df$anteriorinsula_corrected,
+                        human = all_trials_df$human)
+
+ggplot(pr_plot_df, aes(x = AI, y = res.y, color = human)) +
+  # geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  labs(x = "Partial residual for X (controlling for Z and participant)",
+       y = "Partial residual for y (controlling for Z and participant)") +
+  theme_minimal()
+
+ggplot(pr_plot_df, aes(x = res.x, y = res.y, color = human)) +
+  # geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  labs(x = "Partial residual for X (controlling for Z and participant)",
+       y = "Partial residual for y (controlling for Z and participant)") +
+  theme_minimal()
 ```
 
 ### choice ~ anterior insula * similar + controls, NON
