@@ -1,0 +1,468 @@
+---
+title: "SRNDNA figures"
+author: "Jen Yang"
+date: "2025-06-09, last modified 2025-06-09"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    hightlight: zenburn
+    toc_depth: 6
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+# Load libraries
+```{r libraries, message=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(interactions)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+# library(raincloudplots)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(ggpubr)
+library(lubridate)
+library(readxl)
+library(gridExtra)
+library(scales)
+library(rstudioapi)
+library(jsonlite)
+library(rjson)
+library(readr)
+library(hBayesDM)
+library(brms)
+library(emmeans)
+library(mediation)
+library(here)
+library(lme4)
+library(broom.mixed)
+library(easyRT)
+library(parameters)
+library(effectsize)
+library(effects)
+library(lmerTest)
+library(ez)
+library(LMMstar)
+```
+
+# set directories
+```{r}
+gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
+
+data_dir = paste(gitrepo_path,"data", sep = "/")
+codes_dir = paste(gitrepo_path, "codes", sep = "/")
+fit_dir = paste(gitrepo_path,"fits", sep = "/")
+figure_dir = paste(gitrepo_path,"figures", sep = "/")
+
+ROImean_dir = "/Users/momocco/Documents/GitHub/srndna-ug/imaging_plots_SANS"
+```
+
+## plot param setup
+```{r}
+axis_title = 16
+axis_ticks = 10
+axis_text = 12
+axis_label = 14
+
+legend_all = 12
+
+annotate_text = 4
+axis_line_width = 1
+fit_line_width = 2
+
+data_point_alpha = 0.5
+data_point_size = 3*0.8
+
+mean_point_size = 3
+
+summary_point_alpha = 1
+summary_point_size = 3
+
+annotate_text = 4
+
+w = 5
+h = 4
+```
+
+# fmri whole brain
+## load and code data
+```{r}
+list_fmri_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"),
+                          header = T) %>% dplyr::select(subjID)
+
+participant_check_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = T)
+
+participant_demo_df = 
+  merge(list_fmri_df, participant_check_df, by.x = "subjID", by.y = "participant_id", all.x = T) %>% 
+  mutate(age_bi = case_when(age <= 36 ~ "younger", age > 36 ~ "older"),
+         age_bi = relevel(as.factor(age_bi), ref = "younger"))
+
+## load tsnr, fd_mean, and RT
+sub_control_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"),
+                          header = T) %>% 
+  select(subjID, tsnr, fd_mean, RT)
+
+control_vars = colnames(sub_control_df)[-1]
+```
+
+## dmn, cope7, in-out c3 y-o, paracingulate gyrus?, -13.3, 34, 27.8 (aCC?, COG -3.6 33.4 32.9)
+### prep original data
+```{r}
+## data prep
+in_name = "dmn_p_in-out_y-o_type-nppi-dmn_cope-04.txt"
+out_name = "dmn_p_in-out_y-o_type-nppi-dmn_cope-06.txt"
+
+in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'),sep=" ",header=F)
+out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'),sep=" ",header=F)
+
+in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+              in_ROI = in_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+              ROI = in_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+              group = as.factor("ingroup")) # for unpacked interaction, y axis = no-contrast brain activity
+
+in_df = merge(in_df, sub_control_df, by = "subjID")
+
+out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+               out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+               ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+               group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
+out_df = merge(out_df, sub_control_df, by = "subjID")
+
+plot_df = in_df %>% 
+  mutate(out_ROI = out_df$out_ROI,
+         DV = in_ROI - out_ROI) %>% 
+  select("subjID", "DV", "age_bi", control_vars)
+```
+
+### get partial DV
+```{r}
+m_DV_res = lm(DV ~ tsnr + fd_mean + RT, plot_df)
+plot_df %<>% mutate(DV_res = residuals(m_DV_res)) 
+```
+
+### prepare partial residual summary for reg line and error bar
+```{r}
+summary_plot_df <- plot_df %>%
+  group_by(age_bi) %>%
+  summarise(mean_DV_res = mean(DV_res, na.rm = TRUE),
+    se_DV_res = sd(DV_res, na.rm = TRUE) / sqrt(n()))
+```
+
+### ggplot and save
+```{r}
+# x_label = "Age Group\n"
+# y_label = "beta\n(partial residual)"
+# title_label = "DMN-dACC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+
+x_label = ""
+y_label = "DMN-dACC PPI\nsensitivity to fairness"
+title_label = ""
+
+color_label = "Age Group"
+color_age = c("older" = "#006900", "younger"= "#00d000") # "#37ff37"
+
+figure_name = "DMN_dACC_in-out_age_NoBehCov"
+
+p_scatter =
+  ggplot() +
+  geom_jitter(data = plot_df, aes(x = age_bi, y = DV_res, color = age_bi),
+              alpha = data_point_alpha, 
+              width = 0.1, size = data_point_size) + # Adjust jitter width for categorical X
+  geom_point(data = summary_plot_df, aes(x = age_bi, y = mean_DV_res), 
+             size = mean_point_size, alpha = data_point_alpha, shape = 18) +
+  geom_errorbar(data = summary_plot_df, 
+                aes(x = age_bi, 
+                    ymin = mean_DV_res - se_DV_res, ymax = mean_DV_res + se_DV_res),
+                width = 0.1) +
+  scale_color_manual(values = color_age) +
+  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
+  geom_line(data = summary_plot_df, # Connect means with a line
+            aes(x = as.numeric(age_bi), y = mean_DV_res), 
+            color = "black", linewidth = fit_line_width) +
+  theme_classic() +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        legend.title = element_text(face = "bold"),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold")) 
+
+p_scatter
+
+ggsave(paste(figure_dir, paste(figure_name, "scatter_manu.png", sep = "_"),
+             sep = "/"), p_scatter, width = w*1.1, height = h)
+```
+
+## ecn, in-out, sensitivity_logit * age, frontal pole/mpfc?
+### prepare df for ggplot
+```{r}
+## data prep
+in_name = "ecn_p_in-out_o-y_sens-logit_type-nppi-ecn_cope-04.txt"
+out_name = "ecn_p_in-out_o-y_sens-logit_type-nppi-ecn_cope-06.txt"
+
+in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'), sep=" ",header=F)
+out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'), sep=" ",header=F)
+
+sensitivity_name = "in_out_sensitivity_logit.csv"
+sensitivity_name = "in_out_sensitivity_full_logit.csv"
+sensitivity_df = read.csv(paste(data_dir, sensitivity_name, sep = '/'), header = T)
+
+in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+              in_ROI = in_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+              ROI = in_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+              group = as.factor("ingroup")) # for unpacked interaction, y axis = no-contrast brain activity
+
+in_df = merge(in_df, sub_control_df, by = "subjID")
+
+out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+               out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+               ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+               group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
+
+out_df = merge(out_df, sub_control_df, by = "subjID")
+
+plot_df = in_df %>% 
+  mutate(out_ROI = out_df$out_ROI,
+         DV = in_ROI - out_ROI,
+         sensitivity_in_out = sensitivity_df$in_out_full_logit) %>% 
+  select("subjID", "DV", "age_bi", "sensitivity_in_out", control_vars)
+```
+
+### get partial DV
+```{r}
+m_DV_res = lm(DV ~ tsnr + fd_mean + RT, plot_df)
+plot_df %<>% mutate(DV_res = residuals(m_DV_res)) 
+```
+
+## plot and save
+```{r}
+# x_label = "Fairness Senstivity (logit)\nIngroup > Outgroup"
+# y_label = "beta\n(partial residual)"
+# title_label = "ECN-mPFC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+
+x_label = ""
+y_label = "ECN-mPFC connectivity\nsensitivity to fairness"
+title_label = ""
+
+
+color_label = "Age Group"
+color_age = c("older" = "#003c66", "younger"= "#0098ff")
+
+# figure_name = "ECN_mPFC_in-out_age_BehFairSensitivity"
+figure_name = "ECN_mPFC_in-out_age_BehFairSensitivityFull"
+
+p_scatter =
+  ggplot(LMM_df, aes(x = sensitivity_in_out, y = DV_res, color = age_bi)) +
+  geom_point(alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
+  geom_smooth(formula = "y~x", method = "lm", 
+              se = TRUE,
+              linetype = "solid",
+              linewidth = 2, 
+              alpha = 0.2) +
+  scale_color_manual(values = color_age) +
+  guides(color = guide_legend(override.aes = list(fill = NA))) +
+  theme_classic() +
+  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
+  guides(color = guide_legend(override.aes = list(fill = NA))) +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        legend.title = element_text(face = "bold"),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+        # legend.position="bottom left", legend.box = "horizontal")
+        # legend.position="none")
+
+ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"),
+             sep = "/"), p_scatter, width = w*1.1, height = h)
+```
+
+# act, in-out, norm_logit intercept * age, IPLD/IPLC
+## prepare df for ggplot
+```{r}
+## data prep
+in_name = "act_p_in-out_o-y_norm-logit_type-act_cope-04.txt"
+out_name = "act_p_in-out_o-y_norm-logit_type-act_cope-06.txt"
+
+in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'), sep=" ",header=F)
+out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'), sep=" ",header=F)
+
+norm_name = "in_out_norm_logit.csv"
+norm_df = read.csv(paste(data_dir, norm_name, sep = '/'), header = T)
+
+in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+              in_ROI = in_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+              ROI = in_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+              group = as.factor("ingroup")) # for unpacked interaction, y axis = no-contrast brain activity
+
+in_df = merge(in_df, sub_control_df, by = "subjID")
+
+out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
+               out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
+               ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
+               group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
+
+out_df = merge(out_df, sub_control_df, by = "subjID")
+
+plot_df = in_df %>% 
+  mutate(out_ROI = out_df$out_ROI,
+         DV = in_ROI - out_ROI,
+         norm_in_out = norm_df$in_out_logit) %>% 
+  select("subjID", "DV", "age_bi", "norm_in_out", control_vars)
+```
+
+## get partial residuals
+```{r}
+LMM_df = plot_df
+formula_string = "DV ~ age_bi * norm_in_out + tsnr + fd_mean + RT"
+formula_LMM = as.formula(formula_string)
+focal_var_names = c("(Intercept)", 
+                    "age_bi", "norm_in_out")
+
+## compute partial residual using LMM
+pres_LMM_fit = lmm(formula_LMM, data = LMM_df)
+LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial", 
+                                     variable = focal_var_names)
+```
+
+
+## plot and save
+```{r}
+x_label = "Fairness Senstivity (logit)\nIngroup > Outgroup"
+y_label = "beta\n(partial residual)"
+title_label = "Posterior Supramarginal Gyrus norm to Fairness\nIngroup > Outgroup"
+
+color_label = "Age Group"
+color_age = c("older" = "#7f0000", "younger"= "#ff7f7f")
+
+figure_name = "act_pSupramarginalGyrus_in-out_age_BehFairNorm"
+
+p_scatter =
+  ggplot(LMM_df, aes(x = norm_in_out, y = DV_res, color = age_bi)) + 
+  geom_point(alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
+  geom_smooth(formula = "y~x", method = "lm", 
+              se = TRUE,
+              linetype = "solid",
+              linewidth = fit_line_width, 
+              alpha = 0.2) +
+  scale_color_manual(values = color_age) +
+  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
+  guides(color = guide_legend(override.aes = list(fill = NA))) +
+  theme_classic() +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        legend.title = element_text(face = "bold"),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+# legend.position="bottom left", legend.box = "horizontal")
+# legend.position="none")
+
+ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"), 
+             sep = "/"), p_scatter, width = w*1.1, height = h)
+```
+
+# single trial
+## load data
+```{r}
+# load subs
+all_trials_df = read.csv(paste(data_dir, "all_trials_brains.csv", sep = "/"), header = TRUE) %>% 
+  .[.$missed == 0,]
+
+colnames(all_trials_df)[colnames(all_trials_df) == "subjID"] <- "participant_id"
+indiv_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = TRUE)  %>%
+  mutate(age_bi = case_when(age <= 36 ~ "younger",
+                            age > 36 ~ "older"))
+
+all_trials_df = merge(all_trials_df, indiv_df, by.x = "participant_id", by.y = "participant_id")
+
+sublist_final = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE)
+
+all_trials_df = all_trials_df[all_trials_df$participant_id %in% sublist_final$subjID,]
+```
+
+## recode group and age
+```{r}
+## add a categorical variable that differentiate three groups
+all_trials_df = all_trials_df %>% 
+  mutate(group_tri = as.factor(case_when(human == 0 ~ 0, # computer
+                               human == 1 & ingroup == 0 ~ 1, # outgroup
+                               human == 1 & ingroup == 1 ~ 2))) # ingroup
+# all_trials_df$group_tri = relevel(all_trials_df$group_tri, ref = "0") # computer
+
+all_trials_df = all_trials_df %>% mutate(human = as.factor(human))
+
+all_trials_df$group_tri = relevel(all_trials_df$group_tri, ref = "1") # outgroup
+
+all_trials_df$age_bi = relevel(as.factor(all_trials_df$age_bi), ref = "younger")
+
+all_trials_df = all_trials_df %>% 
+  mutate(age_bi_dummy = case_when(age_bi == "younger" ~ 0,
+                                  age_bi == "older" ~ 1)
+         )
+```
+
+## factorize vars as needed
+```{r}
+factor_col_names = c("participant_id", "run", "missed", "accept",
+                     "ingroup", "block_fair", "sex")
+all_trials_df[factor_col_names] %<>% lapply(., factor) 
+```
+
+## add fdmean, tsnr vars to data
+```{r}
+fmri_control_data = 
+  read.csv(paste(data_dir, "Task-ultimatum_Level-Run_Outlier-info.csv", 
+                 sep = "/"), header = TRUE) %>% 
+  filter(Sub %in% sublist_final$subjID == 1) %>% 
+  # mutate(subjID = Sub) %>% 
+  select(-task, -outlier_run_Custom1)
+
+all_trials_df = merge(all_trials_df, fmri_control_data, 
+                      by.x = c("participant_id", "run"),
+                      by.y = c("Sub", "run"))
+```
+
+## remove incomplete rows
+```{r}
+all_trials_df %<>% na.omit 
+```
+
+# end of code

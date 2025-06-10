@@ -1,0 +1,196 @@
+---
+title: "singletrial_hypotheses_tests_srndnaUGR"
+author: "Jen Yang"
+date: "2025-04-09, last modified 2025-04-09"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    hightlight: zenburn
+    toc_depth: 6
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+# Load libraries
+```{r libraries, message_bi=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(interactions)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+# library(raincloudplots)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(ggpubr)
+library(lubridate)
+library(readxl)
+library(gridExtra)
+library(scales)
+library(rstudioapi)
+library(jsonlite)
+library(rjson)
+library(readr)
+library(hBayesDM)
+library(brms)
+library(emmeans)
+library(mediation)
+library(here)
+library(lme4)
+library(lmerTest)
+library(broom.mixed)
+library(easyRT)
+library(parameters)
+library(effectsize)
+library(effects)
+library(lmerTest)
+library(ez)
+library(afex)
+library(marginaleffects)
+library(magrittr)
+```
+
+```{r}
+set.seed(123)
+```
+
+# directories
+```{r}
+gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
+
+data_dir = paste(gitrepo_path,"data", sep = "/")
+codes_dir = paste(gitrepo_path, "codes", sep = "/")
+fit_dir = paste(gitrepo_path,"fits", sep = "/")
+figure_dir = paste(gitrepo_path,"figures", sep = "/")
+```
+
+# load and prepare data
+```{r}
+# load subs
+all_trials_df = read.csv(paste(data_dir, "all_trials_brains.csv", sep = "/"), header = TRUE) %>% 
+  .[.$missed == 0,]
+
+colnames(all_trials_df)[colnames(all_trials_df) == "subjID"] <- "participant_id"
+indiv_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = TRUE)  %>%
+  mutate(age_bi = case_when(age <= 36 ~ "younger",
+                            age > 36 ~ "older"))
+
+all_trials_df = merge(all_trials_df, indiv_df, by.x = "participant_id", by.y = "participant_id")
+
+sublist_final = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"), header = TRUE)
+
+all_trials_df = all_trials_df[all_trials_df$participant_id %in% sublist_final$subjID,]
+```
+
+## recode group and age
+```{r}
+## add a categorical variable that differentiate three groups
+all_trials_df = all_trials_df %>% 
+  mutate(group_tri = as.factor(case_when(human == 0 ~ 0, # computer
+                               human == 1 & ingroup == 0 ~ 1, # outgroup
+                               human == 1 & ingroup == 1 ~ 2))) # ingroup
+# all_trials_df$group_tri = relevel(all_trials_df$group_tri, ref = "0") # computer
+
+all_trials_df = all_trials_df %>% mutate(human = as.factor(human))
+
+all_trials_df$group_tri = relevel(all_trials_df$group_tri, ref = "1") # outgroup
+
+all_trials_df$age_bi = relevel(as.factor(all_trials_df$age_bi), ref = "younger")
+
+all_trials_df = all_trials_df %>% 
+  mutate(age_bi_dummy = case_when(age_bi == "younger" ~ 0,
+                                  age_bi == "older" ~ 1)
+         )
+```
+
+## factorize vars as needed
+```{r}
+factor_col_names = c("participant_id", "run", "missed", "accept",
+                     "ingroup", "block_fair", "sex")
+all_trials_df[factor_col_names] %<>% lapply(., factor) 
+```
+
+## add fdmean, tsnr vars to data
+```{r}
+fmri_control_data = 
+  read.csv(paste(data_dir, "Task-ultimatum_Level-Run_Outlier-info.csv", 
+                 sep = "/"), header = TRUE) %>% 
+  filter(Sub %in% sublist_final$subjID == 1) %>% 
+  # mutate(subjID = Sub) %>% 
+  select(-task, -outlier_run_Custom1)
+
+all_trials_df = merge(all_trials_df, fmri_control_data, 
+                      by.x = c("participant_id", "run"),
+                      by.y = c("Sub", "run"))
+```
+
+## remove incomplete rows
+```{r}
+all_trials_df %<>% na.omit 
+```
+
+```{r}
+m_full = glm(accept ~ VS_corrected + offer * response_time, data = all_trials_df, family = binomial)
+
+summary(m_full)
+
+m_full_res = residuals(m_full)
+m_full_res_partial = m_full_res + m_full$coefficients[2]*all_trials_df$offer
+
+m_partial = lm(VS_corrected ~ response_time, data = all_trials_df)
+m_partial_res = residuals(m_partial)
+
+
+pres_LMM_fit = lmm(VS_corrected ~ offer + response_time, data = all_trials_df)
+LMM_partial_residual <- residuals(pres_LMM_fit, type = "partial", 
+                         variable = "offer")
+
+avPlot(m_full, variable = c("offer:response_time"))
+
+```
+
+```{r}
+m_full = lm(dacc_corrected ~ VS_corrected + offer * response_time, data = all_trials_df)
+summary(m_full)
+
+m_res = lm(dacc_corrected ~ VS_corrected, data = all_trials_df)
+
+all_trials_df %<>% mutate(dacc_corrected_res = 
+                            residuals(m_res))
+
+m_full_res = lm(dacc_corrected_res ~ offer * response_time, data = all_trials_df)
+summary(m_full_res)
+
+```
