@@ -91,7 +91,7 @@ figure_dir = paste(gitrepo_path,"figures", sep = "/")
 ROImean_dir = "/Users/momocco/Documents/GitHub/srndna-ug/imaging_plots_SANS"
 ```
 
-## plot param setup
+# plot param setup
 ```{r}
 axis_title = 16
 axis_ticks = 10
@@ -108,6 +108,9 @@ data_point_alpha = 0.5
 data_point_size = 3*0.8
 
 mean_point_size = 3
+
+line_width = 1
+point_size = 3
 
 summary_point_alpha = 1
 summary_point_size = 3
@@ -140,7 +143,7 @@ control_vars = colnames(sub_control_df)[-1]
 ```
 
 ## dmn, cope7, in-out c3 y-o, paracingulate gyrus?, -13.3, 34, 27.8 (aCC?, COG -3.6 33.4 32.9)
-### prep original data
+### prep df for ggplot
 ```{r}
 ## data prep
 in_name = "dmn_p_in-out_y-o_type-nppi-dmn_cope-04.txt"
@@ -184,12 +187,10 @@ summary_plot_df <- plot_df %>%
 
 ### ggplot and save
 ```{r}
-# x_label = "Age Group\n"
-# y_label = "beta\n(partial residual)"
-# title_label = "DMN-dACC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+set.seed(1234)
 
 x_label = ""
-y_label = "DMN-dACC PPI\nsensitivity to fairness"
+y_label = "DMN-dACC, similar > disimilar (β)\noffer size modulated"
 title_label = ""
 
 color_label = "Age Group"
@@ -214,7 +215,7 @@ p_scatter =
   geom_line(data = summary_plot_df, # Connect means with a line
             aes(x = as.numeric(age_bi), y = mean_DV_res), 
             color = "black", linewidth = fit_line_width) +
-  theme_classic() +
+  # theme_classic() +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
         legend.title = element_text(face = "bold"),
         axis.text.x = element_text(size = axis_text), 
@@ -269,16 +270,13 @@ m_DV_res = lm(DV ~ tsnr + fd_mean + RT, plot_df)
 plot_df %<>% mutate(DV_res = residuals(m_DV_res)) 
 ```
 
-## plot and save
+### plot and save
 ```{r}
-# x_label = "Fairness Senstivity (logit)\nIngroup > Outgroup"
-# y_label = "beta\n(partial residual)"
-# title_label = "ECN-mPFC Connectivity's Sensitivity to Fairness\nIngroup > Outgroup"
+set.seed(1234)
 
-x_label = ""
-y_label = "ECN-mPFC connectivity\nsensitivity to fairness"
+x_label = "Norm Violation Senstivity\nsimilar > disimilar"
+y_label = "ECN-mPFC, similar > disimilar (β)\noffer size modulated"
 title_label = ""
-
 
 color_label = "Age Group"
 color_age = c("older" = "#003c66", "younger"= "#0098ff")
@@ -287,7 +285,7 @@ color_age = c("older" = "#003c66", "younger"= "#0098ff")
 figure_name = "ECN_mPFC_in-out_age_BehFairSensitivityFull"
 
 p_scatter =
-  ggplot(LMM_df, aes(x = sensitivity_in_out, y = DV_res, color = age_bi)) +
+  ggplot(plot_df, aes(x = sensitivity_in_out, y = DV_res, color = age_bi)) +
   geom_point(alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
   geom_smooth(formula = "y~x", method = "lm", 
               se = TRUE,
@@ -296,7 +294,7 @@ p_scatter =
               alpha = 0.2) +
   scale_color_manual(values = color_age) +
   guides(color = guide_legend(override.aes = list(fill = NA))) +
-  theme_classic() +
+  # theme_classic() +
   labs(x = x_label, y = y_label, color = color_label, title = title_label) +
   # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
   guides(color = guide_legend(override.aes = list(fill = NA))) +
@@ -309,97 +307,14 @@ p_scatter =
         # legend.position="bottom left", legend.box = "horizontal")
         # legend.position="none")
 
-ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"),
-             sep = "/"), p_scatter, width = w*1.1, height = h)
-```
+p_scatter
 
-# act, in-out, norm_logit intercept * age, IPLD/IPLC
-## prepare df for ggplot
-```{r}
-## data prep
-in_name = "act_p_in-out_o-y_norm-logit_type-act_cope-04.txt"
-out_name = "act_p_in-out_o-y_norm-logit_type-act_cope-06.txt"
-
-in_ROI = read.table(paste(ROImean_dir, in_name, sep = '/'), sep=" ",header=F)
-out_ROI = read.table(paste(ROImean_dir, out_name, sep = '/'), sep=" ",header=F)
-
-norm_name = "in_out_norm_logit.csv"
-norm_df = read.csv(paste(data_dir, norm_name, sep = '/'), header = T)
-
-in_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
-              in_ROI = in_ROI$V1, # for packed interaction, y axis = contrasted brain activity
-              ROI = in_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
-              group = as.factor("ingroup")) # for unpacked interaction, y axis = no-contrast brain activity
-
-in_df = merge(in_df, sub_control_df, by = "subjID")
-
-out_df = cbind(list_fmri_df, age_bi = participant_demo_df$age_bi, 
-               out_ROI = out_ROI$V1, # for packed interaction, y axis = contrasted brain activity
-               ROI = out_ROI$V1, # for unpacked interaction, y axis = no-contrast brain activity
-               group = as.factor("outgroup")) # for unpacked interaction, y axis = no-contrast brain activity
-
-out_df = merge(out_df, sub_control_df, by = "subjID")
-
-plot_df = in_df %>% 
-  mutate(out_ROI = out_df$out_ROI,
-         DV = in_ROI - out_ROI,
-         norm_in_out = norm_df$in_out_logit) %>% 
-  select("subjID", "DV", "age_bi", "norm_in_out", control_vars)
-```
-
-## get partial residuals
-```{r}
-LMM_df = plot_df
-formula_string = "DV ~ age_bi * norm_in_out + tsnr + fd_mean + RT"
-formula_LMM = as.formula(formula_string)
-focal_var_names = c("(Intercept)", 
-                    "age_bi", "norm_in_out")
-
-## compute partial residual using LMM
-pres_LMM_fit = lmm(formula_LMM, data = LMM_df)
-LMM_df$partial_residual <- residuals(pres_LMM_fit, type = "partial", 
-                                     variable = focal_var_names)
-```
-
-
-## plot and save
-```{r}
-x_label = "Fairness Senstivity (logit)\nIngroup > Outgroup"
-y_label = "beta\n(partial residual)"
-title_label = "Posterior Supramarginal Gyrus norm to Fairness\nIngroup > Outgroup"
-
-color_label = "Age Group"
-color_age = c("older" = "#7f0000", "younger"= "#ff7f7f")
-
-figure_name = "act_pSupramarginalGyrus_in-out_age_BehFairNorm"
-
-p_scatter =
-  ggplot(LMM_df, aes(x = norm_in_out, y = DV_res, color = age_bi)) + 
-  geom_point(alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
-  geom_smooth(formula = "y~x", method = "lm", 
-              se = TRUE,
-              linetype = "solid",
-              linewidth = fit_line_width, 
-              alpha = 0.2) +
-  scale_color_manual(values = color_age) +
-  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
-  # labs(x = x_label, y = y_label, color = color_label, title = NULL) +
-  guides(color = guide_legend(override.aes = list(fill = NA))) +
-  theme_classic() +
-  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
-        legend.title = element_text(face = "bold"),
-        axis.text.x = element_text(size = axis_text), 
-        axis.text.y = element_text(size = axis_text), 
-        axis.title.x = element_text(size = axis_title, face="bold"), 
-        axis.title.y = element_text(size = axis_title, face="bold"))
-# legend.position="bottom left", legend.box = "horizontal")
-# legend.position="none")
-
-ggsave(paste(figure_dir, paste(figure_name, "scatter_classic.png", sep = "_"), 
+ggsave(paste(figure_dir, paste(figure_name, "scatter_manu.png", sep = "_"),
              sep = "/"), p_scatter, width = w*1.1, height = h)
 ```
 
 # single trial
+
 ## load data
 ```{r}
 # load subs
@@ -464,5 +379,202 @@ all_trials_df = merge(all_trials_df, fmri_control_data,
 ```{r}
 all_trials_df %<>% na.omit 
 ```
+
+## anterior singula
+### prepare df for ggplot
+```{r}
+# P2_NH1_AI_human_m1 =
+#   glmer(accept ~ anteriorinsula_corrected * human + offer +
+#          tsnr + fd_mean + response_time +
+#          (1 | participant_id),
+#        data = all_trials_df,
+#        family = binomial)
+# summary(P2_NH1_AI_human_m1)
+
+plot_df = all_trials_df %>%
+  select(participant_id, accept, anteriorinsula_corrected, human, 
+         age_bi, offer, tsnr, fd_mean, response_time)
+```
+
+### choice ~ anterior insula * age + controls, SIG, small
+#### get partial DV
+```{r}
+m_DV_res = glmer(accept ~ offer * age_bi +
+         tsnr + fd_mean + response_time +
+         (1 | participant_id),
+       data = plot_df,
+       family = binomial)
+plot_df %<>% mutate(DV_res = residuals(m_DV_res))
+```
+
+#### plot and save
+```{r}
+x_label = "single-trial anterior insula activation"
+y_label = "Accept (logit)"
+title_label = ""
+
+
+color_label = "Age Group"
+color_age = c("older" = "#006900", "younger"= "#00d000") # "#37ff37"
+
+# figure_name = "ECN_mPFC_in-out_age_BehFairSensitivity"
+figure_name = "ant_insula_age_SingleTrial"
+
+p_scatter =
+  ggplot(plot_df, 
+         aes(x = anteriorinsula_corrected,
+             y = DV_res,
+             color = age_bi)) +
+  # geom_point(alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
+  geom_smooth(formula = "y~x", method = "lm", 
+              se = TRUE,
+              linetype = "solid",
+              linewidth = 2, 
+              alpha = 0.2) +
+  scale_color_manual(values = color_age) +
+  # guides(color = guide_legend(override.aes = list(fill = NA))) +
+  # theme_classic() +
+  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  # guides(color = guide_legend(override.aes = list(fill = NA))) +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        legend.title = element_text(face = "bold"),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+        # legend.position="bottom left", legend.box = "horizontal")
+        # legend.position="none")
+
+p_scatter
+
+ggsave(paste(figure_dir,
+             paste(figure_name, "scatter_manu.png", sep = "_"),
+             sep = "/"),
+       p_scatter, width = w*1.1, height = h)
+```
+
+### choice ~ anterior insula * human + controls, SIG
+#### get partial DV
+```{r}
+m_DV_res = glmer(accept ~ offer * age_bi +
+         tsnr + fd_mean + response_time +
+         (1 | participant_id),
+       data = plot_df,
+       family = binomial)
+plot_df %<>% mutate(DV_res = residuals(m_DV_res))
+```
+
+#### plot and save
+```{r}
+x_label = "single-trial anterior insula activation"
+y_label = "Accept (logit)"
+title_label = ""
+
+
+color_label = "Partner Identity"
+color_human = c("#7f0000", "#ff7f7f")
+
+# figure_name = "ECN_mPFC_in-out_age_BehFairSensitivity"
+figure_name = "ant_insula_hum-com_SingleTrial"
+
+p_scatter =
+  ggplot(plot_df, 
+         aes(x = anteriorinsula_corrected,
+             y = DV_res,
+             color = human)) +
+  # geom_point(alpha = data_point_alpha, size = data_point_size, show.legend = FALSE) +
+  geom_smooth(formula = "y~x", method = "lm", 
+              se = TRUE,
+              linetype = "solid",
+              linewidth = 2, 
+              alpha = 0.2) +
+  scale_color_manual(values = color_human, 
+                     labels = c("computer", "human")) +
+  # guides(color = guide_legend(override.aes = list(fill = NA))) +
+  # theme_classic() +
+  labs(x = x_label, y = y_label, color = color_label, title = title_label) +
+  # guides(color = guide_legend(override.aes = list(fill = NA))) +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        legend.title = element_text(face = "bold"),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+        # legend.position="bottom left", legend.box = "horizontal")
+        # legend.position="none")
+
+p_scatter
+
+ggsave(paste(figure_dir,
+             paste(figure_name, "scatter_manu.png", sep = "_"),
+             sep = "/"),
+       p_scatter, width = w*1.1, height = h)
+```
+
+# behavior
+```{r}
+model_all_fit = glmer(accept ~ 
+                            offer * age_bi + (1|participant_id), 
+                          data = all_trials_df, 
+                          family = binomial)
+summary(model_all_fit)
+
+all_trials_similar_df = all_trials_df[all_trials_df$human == 1,]
+model_similar_fit = glmer(accept ~ 
+                            offer * age_bi + (1|participant_id), 
+                          data = all_trials_similar_df, 
+                          family = binomial)
+summary(model_similar_fit)
+```
+
+### prepare df for ggplot
+```{r}
+plot_df = all_trials_df %>%
+  select(participant_id, accept, 
+         age_bi, offer)
+```
+
+### plot and save
+```{r}
+set.seed(1234)
+
+pred_offer_age_prob <-Effect(c("age_bi", "offer"), model_all_fit, 
+                             xlevels = list(offer = 1:10) )
+pred_offer_age_prob_df<-data.frame(pred_offer_age_prob)
+
+m_params = model_parameters(model_all_fit, effects = "fixed")
+
+p_val = m_params[m_params$Parameter == "offer:age_biolder", "p"]
+
+plot_offer_age = 
+ggplot(pred_offer_age_prob_df, aes(x=offer,y=fit,color=age_bi)) +
+  geom_line(linewidth = line_width) +
+  geom_point(size = point_size-1) +
+  geom_errorbar(aes(ymin = fit-0.5*se, ymax = fit+0.5*se),
+                width=.1) +
+  scale_color_manual(values = color_age) +
+  # scale_color_manual(values = c("#E69F00", "#56B4E9", "#009E73")) +
+  labs(x = "Offer Size in $", y = "Predicted P(Accept)", color = "Age", 
+       title = "Offer Acceptance Probability, all",) + 
+  coord_cartesian(xlim=c(1, 10), ylim = c(0,1)) +
+  annotate("text", 
+           x = -Inf, y = Inf, 
+           label = sprintf("p = %.3f", p_val), 
+           hjust = -0.2,
+           vjust = 2, 
+           size = annotate_text, color = "black") +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"))
+
+plot_offer_age
+
+ggsave(paste(figure_dir, "behavior_offer_age_All.png", sep = "/"),
+       plot_offer_age, width = w*1.1, height = h)
+```
+
+
 
 # end of code

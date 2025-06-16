@@ -178,22 +178,26 @@ colnames(results_df) = results_cols
 ### choice ~ anterior insula * age * group3 + controls, won't converge
 ```{r}
 P2_NH1_AI_age_group_m1 =
-  glmer(accept ~ anteriorinsula_corrected * age_bi * group_tri + offer +
+  glmer(accept ~ anteriorinsula_corrected * age_bi * group_tri + 
+          offer * age_bi +
          tsnr + fd_mean + response_time +
-         # (1 + anteriorinsula_corrected + response_time || participant_id), # won't converge
+         (1 + anteriorinsula_corrected + response_time || participant_id), # won't converge
           # (1 + response_time || participant_id), # won't converge
-          (1| participant_id),
+          # (1| participant_id),
        data = all_trials_df,
        family = binomial)
 summary(P2_NH1_AI_age_group_m1)
 ```
 
-### choice ~ anterior insula * age + controls, NON
+### choice ~ anterior insula * age + controls, SIG, small
 ```{r}
 P2_NH1_AI_age_m1 =
-  glmer(accept ~ anteriorinsula_corrected * age_bi + offer +
+  glmer(accept ~ anteriorinsula_corrected * age_bi + 
+          offer * age_bi +
          tsnr + fd_mean + response_time +
-         (1 + anteriorinsula_corrected + response_time || participant_id),
+         # (1 + anteriorinsula_corrected + response_time || participant_id), # won't converge
+        # (1 + response_time || participant_id), # won't converge
+        (1 | participant_id),
        data = all_trials_df,
        family = binomial)
 summary(P2_NH1_AI_age_m1)
@@ -202,7 +206,7 @@ summary(P2_NH1_AI_age_m1)
 ### choice ~ anterior insula * group_tri + controls, won't converge
 ```{r}
 P2_NH1_AI_group_m1 =
-  glmer(accept ~ anteriorinsula_corrected * group_tri + offer +
+  glmer(accept ~ anteriorinsula_corrected * group_tri + offer * age_bi +
          tsnr + fd_mean + response_time +
          # (1 + anteriorinsula_corrected + response_time || participant_id), # won't converge
           # (1 + response_time || participant_id), # won't converge
@@ -215,7 +219,7 @@ summary(P2_NH1_AI_group_m1)
 ### choice ~ anterior insula * human + controls, SIG
 ```{r}
 P2_NH1_AI_human_m1 =
-  glmer(accept ~ anteriorinsula_corrected * human + offer +
+  glmer(accept ~ anteriorinsula_corrected * age_bi+ offer * age_bi +
          tsnr + fd_mean + response_time +
          (1 | participant_id),
          # (1 + anteriorinsula_corrected + response_time | participant_id), # won't converge
@@ -229,7 +233,7 @@ summary(P2_NH1_AI_human_m1)
 ```{r}
 # Compute partial residuals for X
 # Step 1: Residualize y by Z and random effects
-P2_NH1_AI_human_m1_pr_y = glmer(accept ~ human + offer +
+P2_NH1_AI_human_m1_pr_y = glmer(accept ~ human + offer * age_bi +
                                 tsnr + fd_mean + response_time +
                                 (1 | participant_id),
                               data = all_trials_df,
@@ -239,7 +243,7 @@ P2_NH1_AI_human_m1_pr_y = glmer(accept ~ human + offer +
 res.accept_pr <- residuals(P2_NH1_AI_human_m1_pr_y)
 
 # # Step 2: Residualize X by Z and random effects
-P2_NH1_AI_human_m1_pr_x = lmer(anteriorinsula_corrected ~ human + offer +
+P2_NH1_AI_human_m1_pr_x = lmer(anteriorinsula_corrected ~ human + offer * age_bi +
                                 tsnr + fd_mean + response_time +
                                 (1 | participant_id),
                               data = all_trials_df)
@@ -270,7 +274,7 @@ ggplot(pr_plot_df, aes(x = res.x, y = res.y, color = human)) +
 ```{r}
 all_trials_similar_df = filter(all_trials_df, human == "1")
 P2_NH1_AI_similar_m1 =
-  glmer(accept ~ anteriorinsula_corrected * ingroup + offer +
+  glmer(accept ~ anteriorinsula_corrected * ingroup + offer * age_bi +
          tsnr + fd_mean + response_time +
           (1 + response_time || participant_id),
          # (1 + anteriorinsula_corrected + response_time || participant_id), # won't converge
@@ -283,10 +287,11 @@ summary(P2_NH1_AI_similar_m1)
 ```{r}
 all_trials_similar_df = filter(all_trials_df, human == "1")
 P2_NH1_AI_similar_m1 =
-  glmer(accept ~ anteriorinsula_corrected + offer + 
+  glmer(accept ~ anteriorinsula_corrected + offer * age_bi + 
          tsnr + fd_mean + response_time +
          # (1 + anteriorinsula_corrected + response_time || participant_id),
-        (1 + response_time || participant_id),
+        # (1 + response_time || participant_id),
+        (1 | participant_id),
        data = all_trials_similar_df,
        family = binomial)
 summary(P2_NH1_AI_similar_m1)
@@ -297,7 +302,7 @@ summary(P2_NH1_AI_similar_m1)
 ```{r}
 ## won't converge
 P2_NH1_dacc_age_group_m1 =
-  glmer(accept ~ dacc_corrected * age_bi * group_tri + offer +
+  glmer(accept ~ dacc_corrected * age_bi * group_tri + offer * age_bi +
          tsnr + fd_mean + response_time +
          # (1 + dacc_corrected + response_time || participant_id),
         (1| participant_id),
@@ -309,7 +314,7 @@ summary(P2_NH1_dacc_age_group_m1)
 ### choice ~ dACC * age + controls, NON
 ```{r}
 P2_NH1_dacc_age_m1 =
-  glmer(accept ~ dacc_corrected * age_bi + offer +
+  glmer(accept ~ dacc_corrected * age_bi + offer * age_bi +
          tsnr + fd_mean + response_time +
          # (1 + dacc_corrected + response_time || participant_id), # won't converge
           # (1 + response_time || participant_id), # won't converge
@@ -319,10 +324,10 @@ P2_NH1_dacc_age_m1 =
 summary(P2_NH1_dacc_age_m1)
 ```
 
-### choice ~ dACC * group3 + controls, NON
+### choice ~ dACC * group3 + controls, won't converge
 ```{r}
 P2_NH1_dacc_group_m1 =
-  glmer(accept ~ dacc_corrected * group_tri + offer +
+  glmer(accept ~ dacc_corrected * group_tri + offer * age_bi +
          tsnr + fd_mean + response_time +
          # (1 + dacc_corrected + response_time || participant_id), # won't converge
           # (1 + response_time || participant_id), # won't converge
@@ -332,10 +337,10 @@ P2_NH1_dacc_group_m1 =
 summary(P2_NH1_dacc_group_m1)
 ```
 
-### choice ~ dACC * human + controls, won't converge
+### choice ~ dACC * human + controls, NON
 ```{r}
 P2_NH1_dacc_human_m1 =
-  glmer(accept ~ dacc_corrected * human + offer +
+  glmer(accept ~ dacc_corrected * human + offer * age_bi +
          tsnr + fd_mean + response_time +
          # (1 + dacc_corrected + response_time || participant_id), # won't converge
         # (1 + response_time || participant_id), # won't converge
@@ -345,11 +350,11 @@ P2_NH1_dacc_human_m1 =
 summary(P2_NH1_dacc_human_m1)
 ```
 
-### choice ~ dacc * similar + controls, NON
+### choice ~ dacc * similar + controls, won't converge
 ```{r}
 all_trials_similar_df = filter(all_trials_df, human == "1")
 P2_NH1_dacc_similar_m1 =
-  glmer(accept ~ dacc_corrected * ingroup + offer +
+  glmer(accept ~ dacc_corrected * ingroup + offer * age_bi +
           tsnr + fd_mean + response_time +
           # (1 + dacc_corrected + response_time || participant_id), # won't converge
           # (1 + response_time || participant_id), # won't converge
@@ -362,7 +367,7 @@ summary(P2_NH1_dacc_similar_m1)
 ### choice ~ dacc + controls, NON
 ```{r}
 P2_NH1_dacc_m1 =
-  glmer(accept ~ dacc_corrected + offer +
+  glmer(accept ~ dacc_corrected + offer * age_bi +
           tsnr + fd_mean + response_time +
           (1 + response_time || participant_id),
         data = all_trials_df,
@@ -371,10 +376,10 @@ summary(P2_NH1_dacc_m1)
 ```
 
 ## VS
-### choice ~ VS * age * group3 + controls, NON
+### choice ~ VS * age * group3 + controls, won't converge
 ```{r}
 P2_NH1_VS_age_group_m1 =
-  glmer(accept ~ VS_corrected * age_bi * group_tri + offer +
+  glmer(accept ~ VS_corrected * age_bi * group_tri + offer * age_bi +
           tsnr + fd_mean + response_time +
           # (1 + VS_corrected + response_time || participant_id), # won't converge
           # (1 + response_time || participant_id), # won't converge
@@ -387,7 +392,7 @@ summary(P2_NH1_VS_age_group_m1)
 ### choice ~ VS * age + controls, NON
 ```{r}
 P2_NH1_VS_age_m1 =
-  glmer(accept ~ VS_corrected * age_bi + offer +
+  glmer(accept ~ VS_corrected * age_bi + offer * age_bi +
           tsnr + fd_mean + response_time +
           # (1 + VS_corrected + response_time || participant_id), # won't converge
           # (1 + response_time || participant_id), # won't converge
@@ -400,11 +405,11 @@ summary(P2_NH1_VS_age_m1)
 ### choice ~ VS * group3 + controls, won't converge
 ```{r}
 P2_NH1_VS_group_m1 =
-  glmer(accept ~ VS_corrected * group_tri + offer +
+  glmer(accept ~ VS_corrected * group_tri + offer * age_bi +
           tsnr + fd_mean + response_time +
           # (1 + VS_corrected + response_time || participant_id), # won't converge
           # (1 + response_time || participant_id), # won't converge
-          # (1 | participant_id), # won't converge
+          (1 | participant_id), # won't converge
         data = all_trials_df,
         family = binomial)
 summary(P2_NH1_VS_group_m1)
@@ -415,22 +420,24 @@ summary(P2_NH1_VS_group_m1)
 ### choice ~ VS * human + controls, NON
 ```{r}
 P2_NH1_VS_human_m1 =
-  glmer(accept ~ VS_corrected * human + offer +
+  glmer(accept ~ VS_corrected * human + offer * age_bi +
           tsnr + fd_mean + response_time +
           # (1 + VS_corrected + response_time || participant_id), # won't converge
-          (1 + response_time || participant_id),
+          # (1 + response_time || participant_id), 
+          (1 | participant_id),
         data = all_trials_df,
         family = binomial)
 summary(P2_NH1_VS_human_m1)
 ```
-### choice ~ VS * similar + controls, NON
+### choice ~ VS * similar + controls, won't converge
 ```{r}
 all_trials_similar_df = filter(all_trials_df, human == "1")
 P2_NH1_VS_similar_m1 =
-  glmer(accept ~ VS_corrected * ingroup + offer +
+  glmer(accept ~ VS_corrected * ingroup + offer * age_bi +
           tsnr + fd_mean + response_time +
           # (1 + VS_corrected + response_time || participant_id), # won't converge
-          (1 + response_time || participant_id),
+          # (1 + response_time || participant_id),
+          (1 | participant_id), # won't converge
         data = all_trials_similar_df,
         family = binomial)
 summary(P2_NH1_VS_similar_m1)
@@ -438,7 +445,7 @@ summary(P2_NH1_VS_similar_m1)
 ### choice ~ VS + controls, NON
 ```{r}
 P2_NH1_VS_m1 =
-  glmer(accept ~ VS_corrected + offer +
+  glmer(accept ~ VS_corrected + offer * age_bi +
           tsnr + fd_mean + response_time +
           # (1 + response_time || participant_id), # won't converge
         (1 | participant_id),
@@ -450,56 +457,59 @@ summary(P2_NH1_VS_m1)
 ### choice ~ vmpfc * age * group3 + controls, won't converge
 ```{r}
 P2_NH1_vmpfc_age_group_m1 =
-  glmer(accept ~ vmpfc_corrected * age_bi * group_tri + offer +
+  glmer(accept ~ vmpfc_corrected * age_bi * group_tri + offer * age_bi +
           tsnr + fd_mean + response_time +
           # (1 + vmpfc_corrected + response_time || participant_id), # won't converge
           # (1 + response_time || participant_id), # won't converge
-          # (1 | participant_id), # won't converge
+          (1 | participant_id), # won't converge
         data = all_trials_df,
         family = binomial)
 summary(P2_NH1_vmpfc_age_group_m1)
 ```
 
-### choice ~ vmpfc * age + controls, NON
+### choice ~ vmpfc * age + controls, won't converge
 ```{r}
 P2_NH1_vmpfc_age_m1 =
-  glmer(accept ~ vmpfc_corrected * age_bi + offer +
+  glmer(accept ~ vmpfc_corrected * age_bi + offer * age_bi +
           tsnr + fd_mean + response_time +
-          (1 + vmpfc_corrected + response_time || participant_id),
+          # (1 + vmpfc_corrected + response_time || participant_id),
+        # (1 + response_time || participant_id),
+        (1 | participant_id),
         data = all_trials_df,
         family = binomial)
 summary(P2_NH1_vmpfc_age_m1)
 ```
-### choice ~ vmpfc * group3 + controls, won't converge
+### choice ~ vmpfc * group3 + controls, NON
 ```{r}
 P2_NH1_vmpfc_group_m1 =
-  glmer(accept ~ vmpfc_corrected * group_tri + offer +
+  glmer(accept ~ vmpfc_corrected * group_tri + offer * age_bi +
           tsnr + fd_mean + response_time +
           # (1 + vmpfc_corrected + response_time || participant_id), # won't converge
           # (1 + response_time || participant_id), # won't converge
-          # (1 | participant_id), # won't converge
+          (1 | participant_id),
           data = all_trials_df,
         family = binomial)
 summary(P2_NH1_vmpfc_group_m1)
 ```
 
-### choice ~ vmpfc * human + controls, NON
+### choice ~ vmpfc * human + controls, won't converge
 ```{r}
 P2_NH1_vmpfc_human_m1 =
-  glmer(accept ~ vmpfc_corrected * human + offer +
+  glmer(accept ~ vmpfc_corrected * human + offer * age_bi +
           tsnr + fd_mean + response_time +
           # (1 + vmpfc_corrected + response_time || participant_id), # won't converge
-          (1 + response_time || participant_id),
+          # (1 + response_time || participant_id),
+        (1 | participant_id),
         data = all_trials_df,
         family = binomial)
 summary(P2_NH1_vmpfc_human_m1)
 ```
 
-### choice ~ vmpfc * similar + controls, NON
+### choice ~ vmpfc * similar + controls, won't converge
 ```{r}
 all_trials_similar_df = filter(all_trials_df, human == "1")
 P2_NH1_vmpfc_similar_m1 =
-  glmer(accept ~ vmpfc_corrected * ingroup + offer +
+  glmer(accept ~ vmpfc_corrected * ingroup + offer * age_bi +
           tsnr + fd_mean + response_time +
           # (1 + vmpfc_corrected + response_time || participant_id), # won't converge
           # (1 + response_time || participant_id), # won't converge
@@ -512,9 +522,11 @@ summary(P2_NH1_vmpfc_similar_m1)
 ### choice ~ vmpfc + controls, NON
 ```{r}
 P2_NH1_vmpfc_m1 =
-  glmer(accept ~ vmpfc_corrected + offer +
+  glmer(accept ~ vmpfc_corrected + offer * age_bi +
           tsnr + fd_mean + response_time +
-          (1 + vmpfc_corrected + response_time || participant_id),
+          # (1 + vmpfc_corrected + response_time || participant_id),
+        # (1 + response_time || participant_id),
+        (1 | participant_id),
         data = all_trials_df,
         family = binomial)
 summary(P2_NH1_vmpfc_m1)
