@@ -108,37 +108,78 @@ all_trials_human_df = all_trials_df[all_trials_df$human == 1,]
 
 ```
 
-# accept ~ age
+# H1.1 accept ~ offer * hum/computer * age, won't converge
 ```{r}
-younger_mlm = glmer(accept ~ offer * age_bi + (1|subjID), 
-                 data = all_trials_human_df, 
+age_HumCom_mlm1 = glmer(accept ~ offer * age_bi * human + 
+                       (1+offer|subjID), 
+                 data = all_trials_df, 
                  family = binomial)
-summary(younger_mlm)
+summary(age_HumCom_mlm1)
+```
 
-younger_mlm1 = glmer(accept ~ offer * age_bi + 
-                       (1 + offer||subjID), 
-                 data = all_trials_human_df, 
+# H1.1 accept ~ offer * hum/computer, NON
+```{r}
+HumCom_mlm1 = glmer(accept ~ offer * human + 
+                       (1+offer|subjID), 
+                 data = all_trials_df, 
                  family = binomial)
-summary(younger_mlm1)
+summary(HumCom_mlm1)
+```
 
-younger_mlm2 = glmer(accept ~ offer * age_bi + 
+# H1.1' accept ~ offer * similar, NON
+```{r}
+ingroup_mlm1 = glmer(accept ~ offer * ingroup + 
                        (1+offer|subjID), 
                  data = all_trials_human_df, 
                  family = binomial)
-summary(younger_mlm2)
+summary(ingroup_mlm1)
+```
 
-anova(younger_mlm, younger_mlm1, younger_mlm2)
-
+H1.1' accept ~ offer * age, NON
+```{r}
+age_mlm1 = glmer(accept ~ offer * age_bi + 
+                       (1+offer|subjID), 
+                 data = all_trials_df, 
+                 family = binomial)
+summary(age_mlm1)
 ```
 
 
+# H1.2 accept ~ offer * similar/dissimilar * age, won't converge
+```{r}
+age_ingroup_mlm1 = glmer(accept ~ offer * age_bi * ingroup + 
+                          (1+offer|subjID), 
+                        data = all_trials_human_df, 
+                        family = binomial)
+summary(age_ingroup_mlm1)
+```
 
+# H1.2 accept ~ offer * similar/dissimilar, NON
+```{r}
+age_ingroup_mlm2 = glmer(accept ~ offer * ingroup + 
+                          (1+offer|subjID), 
+                        data = all_trials_human_df, 
+                        family = binomial)
+summary(age_ingroup_mlm2)
+```
+
+# H1.2' accept ~ offer * age, NON
+```{r}
+age_ingroup_mlm3 = glmer(accept ~ offer * age_bi + 
+                          (1+offer|subjID), 
+                        data = all_trials_human_df, 
+                        family = binomial)
+summary(age_ingroup_mlm3)
+```
+
+
+# two-step exploratory (to continue)
 ## human only
 ### ingroup
 ```{r}
 ## ingroup offer sensitivity
 ingroup_df = all_trials_human_df[all_trials_human_df$ingroup == 1,]
-ingroup_mlm = glmer(accept ~ offer + (1+offer|subjID), 
+ingroup_mlm = glmer(accept ~ offer + (1+offer||subjID), 
                  data = ingroup_df, 
                  family = binomial)
 summary(ingroup_mlm)
@@ -157,12 +198,13 @@ ingroup_fixed_effects <- fixef(ingroup_mlm) %>%
 ingroup_random_effects <- ranef(ingroup_mlm, condVar = FALSE) %>% 
   as.data.frame()
 
-ingroup_random_effects = ingroup_random_effects[ingroup_random_effects$term == "offer",] %>% 
-  mutate(ingroup = condval,
+ingroup_all_effects = 
+  ingroup_random_effects[ingroup_random_effects$term == "offer",] %>% 
+  mutate(ingroup_rand = condval,
          ingroup_fixed_rand = 
            condval + ingroup_fixed_effects$.[ingroup_fixed_effects$fixed == "offer"],
          subjID = grp) %>% 
-  dplyr::select(subjID, ingroup, ingroup_fixed_rand)
+  dplyr::select(subjID, ingroup_rand, ingroup_fixed_rand)
 ```
 
 ### outgroup
@@ -181,22 +223,34 @@ outgroup_fixed_effects <- fixef(outgroup_mlm) %>%
 outgroup_random_effects <- ranef(outgroup_mlm, condVar = FALSE) %>% 
   as.data.frame()
 
-outgroup_random_effects = outgroup_random_effects[outgroup_random_effects$term == "offer",] %>% 
-  mutate(outgroup = condval,
+outgroup_all_effects = 
+  outgroup_random_effects[outgroup_random_effects$term == "offer",] %>% 
+  mutate(outgroup_rand = condval,
          outgroup_fixed_rand = 
            condval + outgroup_fixed_effects$.[outgroup_fixed_effects$fixed == "offer"],
          subjID = grp) %>% 
-  dplyr::select(subjID, outgroup, outgroup_fixed_rand)
+  dplyr::select(subjID, outgroup_rand, outgroup_fixed_rand)
 ```
 
 ```{r}
 ## in-out
-in_out_rand_df = merge(ingroup_random_effects, outgroup_random_effects, by = "subjID") %>% 
-  mutate(in_out_rand_logit = ingroup - outgroup,
+in_out_rand_df = merge(ingroup_all_effects, outgroup_all_effects, by = "subjID") %>% 
+  mutate(in_out_rand_logit = ingroup_rand - outgroup_rand,
          in_out_full_logit = ingroup_fixed_rand - outgroup_fixed_rand,
-         in_out_prob = (exp(ingroup) / (1 + exp(ingroup))) - exp(outgroup) / (1 + exp(outgroup))) %>%
+         in_out_prob = (exp(ingroup_rand) / (1 + exp(ingroup_rand))) - exp(outgroup_rand) / (1 + exp(outgroup_rand))) %>%
   dplyr::select(subjID, ingroup_fixed_rand, outgroup_fixed_rand, in_out_rand_logit, in_out_full_logit, in_out_prob)
+
+
 ```
+
+## in_out ~ age, NON
+```{r}
+in_out_rand_age_df = merge(in_out_rand_df, indiv_df, 
+                           by.x = "subjID", by.y = "participant_id")
+
+summary(lm(in_out_rand_logit~age_bi, in_out_rand_age_df))
+```
+
 
 ## computer
 ```{r}

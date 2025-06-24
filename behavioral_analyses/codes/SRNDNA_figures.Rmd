@@ -77,6 +77,7 @@ library(effects)
 library(lmerTest)
 library(ez)
 library(LMMstar)
+library(magrittr)
 ```
 
 # set directories
@@ -93,10 +94,10 @@ ROImean_dir = "/Users/momocco/Documents/GitHub/srndna-ug/imaging_plots_SANS"
 
 # plot param setup
 ```{r}
-axis_title = 16
+axis_title = 12
 axis_ticks = 10
 axis_text = 12
-axis_label = 14
+axis_label = 12
 
 legend_all = 12
 
@@ -117,8 +118,8 @@ summary_point_size = 3
 
 annotate_text = 4
 
-w = 5
-h = 4
+w = 3.4
+h = 3.4*1.25
 ```
 
 # fmri whole brain
@@ -217,7 +218,8 @@ p_scatter =
             color = "black", linewidth = fit_line_width) +
   # theme_classic() +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
-        legend.title = element_text(face = "bold"),
+        # legend.title = element_text(face = "bold"),
+        legend.position="none",
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 
         axis.title.x = element_text(size = axis_title, face="bold"), 
@@ -226,7 +228,7 @@ p_scatter =
 p_scatter
 
 ggsave(paste(figure_dir, paste(figure_name, "scatter_manu.png", sep = "_"),
-             sep = "/"), p_scatter, width = w*1.1, height = h)
+             sep = "/"), p_scatter, width = w, height = h/1.25, unit = "in", dpi=300)
 ```
 
 ## ecn, in-out, sensitivity_logit * age, frontal pole/mpfc?
@@ -300,6 +302,7 @@ p_scatter =
   guides(color = guide_legend(override.aes = list(fill = NA))) +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
         legend.title = element_text(face = "bold"),
+        legend.position="bottom",
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 
         axis.title.x = element_text(size = axis_title, face="bold"), 
@@ -310,7 +313,7 @@ p_scatter =
 p_scatter
 
 ggsave(paste(figure_dir, paste(figure_name, "scatter_manu.png", sep = "_"),
-             sep = "/"), p_scatter, width = w*1.1, height = h)
+             sep = "/"), p_scatter, width = w, height = h, unit = "in", dpi=300)
 ```
 
 # single trial
@@ -512,29 +515,14 @@ ggsave(paste(figure_dir,
 ```
 
 # behavior
-```{r}
-model_all_fit = glmer(accept ~ 
-                            offer * age_bi + (1|participant_id), 
-                          data = all_trials_df, 
-                          family = binomial)
-summary(model_all_fit)
-
-all_trials_similar_df = all_trials_df[all_trials_df$human == 1,]
-model_similar_fit = glmer(accept ~ 
-                            offer * age_bi + (1|participant_id), 
-                          data = all_trials_similar_df, 
-                          family = binomial)
-summary(model_similar_fit)
-```
-
-### prepare df for ggplot
+## prepare df for ggplot
 ```{r}
 plot_df = all_trials_df %>%
   select(participant_id, accept, 
          age_bi, offer)
 ```
 
-### plot and save
+## plot and save
 ```{r}
 set.seed(1234)
 
