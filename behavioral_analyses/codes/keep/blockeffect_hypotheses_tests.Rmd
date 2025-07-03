@@ -156,11 +156,6 @@ print(offer_block_tbl)
 these two offers exist in both block types, therefore in theory would reduce collinearity
 ```{r}
 all_trials_df_filtered = all_trials_df %>%  filter(offer %in% c(20*0.25, 20*0.3)) # 25% and 30% of 20
-
-all_trials_df_4 = all_trials_df %>%  filter(offer == 4)
-all_trials_df_5 = all_trials_df %>%  filter(offer == 5)
-
-all_trials_df_8 = all_trials_df %>%  filter(offer == 8)
 ```
 
 # test correlation between offer and block type for collinearity
@@ -212,25 +207,25 @@ block_age_group_m3 =
         data = all_trials_df_filtered,
         family = binomial)
 summary(block_age_group_m3)
+icc(block_age_group_m3)
 
-## converged. nothing.
-block_age_group_m4 = 
-  glmer(accept ~ block_fair * age_bi + group_tri + offer +
-          (1 + offer||participant_id),
-        data = all_trials_df_filtered,
-        family = binomial)
-summary(block_age_group_m4)
-icc(block_age_group_m4)
-
-## tested if random slope is necessary. seems unnecessary.
-block_age_group_m4_1 = 
+## tested if random slope is necessary. anova result indicates it's unnecessary.
+block_age_group_m3_1 = 
   glmer(accept ~ block_fair * age_bi + group_tri + offer +
           (1|participant_id),
         data = all_trials_df_filtered,
         family = binomial)
-summary(block_age_group_m4_1)
+summary(block_age_group_m3_1)
 
-anova(block_age_group_m4_1, block_age_group_m4, refit = FALSE)
+anova(block_age_group_m3_1, block_age_group_m3, refit = FALSE) # p = 0.9
+
+## converged. nothing.
+block_age_group_m4 = 
+  glmer(accept ~ block_fair * age_bi + group_tri + offer +
+          (1 |participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_age_group_m4)
 
 ## converged. nothing.
 block_age_group_m5 = 

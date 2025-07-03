@@ -40,14 +40,12 @@ library(interactions)
 library(knitr)
 library(twowaytests)
 library(ggfortify)
-library(interactions)
 library(broom)
 library(patchwork)
 library(robustbase)
 library(lmtest)
 library(modelr)
 library(Rmisc)
-# library(raincloudplots)
 library(cowplot)
 library(readr)
 library(PupillometryR)
@@ -69,7 +67,6 @@ library(emmeans)
 library(mediation)
 library(here)
 library(lme4)
-library(lmerTest)
 library(broom.mixed)
 library(easyRT)
 library(parameters)
@@ -79,7 +76,13 @@ library(lmerTest)
 library(ez)
 library(afex)
 library(marginaleffects)
-library(magrittr)
+
+library(stringr)
+library(performance)
+library(lattice)
+library(sjPlot)
+library(DHARMa)
+library(equatiomatic)
 ```
 
 ```{r}
@@ -170,6 +173,12 @@ col_stnd = c("offer", "response_time",
 all_trials_df %<>%
   mutate(across(all_of(col_stnd), ~as.numeric(scale(.))))
 ```
+
+## create human-only dataset
+```{r}
+all_trials_similar_df = filter(all_trials_df, human == "1")
+```
+
 
 ## test if it's worth adding random slope for response time (perhaps)
 ```{r}
@@ -309,7 +318,7 @@ ggplot(pr_plot_df, aes(x = res.x, y = res.y, color = human)) +
 
 ### choice ~ anterior insula + controls, # won't converge
 ```{r}
-all_trials_similar_df = filter(all_trials_df, human == "1")
+
 P2_NH1_AI_similar_m1 =
   glmer(accept ~ anteriorinsula_corrected + offer + age_bi + 
          tsnr + fd_mean + response_time +
@@ -381,7 +390,7 @@ summary(P2_NH1_dacc_human_m1)
 
 ### choice ~ dacc * similar + controls, won't converge
 ```{r}
-all_trials_similar_df = filter(all_trials_df, human == "1")
+
 P2_NH1_dacc_similar_m1 =
   glmer(accept ~ dacc_corrected * ingroup + offer + age_bi +
           tsnr + fd_mean + response_time +
@@ -467,7 +476,7 @@ summary(P2_NH1_VS_human_m1)
 
 ### choice ~ VS * similar + controls, won't converge
 ```{r}
-all_trials_similar_df = filter(all_trials_df, human == "1")
+
 P2_NH1_VS_similar_m1 =
   glmer(accept ~ VS_corrected * ingroup + offer + age_bi +
           tsnr + fd_mean + response_time +
@@ -550,7 +559,7 @@ summary(P2_NH1_vmpfc_human_m1)
 
 ### choice ~ vmpfc * similar + controls, won't converge
 ```{r}
-all_trials_similar_df = filter(all_trials_df, human == "1")
+
 P2_NH1_vmpfc_similar_m1 =
   glmer(accept ~ vmpfc_corrected * ingroup + offer + age_bi +
           tsnr + fd_mean + response_time +
@@ -572,6 +581,89 @@ P2_NH1_vmpfc_m1 =
         family = binomial)
 summary(P2_NH1_vmpfc_m1)
 ```
+
+# strictly NH1A with controls and random slope of offer
+## human vs computer, won't converge
+```{r}
+# won't converge
+full_model = glmer(accept ~ offer + age_bi + human +
+                     tsnr + fd_mean + response_time + 
+                     vmpfc_corrected + VS_corrected + 
+                     dacc_corrected + anteriorinsula_corrected +
+                     (1 + offer || participant_id), 
+                   data = all_trials_df, family = 'binomial')
+summary(full_model)
+
+# with only random intercept, not the right model, but let's see
+# converged, not sig
+full_model_1 = glmer(accept ~ offer + age_bi + human +
+                     tsnr + fd_mean +
+                       response_time +
+                     vmpfc_corrected + VS_corrected + 
+                     dacc_corrected + anteriorinsula_corrected +
+                     (1 | participant_id), 
+                   data = all_trials_df, family = 'binomial')
+summary(full_model_1)
+```
+
+## similar vs disimilar, won't converge
+```{r}
+# won't converge
+full_model_similar = glmer(accept ~ offer + age_bi + ingroup +
+                     tsnr + fd_mean + response_time + 
+                     vmpfc_corrected + VS_corrected + 
+                     dacc_corrected + anteriorinsula_corrected +
+                     (1 + offer || participant_id), 
+                   data = all_trials_similar_df, family = 'binomial')
+summary(full_model_similar)
+
+# with only random intercept, not the right model, but let's see
+# won't converge
+full_model_similar_1 = glmer(accept ~ offer + age_bi + ingroup +
+                     tsnr + fd_mean + response_time + 
+                     vmpfc_corrected + VS_corrected + 
+                     dacc_corrected + anteriorinsula_corrected +
+                     (1| participant_id), 
+                   data = all_trials_similar_df, family = 'binomial')
+summary(full_model_similar_1)
+```
+
+
+# compare model fit between models with and without random slope of offer
+model with randon slope of offer is better
+```{r}
+random_offer_slope_model = glmer(accept ~ offer +
+                     (1 + offer|| participant_id), 
+                   data = all_trials_df, family = 'binomial')
+# summary(random_offer_slope_model)
+icc(random_offer_slope_model)
+
+random_interceptONLY_model = glmer(accept ~ offer +
+                     (1 | participant_id), 
+                   data = all_trials_df, family = 'binomial')
+# summary(random_interceptONLY_model)
+icc(random_interceptONLY_model)
+
+anova(random_offer_slope_model, random_interceptONLY_model)
+```
+
+# randome slope of offer with fixed age
+```{r}
+age_random_offer_slope_model = glmer(accept ~ offer + age_bi +
+                     (1 + offer|| participant_id), 
+                   data = all_trials_df, family = 'binomial')
+summary(age_random_offer_slope_model)
+icc(age_random_offer_slope_model)
+
+age_random_interceptONLY_model = glmer(accept ~ offer + age_bi +
+                     (1| participant_id), 
+                   data = all_trials_df, family = 'binomial')
+summary(age_random_interceptONLY_model)
+icc(age_random_interceptONLY_model)
+
+anova(age_random_offer_slope_model, age_random_interceptONLY_model, refit = FALSE)
+```
+
 
 # end of code
 
