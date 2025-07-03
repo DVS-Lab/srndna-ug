@@ -1,0 +1,208 @@
+---
+title: "srndnaUGplots"
+author: "Rita M Ludwig"
+date: "2022-09-20"
+output: html_document
+---
+```{r load_packages, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(RColorBrewer)
+library(Rmisc)
+```
+```{r, setup, include=FALSE}
+# Set the correct path to the behavioral data folder
+knitr::opts_knit$set(root.dir = '/Users/rx/Documents/Research/srndnaUG/behavioral_analyses/rois/')
+```
+```{r load_dfs, include=FALSE}
+#aINS ROI activation
+activation_roi_aINS = read.csv("activation_roi-aINS_modulated.csv") %>%
+  pivot_longer(cols = ends_with("_p"), names_to = "partner") %>% mutate(partner = ifelse(str_detect(partner, "comp_p"), "computer",
+                          ifelse(str_detect(partner, "out_p"), "dissimilar",
+                                 ifelse(str_detect(partner, "in_p"), "similar", NA)))) %>%
+  mutate(agecat = ifelse(age >= 60, "older",
+                    ifelse(age < 60, "younger", NA))) %>%
+  mutate(agedummy = ifelse(age >= 60, 1,
+                    ifelse(age < 60, 0, NA)))%>% mutate(partner = as.factor(partner)) %>% mutate(agecat = factor(agecat, levels = c("younger","older"))) 
+
+#daCC ROI activation
+activation_roi_dACC = read.csv("activation_roi-dACC_modulated.csv") %>%
+  pivot_longer(cols = ends_with("_p"), names_to = "partner") %>% mutate(partner = ifelse(str_detect(partner, "comp_p"), "computer",
+                          ifelse(str_detect(partner, "out_p"), "dissimilar",
+                                 ifelse(str_detect(partner, "in_p"), "similar", NA)))) %>%
+  mutate(agecat = ifelse(age >= 60, "older",
+                    ifelse(age < 60, "younger", NA))) %>%
+  mutate(agedummy = ifelse(age >= 60, 1,
+                    ifelse(age < 60, 0, NA)))%>% mutate(partner = as.factor(partner)) %>% mutate(agecat = factor(agecat, levels = c("younger","older")))
+
+#dlPFC whole brain activaton
+activation_func_dlPFC = read.csv("activation_func-DLPFC_modulated.csv") %>%
+  pivot_longer(cols = ends_with("_p"), names_to = "partner") %>% mutate(partner = ifelse(str_detect(partner, "comp_p"), "computer",
+                          ifelse(str_detect(partner, "out_p"), "dissimilar",
+                                 ifelse(str_detect(partner, "in_p"), "similar", NA)))) %>%
+  mutate(agecat = ifelse(age >= 60, "older",
+                    ifelse(age < 60, "younger", NA))) %>%
+  mutate(agedummy = ifelse(age >= 60, 1,
+                    ifelse(age < 60, 0, NA))) %>% mutate(partner = as.factor(partner)) %>% mutate(agecat = factor(agecat, levels = c("younger","older")))
+
+#vmPFC ROI activation
+activation_roi_vmPFC = read.csv("activation_roi-VMPFC_modulated.csv") %>%
+  pivot_longer(cols = ends_with("_p"), names_to = "partner") %>% mutate(partner = ifelse(str_detect(partner, "comp_p"), "computer",
+                          ifelse(str_detect(partner, "out_p"), "dissimilar",
+                                 ifelse(str_detect(partner, "in_p"), "similar", NA)))) %>%
+  mutate(agecat = ifelse(age >= 60, "older",
+                    ifelse(age < 60, "younger", NA))) %>%
+  mutate(agedummy = ifelse(age >= 60, 1,
+                    ifelse(age < 60, 0, NA)))%>% mutate(partner = as.factor(partner)) %>% mutate(agecat = factor(agecat, levels = c("younger","older")))
+
+#VS ROI activation
+activation_roi_VS = read.csv("activation_roi-VS_modulated.csv") %>%
+  pivot_longer(cols = ends_with("_p"), names_to = "partner") %>% mutate(partner = ifelse(str_detect(partner, "comp_p"), "computer",
+                          ifelse(str_detect(partner, "out_p"), "dissimilar",
+                                 ifelse(str_detect(partner, "in_p"), "similar", NA)))) %>%
+  mutate(agecat = ifelse(age >= 60, "older",
+                    ifelse(age < 60, "younger", NA))) %>%
+  mutate(agedummy = ifelse(age >= 60, 1,
+                    ifelse(age < 60, 0, NA)))%>% mutate(partner = as.factor(partner)) %>% mutate(agecat = factor(agecat, levels = c("younger","older")))
+
+#daCC functional connectivity w/DMN
+connectivity_DMN_func_daCC = read.csv("conn_dmn-func-dACC_modulated.csv")%>%
+  pivot_longer(cols = ends_with("_p"), names_to = "partner") %>% mutate(partner = ifelse(str_detect(partner, "comp_p"), "computer",
+                          ifelse(str_detect(partner, "out_p"), "dissimilar",
+                                 ifelse(str_detect(partner, "in_p"), "similar", NA)))) %>%
+  mutate(agecat = ifelse(age >= 60, "older",
+                    ifelse(age < 60, "younger", NA))) %>%
+  mutate(agedummy = ifelse(age >= 60, 1,
+                    ifelse(age < 60, 0, NA)))%>% mutate(partner = as.factor(partner)) %>% mutate(agecat = factor(agecat, levels = c("younger","older")))
+
+#INS functional connectivity w/ECN
+connectivity_ECN_fun_INS = read.csv("conn_ecn-func-insula_unmodulated.csv")%>%
+  pivot_longer(cols = ends_with("_p"), names_to = "partner") %>% mutate(partner = ifelse(str_detect(partner, "comp_p"), "computer",
+                          ifelse(str_detect(partner, "out_p"), "dissimilar",
+                                 ifelse(str_detect(partner, "in_p"), "similar", NA)))) %>%
+  mutate(agecat = ifelse(age >= 60, "older",
+                    ifelse(age < 60, "younger", NA))) %>%
+  mutate(agedummy = ifelse(age >= 60, 1,
+                    ifelse(age < 60, 0, NA)))%>% mutate(partner = as.factor(partner)) %>% mutate(agecat = factor(agecat, levels = c("younger","older")))
+```
+```{r summary_stats}
+##Create individual dfs of summary stats for each of the above (and remove full dfs to reduct clutter, if desired). Summary stats include standard error of the mean for within subjects factors.
+
+#aINS ROI activation
+aINS_roi_summary = summarySEwithin(data = activation_roi_aINS, "value", withinvars = "partner", idvar = "participant_id",na.rm = FALSE, conf.interval = 0.95, .drop = TRUE)
+aINS_roi_summary
+rm(activation_roi_aINS)
+
+#daCC ROI activation
+daCC_roi_summary = summarySEwithin(data = activation_roi_dACC, "value", withinvars = "partner", idvar = "participant_id",na.rm = FALSE, conf.interval = 0.95, .drop = TRUE)
+daCC_roi_summary
+rm(activation_roi_dACC)
+
+#dlPFC whole brain activation
+dlPFC_func_summary = summarySEwithin(data = activation_func_dlPFC, "value", withinvars = "partner", betweenvars = "agecat", idvar = "participant_id",na.rm = FALSE, conf.interval = 0.95, .drop = TRUE)
+dlPFC_func_summary
+rm(activation_func_dlPFC)
+
+#vmPFC ROI activation
+vmPFC_roi_summary = summarySEwithin(data = activation_roi_vmPFC, "value", withinvars = "partner", idvar = "participant_id",na.rm = FALSE, conf.interval = 0.95, .drop = TRUE)
+vmPFC_roi_summary
+rm(activation_roi_vmPFC)
+
+#VS ROI activation
+VS_roi_summary = summarySEwithin(data = activation_roi_VS, "value", withinvars = "partner", idvar = "participant_id",na.rm = FALSE, conf.interval = 0.95, .drop = TRUE)
+VS_roi_summary
+rm(activation_roi_VS)
+
+#daCC functional connectivity w/DMN
+daCC_connDMN_summary = summarySEwithin(data = connectivity_DMN_func_daCC, "value", withinvars = "partner", betweenvars = "agecat", idvar = "participant_id",na.rm = FALSE, conf.interval = 0.95, .drop = TRUE)
+daCC_connDMN_summary
+rm(connectivity_DMN_func_daCC)
+
+#INS functional connectivity w/ECN
+INS_connECN_summary = summarySEwithin(data = connectivity_ECN_fun_INS, "value", withinvars = "partner", betweenvars = "agecat",  idvar = "participant_id",na.rm = FALSE, conf.interval = 0.95, .drop = TRUE)
+INS_connECN_summary
+rm(connectivity_ECN_fun_INS)
+```
+```{r plotting}
+##Main effects of task for ROIs, age and task for whole brain
+
+#aINS ROI activation
+ggplot(aINS_roi_summary, aes(x = partner, y = value, fill = partner)) +
+  geom_bar(position = "dodge",
+           stat = "summary",
+           fun = "mean", show.legend = FALSE) +
+  scale_fill_brewer(palette = "YlOrRd") +
+  ggtitle("aINS activitation by partner condition")+
+  geom_errorbar( aes(x=partner, ymin=value-se, ymax=value+se), width=0.2, colour="black", alpha=0.9, size=.75)
+
+#daCC ROI activation
+ggplot(daCC_roi_summary, aes(x = partner, y = value, fill = partner)) +
+  geom_bar(position = "dodge",
+           stat = "summary",
+           fun = "mean", show.legend = FALSE) +
+  scale_fill_brewer(palette = "YlOrRd") +
+  ggtitle("daCC activitation by partner condition")+
+  geom_errorbar( aes(x=partner, ymin=value-se, ymax=value+se), width=0.2, colour="black", alpha=0.9, size=.75)
+
+#dlPFC whole brain activation
+ggplot(dlPFC_func_summary, aes(x = partner, y = value, fill = agecat)) +
+  geom_bar(position = "dodge",
+           stat = "summary",
+           fun = "mean", show.legend = TRUE) +
+  scale_fill_brewer(palette = "YlOrRd") +
+  geom_errorbar(aes(ymin=value-se, ymax=value+se), width=0.2, colour="black", alpha=0.9, size=.75, position=position_dodge(.9))+
+  theme(text = element_text(size = 22)) +
+  guides(fill=guide_legend(title="Age group"))+
+  ylab("dlPFC activation \n (modulated by fairness)")
+
+#Save this plot
+ggsave("/Users/rx/Documents/Research/srndnaUG/dlpfc_wholebrain.png", width = 7, height = 5, units = "in")
+
+#vmPFC ROI activation
+ggplot(vmPFC_roi_summary, aes(x = partner, y = value, fill = partner)) +
+  geom_bar(position = "dodge",
+           stat = "summary",
+           fun = "mean", show.legend = FALSE) +
+  scale_fill_brewer(palette = "YlOrRd") +
+  ggtitle("vmPFC activitation by partner condition")+
+  geom_errorbar( aes(x=partner, ymin=value-se, ymax=value+se), width=0.2, colour="black", alpha=0.9, size=.75)
+
+#VS ROI activation
+ggplot(VS_roi_summary, aes(x = partner, y = value, fill = partner)) +
+  geom_bar(position = "dodge",
+           stat = "summary",
+           fun = "mean", show.legend = FALSE) +
+  scale_fill_brewer(palette = "YlOrRd") +
+  ggtitle("VS activitation by partner condition")+
+  geom_errorbar( aes(x=partner, ymin=value-se, ymax=value+se), width=0.2, colour="black", alpha=0.9, size=.75)
+
+#daCC functional connectivity w/DMN
+ggplot(daCC_connDMN_summary, aes(x = partner, y = value, fill = agecat)) +
+  geom_bar(position = "dodge",
+           stat = "summary",
+           fun = "mean", show.legend = TRUE) +
+  scale_fill_brewer(palette = "YlOrRd") +
+  geom_errorbar(aes(ymin=value-se, ymax=value+se), width=0.2, colour="black", alpha=0.9, size=.75, position=position_dodge(.9))+
+  theme(text = element_text(size = 22)) +
+  guides(fill=guide_legend(title="Age group")) +
+  ylab("dACC-DMN connectivity \n (modulated by fairness)")
+
+#Save this plot
+ggsave("/Users/rx/Documents/Research/srndnaUG/dacc_wholebrain.png", width = 7, height = 5, units = "in")
+
+#INS functional connectivity w/ECN
+ggplot(INS_connECN_summary, aes(x = partner, y = value, fill = agecat)) +
+  geom_bar(position = "dodge",
+           stat = "summary",
+           fun = "mean", show.legend = TRUE) +
+  scale_fill_brewer(palette = "YlOrRd") +
+  geom_errorbar(aes(ymin=value-se, ymax=value+se), width=0.2, colour="black", alpha=0.9, size=.75, position=position_dodge(.9))+
+  theme(text = element_text(size = 22)) +
+  guides(fill=guide_legend(title="Age group"))+
+  ylab("insula-ECN connectivity (betas)")
+
+
+#Save this plot
+ggsave("/Users/rx/Documents/Research/srndnaUG/INS_wholebrain.png", width = 7, height = 5, units = "in")
+```

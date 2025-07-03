@@ -1,7 +1,7 @@
 ---
 title: "block_hypotheses_tests_srndnaUGR"
 author: "Jen Yang"
-date: "2025-06-02, last modified 2025-06-03"
+date: "2025-06-02, last modified 2025-07-02"
 output: 
   html_document:
     code_folding: hide
@@ -40,14 +40,12 @@ library(interactions)
 library(knitr)
 library(twowaytests)
 library(ggfortify)
-library(interactions)
 library(broom)
 library(patchwork)
 library(robustbase)
 library(lmtest)
 library(modelr)
 library(Rmisc)
-# library(raincloudplots)
 library(cowplot)
 library(readr)
 library(PupillometryR)
@@ -78,13 +76,20 @@ library(lmerTest)
 library(ez)
 library(afex)
 library(marginaleffects)
+
+library(stringr)
+library(performance)
+library(lattice)
+library(sjPlot)
+library(DHARMa)
+library(equatiomatic)
 ```
 
 ```{r}
 set.seed(123)
 ```
 
-# load tsv and prolific raw data
+# set directories
 ```{r}
 gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
 
@@ -112,7 +117,7 @@ sublist_final = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"), he
 all_trials_df = all_trials_df[all_trials_df$participant_id %in% sublist_final$subjID,]
 ```
 
-
+# recode partner identity, group_tri, and age group, age_bi
 ```{r}
 ## add a categorical variable that differentiate three groups
 all_trials_df = all_trials_df %>% 
@@ -133,28 +138,38 @@ all_trials_df = all_trials_df %>%
          )
 ```
 
-## factorize vars as needed
+# factorize vars as needed
 ```{r}
 factor_col_names = c("participant_id", "run", "missed", "accept",
                      "ingroup", "block_fair", "sex")
 all_trials_df[factor_col_names] %<>% lapply(., factor) 
 ```
 
-## add fdmean, tsnr vars to data
-```{r}
-fmri_control_data = 
-  read.csv(paste(data_dir, "Task-ultimatum_Level-Run_Outlier-info.csv", 
-                 sep = "/"), header = TRUE) %>% 
-  filter(Sub %in% sublist_final$subjID == 1) %>% 
-  # mutate(subjID = Sub) %>% 
-  select(-task, -outlier_run_Custom1)
+<!-- ## add fdmean, tsnr vars to data -->
+<!-- ```{r} -->
+<!-- fmri_control_data =  -->
+<!--   read.csv(paste(data_dir, "Task-ultimatum_Level-Run_Outlier-info.csv",  -->
+<!--                  sep = "/"), header = TRUE) %>%  -->
+<!--   filter(Sub %in% sublist_final$subjID == 1) %>%  -->
+<!--   # mutate(subjID = Sub) %>%  -->
+<!--   select(-task, -outlier_run_Custom1) -->
 
-all_trials_df = merge(all_trials_df, fmri_control_data, 
-                      by.x = c("participant_id", "run"),
-                      by.y = c("Sub", "run"))
+<!-- all_trials_df = merge(all_trials_df, fmri_control_data,  -->
+<!--                       by.x = c("participant_id", "run"), -->
+<!--                       by.y = c("Sub", "run")) -->
+<!-- ``` -->
+
+
+
+# test correlation between offer and block type for collinearity
+```{r}
+offer_block_m = lmer(offer~block_fair + (1|participant_id), data = all_trials_df)
+summary(offer_block_m)
+icc(offer_block_m)
 ```
 
-## filter trials, keep only 25% and 30%
+
+# filter trials, keep only 25% and 30%
 ```{r}
 all_trials_df %<>% filter(offer %in% c(4,5))
 ```

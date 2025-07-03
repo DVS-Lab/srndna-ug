@@ -1,0 +1,199 @@
+---
+title: "srndna-ultimatum-analyses"
+author: "Rita M Ludwig"
+date: "2022-09-13"
+output: html_document
+---
+```{r load_packages, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(tools)
+library(lme4)
+library(performance)
+library(lattice)
+library(sjPlot)
+library(DHARMa)
+library(interactions)
+library(equatiomatic)
+```
+```{r, setup, include=FALSE}
+# Set the correct path to the behavioral data folder
+knitr::opts_knit$set(root.dir = '/Users/rludwig/Documents/srndnaUG/data/')
+```
+```{r import_dataframes, include=FALSE}
+blockdf = read_csv("srndna-ultimatum-behavioral-data.csv", show_col_types = FALSE) %>%
+  mutate(partner = as.character(partner) %>% fct_recode("computer" = "0", "dissimilar" = "1", "similar" = "2")) %>%
+  mutate(partner_binary = case_when(partner != "computer" ~ "human",
+                                    TRUE ~ "computer")) %>%
+  mutate(agecat = as_factor(agecat)) %>%
+  mutate(IsFairBlock = as.character(IsFairBlock) %>% fct_recode("unfair" = "0", "fair" = "1")) %>%
+  mutate(trial_type = paste(partner,IsFairBlock, " "))
+
+trialdf = read_csv("srndna-ultimatum-behavioral-data_pertrial.csv", show_col_types = FALSE, ) %>%
+  mutate(agecat = as_factor(agecat)) %>%
+  mutate(IsFairBlock = as.character(IsFairBlock) %>% fct_recode("unfair" = "0", "fair" = "1")) %>%
+  mutate(partner = as.character(partner) %>% fct_recode("computer" = "1", "dissimilar" = "2", "similar" = "3")) %>%
+  mutate(response = as.character(response) %>% fct_recode("reject" = "0", "accept" = "1")) %>%
+  mutate(trial_type = as_factor(trial_type))
+
+# A REMINDER: I removed sub-143 for now, not sure what's going on with their EV file
+```
+First, test the hypotheses that were part of the aspredicted pre-registration that are predicting average proportion of acceptance rates per block (vs individual binary offer decisions).
+```{r asp_model_testing}
+#Test the null model
+null_model_sne = lmer(proportion_accept ~ 1 + (1|participant_id), data = blockdf)
+summary(null_model_sne)
+#ICC - the proportion of variance in acceptance that is attributable to participants
+icc(null_model_sne)
+
+#Fixed effects for partner
+# Partner type: 0 = computer, 1 = outgroup, 2 = ingroup
+partner_model_sne = lmer(proportion_accept ~ partner + (1|participant_id), data = blockdf)
+summary(partner_model_sne)
+#ICC - the proportion of variance in acceptance that is attributable to participants, after accounting for partner type
+icc(partner_model_sne)
+
+#Fixed effects for fairness
+# IsFairBlock: 1 = fair, 0  unfair
+fair_model_sne = lmer(proportion_accept ~ IsFairBlock + (1|participant_id), data = blockdf)
+summary(fair_model_sne)
+#ICC - the proportion of variance in acceptance that is attributable to participants, after accounting for partner type
+icc(fair_model_sne)
+
+#Fixed effects for age
+age_model_sne = lmer(proportion_accept ~ agecat + (1|participant_id), data = blockdf)
+summary(age_model_sne)
+#ICC - the proportion of variance in acceptance that is attributable to participants, after accounting for their age
+icc(age_model_sne)
+
+#Testing the hypothesis: Younger adults will accept more offers from human partners who are similar to them, but older adults will not discriminate. 
+#NOTE: have to add a random slope to the level 1 model to give the model something to actually attribute the variance of at level 2.
+#Age: 0 = younger, 1 = older; Partner: 0 = computer, 1 = dissimilar, 2 = similar
+h1_model_sne = lmer(proportion_accept ~ 1 + partner + agecat + partner:agecat + (1 + partner|participant_id), data=blockdf, REML = TRUE)
+summary(h1_model_sne)
+icc(h1_model_sne)
+# now check for multicollinearity
+check_collinearity(h1_model_sne)
+
+#young, similar: 0.658964
+#young, dissimilar: 0.662427
+#old, similar: 0.688135
+#old, dissimilar: 0.6977
+
+
+#Testing the hypothesis: Everyone will reject more unfair offers from human (vs. computer) partners, and this effect will be stronger for younger adults.
+#Age: 0 = younger, 1 = older; Partner: 0 = computer, 1 = dissimilar, 2 = similar, # IsFairBlock: 1 = fair, 0  unfair
+h2_model_sne = lmer(proportion_accept ~ 1 + IsFairBlock*partner*agecat + (1 + IsFairBlock|participant_id), data=blockdf, REML = TRUE)
+summary(h2_model_sne)
+icc(h2_model_sne)
+# now check for multicollinearity
+check_collinearity(h2_model_sne)
+
+#young,unfair,computer: 0.489907
+#young, unfair, human: 0.514462
+#old, unfair, computer: 0.610964
+#old, unfair, human: 0.520964
+```
+As established in the pre-registration, the following code will test a series of mixed effects logistic regression models, beginning with a "null" model to test for evidence of L2 variance. Relative fit of these models is assessed via significance tests on chi square differences.
+
+The mixed effects models of interest are: a) a model with offer value, b) a model with offer value and offer block type, c) a model with trial offer value, offer block type, and BOLD signal in each ROI, d) a 'full' model with all covariates.
+
+Model C as described above in R notation is:
+accept ~ offer value * offer block + vmpfc + dacc + insula + (1 | participantID)
+```{r osf_model_testing}
+#Create grand mean-centered offer variable to aid in interpretability
+trialdf$Offer_centered = scale(trialdf$Offer, center=TRUE, scale=FALSE)
+
+#Test the null model
+null_model = glmer(response ~ 1 + (1|participant_id), data = trialdf, family = 'binomial')
+summary(null_model)
+#ICC - the proportion of variance in acceptance that is attributable to participants
+icc(null_model)
+
+#Test the offer value model (model a, above)
+offer_model = glmer(response ~ Offer + (1|participant_id), data = trialdf, family = 'binomial')
+summary(offer_model)
+icc(offer_model)
+
+#Test the age and partner model (aspredicted hypothesis; should be HUMAN v computer
+partnerage_model = glmer(response ~ partner*agedummy + (1|participant_id), data = trialdf, family = 'binomial')
+summary(partnerage_model)
+icc(partnerage_model)
+
+#Test the offer value, age, and partner model (aspredicted hypothesis; should be HUMAN v computer
+offerpartnerage_model = glmer(response ~ IsFairBlock*partner*agedummy + (1|participant_id), data = trialdf, family = 'binomial')
+summary(offerpartnerage_model)
+icc(offerpartnerage_model)
+
+#Test the offer value and block type model (model b, above)
+offerblock_model = glmer(response ~ Offer_centered * IsFairBlock + (1|participant_id), data = trialdf, family = 'binomial')
+summary(offerblock_model)
+icc(offerblock_model)
+
+#Test the offer value, block type, and ROIs model (model c, above)
+ROIs_model = glmer(response ~ Offer * IsFairBlock + aINS + dACC + VMPFC + VS + (1 | participant_id), data = trialdf, family = 'binomial')
+summary(ROIs_model)
+icc(ROIs_model)
+
+#Test the full model
+full_model = glmer(response ~ Offer * IsFairBlock + partner + agedummy + aINS + dACC + VMPFC + VS + (1 | participant_id), data = trialdf, family = 'binomial')
+summary(full_model)
+
+```
+Model assumption testing, data inspection. Model assumption testing conducted using the package DHARMa, which "uses a simulation-based approach to create readily interpretable scaled (quantile) residuals for fitted (generalized) linear mixed models."
+```{r assumption_testing}
+##Inspect data - are there differences in intercepts and slopes across choices within participants? (Looks like yes)
+data_sub = trialdf %>% 
+  filter(str_detect(participant_id, "sub-10[1-9]"))
+data_sub %>% 
+  ggplot(mapping = aes(x = Offer, y = response, colour = factor(participant_id))) +
+  geom_point() +
+  geom_smooth(mapping = aes(group = participant_id), method = "lm", se = FALSE, fullrange = TRUE) +
+  labs(colour = "participant_id")
+blockdata_sub = blockdf %>%
+  filter(str_detect(participant_id, "sub-11[1-9]"))
+blockdata_sub %>% 
+  ggplot(mapping = aes(x = trial_type, y = proportion_accept, color = participant_id, group = participant_id)) + geom_line() + geom_point()
+
+##Simulate residuals using the DHARMa package
+simulatedresiduals_null = simulateResiduals(fittedModel = null_model, plot = F)
+simulatedresiduals_offer = simulateResiduals(fittedModel = offer_model, plot = F)
+simulatedresiduals_offerblock = simulateResiduals(fittedModel = offerblock_model, plot = F)
+simulatedresiduals_ROIs = simulateResiduals(fittedModel = ROIs_model, plot = F)
+simulatedresiduals_full = simulateResiduals(fittedModel = full_model, plot = F)
+
+## QQplots and residuals vs predicted values
+plot(simulatedresiduals_null)
+plot(simulatedresiduals_offer)
+plot(simulatedresiduals_offerblock)
+plot(simulatedresiduals_ROIs)
+plot(simulatedresiduals_full)
+
+##Autocorrelation check
+resTime_null = recalculateResiduals(simulatedresiduals_null, sel = trialdf$participant_id == "sub-106")
+testTemporalAutocorrelation(resTime_null, time = unique(trialdf$runningtrialno))
+
+```
+```{r tables_figures}
+# Tables
+tab_model(offer_model)
+tab_model(offerblock_model)
+tab_model(ROIs_model)
+tab_model(full_model)
+
+# Plots
+plot_model(offer_model, vline.color = "black")
+plot_model(offerblock_model, vline.color = "black")
+plot_model(partnerage_model, vline.color = "black")
+plot_model(ROIs_model, vline.color = "black")
+plot_model(full_model, vline.color = "black")
+
+interact_plot(partnerage_model, pred = agedummy, modx = partner)
+interact_plot(offerblock_model, pred = Offer_centered, modx = IsFairBlock)
+
+
+
+
+
+```

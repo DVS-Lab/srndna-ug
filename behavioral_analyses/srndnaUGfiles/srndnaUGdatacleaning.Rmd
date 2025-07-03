@@ -1,0 +1,114 @@
+---
+title: "srndna-ultimatum-datacleaning"
+author: "Rita M Ludwig"
+date: "2022-09-13"
+output: html_document
+---
+
+```{r load_packages, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(tools)
+library(lme4)
+library(performance)
+library(lattice)
+```
+```{r, setup, include=FALSE}
+# Set the correct path to the behavioral data folder
+knitr::opts_knit$set(root.dir = '/Users/rludwig/Documents/srndnaUG/data/')
+# A REMINDER: I removed sub-143 for now, not sure what's going on with their EV file
+```
+```{r create_dataframes, include=FALSE}
+# Import behavioral data .tsv files into seperate tables, create a column for subid, and save
+filenames = list.files(pattern = "sub-*")
+filelist = vector()
+for(i in filenames){
+  subnu = str_extract(i,"^[a-z]{3}-[0-9]{3}")
+  runnu = str_extract(i,"run-[0-9]{2}")
+  df = paste(subnu,runnu,sep = "_")
+  filelist[[length(filelist) + 1]] = df 
+  assign(paste(df), read.table(paste(i), header=TRUE))
+  eval(as.name(df)) %>% subset(., grepl("accept|reject|missed", trial_type)) %>%  mutate(participant_id = subnu) %>% mutate(run = runnu) %>% mutate(trial = row_number()) %>% mutate(decision=(str_extract(trial_type,"(?<=event_)[a-z]{6}"))) %>% assign(paste0(df),.,envir = .GlobalEnv) 
+}
+
+# Combine data tables into single EV dataframe, remove the many many individual data tables
+EVs = do.call(rbind, mget(filelist))
+rm(list = filelist)
+
+# Import neural data .tsv files into seperate tables, create a column for subid, and save
+filenames = paste("rois/",(list.files(path = "rois/", pattern = "sub-*")),sep="")
+filelist = vector()
+for(i in filenames){
+  subnu = str_extract(i,"sub-[0-9]{3}")
+  runnu = str_extract(i,"run-[0-9]{2}")
+  roi = str_extract(i, "[:alpha:]{2,}(?=.txt)")
+  df = paste(subnu,runnu,roi,sep = "_")
+  filelist[[length(filelist) + 1]] = df 
+  assign(paste(df), read.table(paste(i), header=FALSE, col.names = ("activation")))
+  eval(as.name(df)) %>% mutate(participant_id = subnu) %>% mutate(run = runnu) %>% mutate(trial = row_number()) %>% mutate(roi = roi) %>% assign(paste0(df),.,envir = .GlobalEnv) 
+}
+
+# Combine data tables into single ROI dataframe, remove the many many individual data tables
+ROIs = do.call(rbind, mget(filelist)) %>% pivot_wider(names_from = roi,values_from = activation)
+rm(list = filelist)
+
+# Clean up the participants data table to prep it for merging
+participantsdata = read.table("participants.tsv", header = TRUE) %>%
+  mutate(agecat = ifelse(age >= 60, "older",
+                    ifelse(age < 60, "younger", NA))) %>%
+  mutate(agedummy = ifelse(age >= 60, 1,
+                    ifelse(age < 60, 0, NA)))
+
+# Create a merged data frame with participants info, drop unnecessary columns, create new columns for analysis prep, drop duplicate rows
+# Create partner column: 0 = computer, 1 = outgroup, 2 = ingroup
+# Create participant response column: 0 = reject, 1 = accept
+# IsFairBlock: 1 = fair, 0  unfair
+trialdf=full_join(participantsdata, EVs, by = "participant_id") %>% full_join(.,ROIs, by = c( "participant_id", "run", "trial")) %>% subset(., select= -c(sex, group, duration, onset, response_time)) %>% mutate(partner = ifelse(str_detect(trial_type, "computer"), 0,
+                          ifelse(str_detect(trial_type, "outgroup"), 1,
+                                 ifelse(str_detect(trial_type, "ingroup"), 2, NA)))) %>%
+  mutate(response = ifelse(str_detect(trial_type, "reject"), 0,
+                        ifelse(str_detect(trial_type, "accept"), 1, NA))) %>%
+  drop_na(response) %>% group_by(participant_id) %>% mutate(runningtrialno = row_number())
+
+#Reorder columns
+trialdf = trialdf[, c(1,2,3,4,8,17,9,7,5,6,10,15,16,11,12,13,14)]
+
+# Delete individual EV dataframes and other excess objects in environment
+rm(EVs, participantsdata, filelist, filenames, i, runnu, subnu)
+
+#Write out df where every row is a trial
+write.csv(trialdf,file="srndna-ultimatum-data_pertrial.csv", row.names = FALSE)
+
+# Calculate proportion of accept/reject responses for each participant per run within each block type x partner (i.e. computer x fair, computer x unfair, outgroup x fair, etc.)
+blockdf = trialdf %>%
+  group_by(participant_id) %>% mutate(agecat = as.factor(agecat)) %>% mutate(partner = as.factor(partner)) %>% 
+  mutate(avg_compFair = mean(ifelse(IsFairBlock == 1 & partner == 0, response, NA), na.rm=T)) %>%
+  mutate(avg_compUnfair = mean(ifelse(IsFairBlock == 0 & partner == 0, response, NA), na.rm=T)) %>%
+  mutate(avg_outgroupFair = mean(ifelse(IsFairBlock == 1 & partner == 1, response, NA), na.rm=T)) %>%
+  mutate(avg_outgroupUnfair = mean(ifelse(IsFairBlock == 0 & partner == 1, response, NA), na.rm=T)) %>%
+  mutate(avg_ingroupFair = mean(ifelse(IsFairBlock == 1 & partner == 2, response, NA), na.rm=T)) %>%
+  mutate(avg_ingroupUnfair = mean(ifelse(IsFairBlock == 0 & partner == 2, response, NA), na.rm=T))
+
+# Reduce this dataframe (if desired) that just contains participant id, block and partner type, and proportion accept values
+blockdf = blockdf %>%
+  subset(select = c(participant_id, partner, IsFairBlock, avg_compFair, avg_compUnfair, avg_outgroupFair, avg_outgroupUnfair, avg_ingroupFair, avg_ingroupUnfair, agecat)) %>%
+  group_by_at(vars(participant_id, partner, IsFairBlock)) %>%
+  unique(.) %>%
+  mutate(
+    proportion_accept = case_when(
+      IsFairBlock == 1 & partner == 0 ~ avg_compFair,
+      IsFairBlock == 0 & partner == 0 ~ avg_compUnfair,
+      IsFairBlock == 1 & partner == 1 ~ avg_outgroupFair,
+      IsFairBlock == 0 & partner == 1 ~ avg_outgroupUnfair,
+      IsFairBlock == 1 & partner == 2 ~ avg_ingroupFair,
+      IsFairBlock == 0 & partner == 2 ~ avg_ingroupUnfair
+    )
+  ) %>%
+  subset(select = -c (avg_compFair, avg_compUnfair, avg_outgroupFair, avg_outgroupUnfair, avg_ingroupFair, avg_ingroupUnfair)) %>% na.omit() 
+
+write.csv(blockdf,file="srndna-ultimatum-behavioral-data.csv", row.names = FALSE)
+
+# Remove the per trial data frame if not using
+#rm(trialdf)
+```

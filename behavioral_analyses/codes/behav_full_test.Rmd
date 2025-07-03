@@ -172,6 +172,16 @@ age_ingroup_mlm3 = glmer(accept ~ offer * age_bi +
 summary(age_ingroup_mlm3)
 ```
 
+# accept ~ offer, SIG
+```{r}
+all_trials_human_df = all_trials_human_df %>% mutate(offer_sd = as.numeric(scale(offer))) 
+offer_mlm = glmer(accept ~ offer + 
+                          (1+offer|subjID), 
+                        data = all_trials_human_df, 
+                        family = binomial)
+summary(offer_mlm)
+```
+
 
 # two-step exploratory (to continue)
 ## human only
