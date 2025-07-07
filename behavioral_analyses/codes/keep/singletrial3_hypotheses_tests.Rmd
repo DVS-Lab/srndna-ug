@@ -83,6 +83,8 @@ library(lattice)
 library(sjPlot)
 library(DHARMa)
 library(equatiomatic)
+
+library(magrittr)
 ```
 
 ```{r}
@@ -583,7 +585,7 @@ summary(P2_NH1_vmpfc_m1)
 ```
 
 # strictly NH1A with controls and random slope of offer
-## human vs computer, won't converge
+## human vs computer with fmri controls, won't converge
 ```{r}
 # won't converge
 full_model = glmer(accept ~ offer + age_bi + human +
@@ -597,14 +599,36 @@ summary(full_model)
 # with only random intercept, not the right model, but let's see
 # converged, not sig
 full_model_1 = glmer(accept ~ offer + age_bi + human +
-                     tsnr + fd_mean +
-                       response_time +
+                     tsnr + fd_mean + response_time +
                      vmpfc_corrected + VS_corrected + 
                      dacc_corrected + anteriorinsula_corrected +
                      (1 | participant_id), 
                    data = all_trials_df, family = 'binomial')
 summary(full_model_1)
 ```
+
+## human vs computer WITHOUT fmri controls, converged but not sig
+```{r}
+full_model_NOcontrol = glmer(accept ~ offer + age_bi + human +
+                     # tsnr + fd_mean + response_time + 
+                     vmpfc_corrected + VS_corrected + 
+                     dacc_corrected + anteriorinsula_corrected +
+                     (1 + offer || participant_id), 
+                   data = all_trials_df, family = 'binomial')
+summary(full_model_NOcontrol)
+
+# with only random intercept, not the right model, but let's see
+full_model_NOcontrol_1 = glmer(accept ~ offer + age_bi + human +
+                     # tsnr + fd_mean + response_time +
+                     vmpfc_corrected + VS_corrected + 
+                     dacc_corrected + anteriorinsula_corrected +
+                     (1 | participant_id), 
+                   data = all_trials_df, family = 'binomial')
+summary(full_model_NOcontrol_1)
+
+anova(full_model_NOcontrol, full_model_NOcontrol_1, refit = FALSE)
+```
+
 
 ## similar vs disimilar, won't converge
 ```{r}
@@ -620,7 +644,7 @@ summary(full_model_similar)
 # with only random intercept, not the right model, but let's see
 # won't converge
 full_model_similar_1 = glmer(accept ~ offer + age_bi + ingroup +
-                     tsnr + fd_mean + response_time + 
+                     # tsnr + fd_mean + response_time + 
                      vmpfc_corrected + VS_corrected + 
                      dacc_corrected + anteriorinsula_corrected +
                      (1| participant_id), 
@@ -647,7 +671,8 @@ icc(random_interceptONLY_model)
 anova(random_offer_slope_model, random_interceptONLY_model)
 ```
 
-# randome slope of offer with fixed age
+# compare model fit between model with random slope of offer with fixed age and without random slope
+result: with random slope of offer is better
 ```{r}
 age_random_offer_slope_model = glmer(accept ~ offer + age_bi +
                      (1 + offer|| participant_id), 

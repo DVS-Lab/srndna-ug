@@ -161,25 +161,17 @@ all_trials_df_filtered = all_trials_df %>%  filter(offer %in% c(20*0.25, 20*0.3)
 # test correlation between offer and block type for collinearity
 offer and block type are highly correlated. will have collinearity problem if both are included in a model.
 ```{r}
-offer_block_m = lmer(offer~block_fair + (1 + offer ||participant_id), 
+offer_block_m = lm(offer~block_fair, 
                      data = all_trials_df)
 summary(offer_block_m)
-icc(offer_block_m)
 ```
 
 # test correlation between FILTERED offer and block type for collinearity
 FILTERED offer and block type are NO LONGER correlated!
 ```{r}
-offerFILTERED_block_m = glmer(block_fair ~ offer + (1 + offer ||participant_id), 
-                             data = all_trials_df_filtered,
-                             family = "binomial")
-summary(offerFILTERED_block_m)
-icc(offerFILTERED_block_m)
-
-offer_block_m = lmer(offer~block_fair + (1 + offer ||participant_id), 
+offerFILTERED_block_m = lm(offer~block_fair, 
                      data = all_trials_df_filtered)
 summary(offerFILTERED_block_m)
-icc(offerFILTERED_block_m)
 ```
 
 # accept ~ block * age_bi * group_tri + offer
@@ -235,4 +227,148 @@ block_age_group_m5 =
         family = binomial)
 summary(block_age_group_m5)
 ```
+# accept ~ block * age_bi * human + offer
+```{r}
+## won't converge
+# block_age_group_m1 =
+#   glmer(accept ~ block_fair * age_bi * group_tri + offer +
+#           (1 + offer ||participant_id),
+#         data = all_trials_df_filtered,
+#         family = binomial)
+# summary(block_age_group_m1)
 
+## won't converge
+# block_age_group_m2 =
+#   glmer(accept ~ block_fair * group_tri + block_fair * age_bi + offer +
+#           (1 + offer ||participant_id),
+#         data = all_trials_df_filtered,
+#         family = binomial)
+# summary(block_age_group_m2)
+
+## converged. nothing.
+block_age_group_m3 = 
+  glmer(accept ~ block_fair * group_tri + age_bi + offer +
+          (1 + offer||participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_age_group_m3)
+icc(block_age_group_m3)
+
+## tested if random slope is necessary. anova result indicates it's unnecessary.
+block_age_group_m3_1 = 
+  glmer(accept ~ block_fair * age_bi + group_tri + offer +
+          (1|participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_age_group_m3_1)
+
+anova(block_age_group_m3_1, block_age_group_m3, refit = FALSE) # p = 0.9
+
+## converged. nothing.
+block_age_group_m4 = 
+  glmer(accept ~ block_fair * age_bi + group_tri + offer +
+          (1 |participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_age_group_m4)
+
+## converged. nothing.
+block_age_group_m5 = 
+  glmer(accept ~ block_fair + age_bi + group_tri + offer +
+          (1|participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_age_group_m5)
+```
+
+# accept ~ block * age_bi * human + offer
+```{r}
+## won't converge
+block_age_human_m1 =
+  glmer(accept ~ block_fair * age_bi * human + offer +
+          (1 + offer ||participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_age_human_m1)
+
+## converged. nothing
+block_age_human_m2 =
+  glmer(accept ~ block_fair * human + block_fair * age_bi + offer +
+          (1 + offer ||participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_age_human_m2)
+
+## won't converge
+block_age_human_m3 = 
+  glmer(accept ~ block_fair * human + age_bi + offer +
+          (1 + offer||participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_age_human_m3)
+
+## removed random offer slope. converged. nothing.
+block_age_human_m3_1 = 
+  glmer(accept ~ block_fair * human + age_bi + offer +
+          (1|participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_age_human_m3_1)
+
+## won't converge
+block_age_human_m4 = 
+  glmer(accept ~ block_fair * age_bi + human + offer +
+          (1 + offer ||participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_age_human_m4)
+
+## removed random slope. converged. nothing.
+block_age_human_m4_1 = 
+  glmer(accept ~ block_fair * age_bi + human + offer +
+          (1 |participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_age_human_m4_1)
+
+## converged. nothing.
+block_age_human_m5 = 
+  glmer(accept ~ block_fair + age_bi + human + offer +
+          (1 + offer ||participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_age_human_m5)
+
+## converged. nothing.
+block_age_human_m5_1 = 
+  glmer(accept ~ block_fair + age_bi + human + offer +
+          (1|participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_age_human_m5_1)
+
+## compared m5 and m5_1. no benefit in adding random slope here
+anova(block_age_human_m5, block_age_human_m5_1, refit = FALSE)
+```
+
+# accept ~ block * offer, converged, nothing
+```{r}
+## converged. nothing.
+block_offer_m1 =
+  glmer(accept ~ block_fair * offer +
+          (1 + offer ||participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_offer_m1)
+
+## converged. nothing.
+block_offer_m1_1 =
+  glmer(accept ~ block_fair * offer +
+          (1 |participant_id),
+        data = all_trials_df_filtered,
+        family = binomial)
+summary(block_offer_m1_1)
+
+## compared m1 and m1_1. no benefit in adding random slope here
+anova(block_offer_m1, block_offer_m1_1, refit = FALSE)
+```
