@@ -605,6 +605,35 @@ full_model_1 = glmer(accept ~ offer + age_bi + human +
                      (1 | participant_id), 
                    data = all_trials_df, family = 'binomial')
 summary(full_model_1)
+
+full_model_1_null = glmer(accept ~ offer + age_bi + human +
+                     tsnr + fd_mean + response_time +
+                     # vmpfc_corrected + VS_corrected + 
+                     # dacc_corrected + anteriorinsula_corrected +
+                     (1 | participant_id), 
+                   data = all_trials_df, family = 'binomial')
+summary(full_model_1_null)
+
+full_model_2_no_control = glmer(accept ~ offer + age_bi + human +
+                     # tsnr + fd_mean + response_time +
+                     vmpfc_corrected + VS_corrected +
+                     dacc_corrected + anteriorinsula_corrected +
+                     (1 | participant_id), 
+                   data = all_trials_df, family = 'binomial')
+summary(full_model_2_no_control)
+
+full_model_2_no_control_null = glmer(accept ~ offer + age_bi + human +
+                     # tsnr + fd_mean + response_time +
+                     # vmpfc_corrected + VS_corrected + 
+                     # dacc_corrected + anteriorinsula_corrected +
+                     (1 | participant_id), 
+                   data = all_trials_df, family = 'binomial')
+summary(full_model_2_no_control_null)
+
+anova(full_model_1_null, full_model_1)
+
+anova(full_model_2_no_control_null, full_model_2_no_control)
+
 ```
 
 ## human vs computer WITHOUT fmri controls, converged but not sig
