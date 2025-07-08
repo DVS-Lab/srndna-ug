@@ -178,6 +178,147 @@ all_df = participant_demo_df %>%
          pTPJ_comp = pTPJ_comp_df$V1,
          pTPJ_similar = pTPJ_similar_df$V1,
          pTPJ_dissimilar = pTPJ_dissimilar_df$V1)
+
+all_df$age_bi = relevel(all_df$age_bi, ref = "younger")
+```
+
+# H2.1
+H2.1: Recruitment of neural circuits associated with processing social norm violations (DLPFC, insula) will be diminished in older adults during receipt of unfair offers from human vs. computer partners.
+
+## dlpfc
+### make long format df
+```{r}
+# make long format df
+dlpfc_df = all_df %>% 
+  select(subjID, age_bi, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar) %>% 
+  pivot_longer(
+    cols = starts_with("dlpfc_"), # A helpful way to select columns
+    names_to = "partner",
+    names_prefix = "dlpfc_",     # Remove this prefix from the new column names
+    values_to = "roi_mean"
+  ) %>% 
+  mutate(partner = as.factor(partner),
+         subjID = as.factor(subjID),
+         age_bi = as.factor(age_bi))
+```
+
+### similar vs dissimilar, age sig
+```{r}
+dlpfc_df_similar = filter(dlpfc_df, partner %in% c("similar", "dissimilar"))
+
+# partner * age_bi, nothing
+dlpfc_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+                        data = dlpfc_df_similar)
+summary(dlpfc_similar_age)
+
+# partner, nothing
+dlpfc_similar = lmer(roi_mean ~ partner + (1|subjID),
+                        data = dlpfc_df_similar)
+summary(dlpfc_similar)
+
+# age, p = 0.0355
+dlpfc_age = lmer(roi_mean ~ age_bi + (1|subjID),
+                        data = dlpfc_df_similar)
+summary(dlpfc_age)
+```
+
+### human vs computer, partner * age sig
+```{r}
+dlpfc_df_comp = all_df %>% 
+  select(subjID, age_bi, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar) %>% 
+  mutate(dlpfc_hum = 0.5 *(dlpfc_similar+dlpfc_dissimilar)) %>% 
+  select(subjID, age_bi, dlpfc_comp, dlpfc_hum) %>% 
+  pivot_longer(
+    cols = starts_with("dlpfc_"), # A helpful way to select columns
+    names_to = "partner",
+    names_prefix = "dlpfc_",     # Remove this prefix from the new column names
+    values_to = "roi_mean"
+  ) %>% 
+  mutate(partner = as.factor(partner),
+         subjID = as.factor(subjID))
+
+# partner * age_bi, p = 0.0412
+dlpfc_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+                         data = dlpfc_df_comp)
+summary(dlpfc_similar_age)
+
+# # partner
+# dlpfc_similar = lmer(roi_mean ~ partner + (1|subjID),
+#                      data = dlpfc_df_comp)
+# summary(dlpfc_similar)
+# 
+# # age
+# dlpfc_age = lmer(roi_mean ~ age_bi + (1|subjID),
+#                  data = dlpfc_df_comp)
+# summary(dlpfc_age)
+```
+
+## anterior insula
+### make long format df
+```{r}
+# make long format df
+antInsula_df = all_df %>% 
+  select(subjID, age_bi, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
+  pivot_longer(
+    cols = starts_with("antInsula_"), # A helpful way to select columns
+    names_to = "partner",
+    names_prefix = "antInsula_",     # Remove this prefix from the new column names
+    values_to = "roi_mean"
+  ) %>% 
+  mutate(partner = as.factor(partner),
+         subjID = as.factor(subjID),
+         age_bi = as.factor(age_bi))
+```
+
+### similar vs dissimilar, nothing
+```{r}
+antInsula_df_similar = filter(antInsula_df, partner %in% c("similar", "dissimilar"))
+
+# partner * age_bi, nothing
+antInsula_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+                         data = antInsula_df_similar)
+summary(antInsula_similar_age)
+
+# partner, nothing
+antInsula_similar = lmer(roi_mean ~ partner + (1|subjID),
+                     data = antInsula_df_similar)
+summary(antInsula_similar)
+
+# age, nothing
+antInsula_age = lmer(roi_mean ~ age_bi + (1|subjID),
+                 data = antInsula_df_similar)
+summary(antInsula_age)
+```
+
+### human vs computer
+```{r}
+antInsula_df_comp = all_df %>% 
+  select(subjID, age_bi, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
+  mutate(antInsula_hum = 0.5 *(antInsula_similar+antInsula_dissimilar)) %>% 
+  select(subjID, age_bi, antInsula_comp, antInsula_hum) %>% 
+  pivot_longer(
+    cols = starts_with("antInsula_"), # A helpful way to select columns
+    names_to = "partner",
+    names_prefix = "antInsula_",     # Remove this prefix from the new column names
+    values_to = "roi_mean"
+  ) %>% 
+  mutate(partner = as.factor(partner),
+         subjID = as.factor(subjID))
+
+# partner * age_bi
+antInsula_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+                         data = antInsula_df_comp)
+summary(antInsula_similar_age)
+
+# # partner
+# antInsula_similar = lmer(roi_mean ~ partner + (1|subjID),
+#                      data = antInsula_df_comp)
+# summary(antInsula_similar)
+# 
+# # age
+# antInsula_age = lmer(roi_mean ~ age_bi + (1|subjID),
+#                  data = antInsula_df_comp)
+# summary(antInsula_age)
 ```
 
 
