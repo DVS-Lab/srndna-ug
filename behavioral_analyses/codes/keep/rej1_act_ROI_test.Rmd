@@ -1,0 +1,186 @@
+---
+title: "prereg 1 activation ROI test"
+author: "Jen Yang"
+date: "2025-07-08, last modified 2025-07-08"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    hightlight: zenburn
+    toc_depth: 6
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+# Load libraries
+```{r libraries, message_bi=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(ggpubr)
+library(lubridate)
+library(readxl)
+library(gridExtra)
+library(scales)
+library(rstudioapi)
+library(jsonlite)
+library(rjson)
+library(readr)
+library(hBayesDM)
+library(brms)
+library(emmeans)
+library(mediation)
+library(here)
+library(lme4)
+library(broom.mixed)
+library(easyRT)
+library(parameters)
+library(effectsize)
+library(effects)
+library(lmerTest)
+library(ez)
+library(afex)
+library(marginaleffects)
+
+library(stringr)
+library(performance)
+library(lattice)
+library(sjPlot)
+library(DHARMa)
+library(equatiomatic)
+
+library(magrittr)
+```
+
+```{r}
+set.seed(123)
+```
+
+# directories
+```{r}
+srndna_path = "/Users/momocco/Documents/GitHub/srndna-ug"
+ROImean_path = "imaging_plots_reg1"
+gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
+
+data_dir = paste(gitrepo_path,"data", sep = "/")
+codes_dir = paste(gitrepo_path, "codes", sep = "/")
+fit_dir = paste(gitrepo_path,"fits", sep = "/")
+figure_dir = paste(gitrepo_path,"figures", sep = "/")
+```
+
+# load and prepare data
+## load participant list and demographics
+```{r}
+list_fmri_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"),
+                          header = T) %>% dplyr::select(subjID)
+
+participant_check_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = T)
+
+participant_demo_df = 
+  merge(list_fmri_df, participant_check_df, by.x = "subjID", by.y = "participant_id", all.x = T) %>% 
+  mutate(age_bi = case_when(age <= 36 ~ "younger", age > 36 ~ "older"),
+         age_bi = relevel(as.factor(age_bi), ref = "younger"))
+```
+
+## load ROI means and combine into a wide df
+```{r}
+# dlpfc
+dlpfc_comp_df = read.table(
+  paste(srndna_path, ROImean_path,
+         "bi_nanRemoved_resliced_dlpfc_sphere5_brain_type-act_cope-02.txt", sep = "/"),
+  sep = "\t", header = FALSE)
+
+dlpfc_similar_df = read.table(
+  paste(srndna_path, ROImean_path,
+        "bi_nanRemoved_resliced_dlpfc_sphere5_brain_type-act_cope-04.txt", sep = "/"),
+  sep = "\t", header = FALSE)
+
+dlpfc_dissimilar_df = read.table(
+  paste(srndna_path, ROImean_path,
+        "bi_nanRemoved_resliced_dlpfc_sphere5_brain_type-act_cope-06.txt", sep = "/"),
+  sep = "\t", header = FALSE)
+
+# anterior insula
+antInsula_comp_df = read.table(
+  paste(srndna_path, ROImean_path,
+        "bi_nanRemoved_resliced_anteriorinsula_sphere5_mask_type-act_cope-02.txt", sep = "/"),
+  sep = "\t", header = FALSE)
+
+antInsula_similar_df = read.table(
+  paste(srndna_path, ROImean_path,
+        "bi_nanRemoved_resliced_anteriorinsula_sphere5_mask_type-act_cope-04.txt", sep = "/"),
+  sep = "\t", header = FALSE)
+
+antInsula_dissimilar_df = read.table(
+  paste(srndna_path, ROImean_path,
+        "bi_nanRemoved_resliced_anteriorinsula_sphere5_mask_type-act_cope-06.txt", sep = "/"),
+  sep = "\t", header = FALSE)
+
+# pTPJ
+pTPJ_comp_df = read.table(
+  paste(srndna_path, ROImean_path,
+        "bi_nanRemoved_resliced_seed-pTPJ_type-act_cope-02.txt", sep = "/"),
+  sep = "\t", header = FALSE)
+
+pTPJ_similar_df = read.table(
+  paste(srndna_path, ROImean_path,
+        "bi_nanRemoved_resliced_seed-pTPJ_type-act_cope-04.txt", sep = "/"),
+  sep = "\t", header = FALSE)
+
+pTPJ_dissimilar_df = read.table(
+  paste(srndna_path, ROImean_path,
+        "bi_nanRemoved_resliced_seed-pTPJ_type-act_cope-06.txt", sep = "/"),
+  sep = "\t", header = FALSE)
+
+# combine all df
+all_df = participant_demo_df %>% 
+  mutate(dlpfc_comp = dlpfc_comp_df$V1,
+         dlpfc_similar = dlpfc_similar_df$V1,
+         dlpfc_dissimilar = dlpfc_dissimilar_df$V1,
+         antInsula_comp = antInsula_comp_df$V1,
+         antInsula_similar = antInsula_similar_df$V1,
+         antInsula_dissimilar = antInsula_dissimilar_df$V1,
+         pTPJ_comp = pTPJ_comp_df$V1,
+         pTPJ_similar = pTPJ_similar_df$V1,
+         pTPJ_dissimilar = pTPJ_dissimilar_df$V1)
+```
+
+
+
+# end of code
+
