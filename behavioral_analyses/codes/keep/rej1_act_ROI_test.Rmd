@@ -238,14 +238,14 @@ dlpfc_df_comp = all_df %>%
          subjID = as.factor(subjID))
 
 # partner * age_bi, p = 0.0412
-dlpfc_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+dlpfc_comp_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
                          data = dlpfc_df_comp)
-summary(dlpfc_similar_age)
+summary(dlpfc_comp_age)
 
 # # partner
-# dlpfc_similar = lmer(roi_mean ~ partner + (1|subjID),
+# dlpfc_comp = lmer(roi_mean ~ partner + (1|subjID),
 #                      data = dlpfc_df_comp)
-# summary(dlpfc_similar)
+# summary(dlpfc_comp)
 # 
 # # age
 # dlpfc_age = lmer(roi_mean ~ age_bi + (1|subjID),
@@ -305,21 +305,90 @@ antInsula_df_comp = all_df %>%
   mutate(partner = as.factor(partner),
          subjID = as.factor(subjID))
 
-# partner * age_bi
-antInsula_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+# partner * age_bi, nothing
+antInsula_comp_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
                          data = antInsula_df_comp)
-summary(antInsula_similar_age)
+summary(antInsula_comp_age)
 
-# # partner
-# antInsula_similar = lmer(roi_mean ~ partner + (1|subjID),
-#                      data = antInsula_df_comp)
-# summary(antInsula_similar)
-# 
-# # age
-# antInsula_age = lmer(roi_mean ~ age_bi + (1|subjID),
-#                  data = antInsula_df_comp)
-# summary(antInsula_age)
+# partner, nothing
+antInsula_comp = lmer(roi_mean ~ partner + (1|subjID),
+                     data = antInsula_df_comp)
+summary(antInsula_comp)
+
+# age, nothing
+antInsula_age = lmer(roi_mean ~ age_bi + (1|subjID),
+                 data = antInsula_df_comp)
+summary(antInsula_age)
 ```
+
+# pTPJ
+### make long format df
+```{r}
+# make long format df
+pTPJ_df = all_df %>% 
+  select(subjID, age_bi, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
+  pivot_longer(
+    cols = starts_with("pTPJ_"), # A helpful way to select columns
+    names_to = "partner",
+    names_prefix = "pTPJ_",     # Remove this prefix from the new column names
+    values_to = "roi_mean"
+  ) %>% 
+  mutate(partner = as.factor(partner),
+         subjID = as.factor(subjID),
+         age_bi = as.factor(age_bi))
+```
+
+### similar vs dissimilar, nothing
+```{r}
+pTPJ_df_similar = filter(pTPJ_df, partner %in% c("similar", "dissimilar"))
+
+# partner * age_bi, nothing
+pTPJ_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+                             data = pTPJ_df_similar)
+summary(pTPJ_similar_age)
+
+# partner, nothing
+pTPJ_similar = lmer(roi_mean ~ partner + (1|subjID),
+                         data = pTPJ_df_similar)
+summary(pTPJ_similar)
+
+# age, nothing
+pTPJ_age = lmer(roi_mean ~ age_bi + (1|subjID),
+                     data = pTPJ_df_similar)
+summary(pTPJ_age)
+```
+
+### human vs computer
+```{r}
+pTPJ_df_comp = all_df %>% 
+  select(subjID, age_bi, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
+  mutate(pTPJ_hum = 0.5 *(pTPJ_similar+pTPJ_dissimilar)) %>% 
+  select(subjID, age_bi, pTPJ_comp, pTPJ_hum) %>% 
+  pivot_longer(
+    cols = starts_with("pTPJ_"), # A helpful way to select columns
+    names_to = "partner",
+    names_prefix = "pTPJ_",     # Remove this prefix from the new column names
+    values_to = "roi_mean"
+  ) %>% 
+  mutate(partner = as.factor(partner),
+         subjID = as.factor(subjID))
+
+# partner * age_bi, nothing
+pTPJ_comp_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+                          data = pTPJ_df_comp)
+summary(pTPJ_comp_age)
+
+# partner, nothing
+pTPJ_comp = lmer(roi_mean ~ partner + (1|subjID),
+                      data = pTPJ_df_comp)
+summary(pTPJ_comp)
+
+# age, nothing
+pTPJ_age = lmer(roi_mean ~ age_bi + (1|subjID),
+                     data = pTPJ_df_comp)
+summary(pTPJ_age)
+```
+# to continue
 
 
 
