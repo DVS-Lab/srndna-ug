@@ -753,7 +753,7 @@ dlpfc_df = all_nppi_ecn_df %>%
          age_bi = as.factor(age_bi), sex = as.factor(sex))
 ```
 
-#### similar vs dissimilar, nothing (sex???)
+#### similar vs dissimilar, nothing (gender effect!!!???)
 ```{r}
 dlpfc_df_similar = filter(dlpfc_df, partner %in% c("similar", "dissimilar"))
 
@@ -821,7 +821,7 @@ antInsula_df = all_nppi_ecn_df %>%
          age_bi = as.factor(age_bi), sex = as.factor(sex))
 ```
 
-#### similar vs dissimilar, nothing
+#### similar vs dissimilar, nothing (RT effect)
 ```{r}
 antInsula_df_similar = filter(antInsula_df, partner %in% c("similar", "dissimilar"))
 
@@ -938,6 +938,11 @@ summary(pTPJ_comp)
 pTPJ_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                 data = pTPJ_df_comp)
 summary(pTPJ_age)
+```
+# RT vs age
+```{r}
+RT_age_m = lm(RT ~ age_bi, all_act_df)
+summary(RT_age_m)
 ```
 
 
