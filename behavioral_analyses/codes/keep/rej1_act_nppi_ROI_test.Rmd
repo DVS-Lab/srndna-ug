@@ -1,7 +1,7 @@
 ---
 title: "prereg 1 activation ROI test"
 author: "Jen Yang"
-date: "2025-07-08, last modified 2025-07-08"
+date: "2025-07-08, last modified 2025-07-10"
 output: 
   html_document:
     code_folding: hide
@@ -106,13 +106,15 @@ figure_dir = paste(gitrepo_path,"figures", sep = "/")
 # load and prepare data
 ## load participant list and demographics
 ```{r}
-list_fmri_df = read.csv(paste(data_dir, "participant_L3_47.csv", sep = "/"),
-                          header = T) %>% dplyr::select(subjID)
+list_cov_fmri_df = read.csv(paste(data_dir, 
+                             "L3_template_n47_ultimatum_twogroup_wCovs.csv", sep = "/"),                       header = T) %>% 
+  mutate(subjID = subID) %>% 
+  select(subjID, tsnr, fd_mean, RT)
 
 participant_check_df = read.csv(paste(data_dir, "participant_check.csv", sep = "/"), header = T)
 
 participant_demo_df = 
-  merge(list_fmri_df, participant_check_df, by.x = "subjID", by.y = "participant_id", all.x = T) %>% 
+  merge(list_cov_fmri_df, participant_check_df, by.x = "subjID", by.y = "participant_id", all.x = T) %>% 
   mutate(age_bi = case_when(age <= 36 ~ "younger", age > 36 ~ "older"),
          age_bi = relevel(as.factor(age_bi), ref = "younger"))
 ```
@@ -192,7 +194,8 @@ Whole brain contrasts will examine differences in the BOLD response as a functio
 ```{r}
 # make long format df
 dlpfc_df = all_act_df %>% 
-  select(subjID, age_bi, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar,
+         ) %>% 
   pivot_longer(
     cols = starts_with("dlpfc_"), # A helpful way to select columns
     names_to = "partner",
@@ -201,25 +204,26 @@ dlpfc_df = all_act_df %>%
   ) %>% 
   mutate(partner = as.factor(partner),
          subjID = as.factor(subjID),
-         age_bi = as.factor(age_bi))
+         age_bi = as.factor(age_bi),
+         sex = as.factor(sex))
 ```
 
-### similar vs dissimilar, age sig
+### similar vs dissimilar, nothing
 ```{r}
 dlpfc_df_similar = filter(dlpfc_df, partner %in% c("similar", "dissimilar"))
 
 # partner * age_bi, nothing
-dlpfc_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+dlpfc_similar_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                         data = dlpfc_df_similar)
 summary(dlpfc_similar_age)
 
 # partner, nothing
-dlpfc_similar = lmer(roi_mean ~ partner + (1|subjID),
+dlpfc_similar = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                         data = dlpfc_df_similar)
 summary(dlpfc_similar)
 
-# age, p = 0.0355
-dlpfc_age = lmer(roi_mean ~ age_bi + (1|subjID),
+# age, nothing (previously p = 0.0355 without fmri covs)
+dlpfc_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                         data = dlpfc_df_similar)
 summary(dlpfc_age)
 ```
@@ -227,9 +231,9 @@ summary(dlpfc_age)
 ### human vs computer, partner * age sig
 ```{r}
 dlpfc_df_comp = all_act_df %>% 
-  select(subjID, age_bi, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar) %>% 
   mutate(dlpfc_hum = 0.5 *(dlpfc_similar+dlpfc_dissimilar)) %>% 
-  select(subjID, age_bi, dlpfc_comp, dlpfc_hum) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, dlpfc_comp, dlpfc_hum) %>% 
   pivot_longer(
     cols = starts_with("dlpfc_"), # A helpful way to select columns
     names_to = "partner",
@@ -240,17 +244,17 @@ dlpfc_df_comp = all_act_df %>%
          subjID = as.factor(subjID))
 
 # partner * age_bi, p = 0.0412
-dlpfc_comp_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+dlpfc_comp_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                          data = dlpfc_df_comp)
 summary(dlpfc_comp_age)
 
 # # partner
-# dlpfc_comp = lmer(roi_mean ~ partner + (1|subjID),
+# dlpfc_comp = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
 #                      data = dlpfc_df_comp)
 # summary(dlpfc_comp)
 # 
 # # age
-# dlpfc_age = lmer(roi_mean ~ age_bi + (1|subjID),
+# dlpfc_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
 #                  data = dlpfc_df_comp)
 # summary(dlpfc_age)
 ```
@@ -260,7 +264,7 @@ summary(dlpfc_comp_age)
 ```{r}
 # make long format df
 antInsula_df = all_act_df %>% 
-  select(subjID, age_bi, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
   pivot_longer(
     cols = starts_with("antInsula_"), # A helpful way to select columns
     names_to = "partner",
@@ -269,7 +273,7 @@ antInsula_df = all_act_df %>%
   ) %>% 
   mutate(partner = as.factor(partner),
          subjID = as.factor(subjID),
-         age_bi = as.factor(age_bi))
+         age_bi = as.factor(age_bi), sex = as.factor(sex))
 ```
 
 ### similar vs dissimilar, nothing
@@ -277,17 +281,17 @@ antInsula_df = all_act_df %>%
 antInsula_df_similar = filter(antInsula_df, partner %in% c("similar", "dissimilar"))
 
 # partner * age_bi, nothing
-antInsula_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+antInsula_similar_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                          data = antInsula_df_similar)
 summary(antInsula_similar_age)
 
 # partner, nothing
-antInsula_similar = lmer(roi_mean ~ partner + (1|subjID),
+antInsula_similar = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = antInsula_df_similar)
 summary(antInsula_similar)
 
 # age, nothing
-antInsula_age = lmer(roi_mean ~ age_bi + (1|subjID),
+antInsula_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                  data = antInsula_df_similar)
 summary(antInsula_age)
 ```
@@ -295,9 +299,9 @@ summary(antInsula_age)
 ### human vs computer, nothing
 ```{r}
 antInsula_df_comp = all_act_df %>% 
-  select(subjID, age_bi, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
   mutate(antInsula_hum = 0.5 *(antInsula_similar+antInsula_dissimilar)) %>% 
-  select(subjID, age_bi, antInsula_comp, antInsula_hum) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, antInsula_comp, antInsula_hum) %>% 
   pivot_longer(
     cols = starts_with("antInsula_"), # A helpful way to select columns
     names_to = "partner",
@@ -308,17 +312,17 @@ antInsula_df_comp = all_act_df %>%
          subjID = as.factor(subjID))
 
 # partner * age_bi, nothing
-antInsula_comp_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+antInsula_comp_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                          data = antInsula_df_comp)
 summary(antInsula_comp_age)
 
 # partner, nothing
-antInsula_comp = lmer(roi_mean ~ partner + (1|subjID),
+antInsula_comp = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = antInsula_df_comp)
 summary(antInsula_comp)
 
 # age, nothing
-antInsula_age = lmer(roi_mean ~ age_bi + (1|subjID),
+antInsula_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                  data = antInsula_df_comp)
 summary(antInsula_age)
 ```
@@ -328,7 +332,7 @@ summary(antInsula_age)
 ```{r}
 # make long format df
 pTPJ_df = all_act_df %>% 
-  select(subjID, age_bi, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
   pivot_longer(
     cols = starts_with("pTPJ_"), # A helpful way to select columns
     names_to = "partner",
@@ -337,7 +341,7 @@ pTPJ_df = all_act_df %>%
   ) %>% 
   mutate(partner = as.factor(partner),
          subjID = as.factor(subjID),
-         age_bi = as.factor(age_bi))
+         age_bi = as.factor(age_bi), sex = as.factor(sex))
 ```
 
 ### similar vs dissimilar, nothing
@@ -345,17 +349,17 @@ pTPJ_df = all_act_df %>%
 pTPJ_df_similar = filter(pTPJ_df, partner %in% c("similar", "dissimilar"))
 
 # partner * age_bi, nothing
-pTPJ_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+pTPJ_similar_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                              data = pTPJ_df_similar)
 summary(pTPJ_similar_age)
 
 # partner, nothing
-pTPJ_similar = lmer(roi_mean ~ partner + (1|subjID),
+pTPJ_similar = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                          data = pTPJ_df_similar)
 summary(pTPJ_similar)
 
 # age, nothing
-pTPJ_age = lmer(roi_mean ~ age_bi + (1|subjID),
+pTPJ_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = pTPJ_df_similar)
 summary(pTPJ_age)
 ```
@@ -363,9 +367,9 @@ summary(pTPJ_age)
 ### human vs computer, nothing
 ```{r}
 pTPJ_df_comp = all_act_df %>% 
-  select(subjID, age_bi, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
   mutate(pTPJ_hum = 0.5 *(pTPJ_similar+pTPJ_dissimilar)) %>% 
-  select(subjID, age_bi, pTPJ_comp, pTPJ_hum) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, pTPJ_comp, pTPJ_hum) %>% 
   pivot_longer(
     cols = starts_with("pTPJ_"), # A helpful way to select columns
     names_to = "partner",
@@ -376,17 +380,17 @@ pTPJ_df_comp = all_act_df %>%
          subjID = as.factor(subjID))
 
 # partner * age_bi, nothing
-pTPJ_comp_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+pTPJ_comp_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                           data = pTPJ_df_comp)
 summary(pTPJ_comp_age)
 
 # partner, nothing
-pTPJ_comp = lmer(roi_mean ~ partner + (1|subjID),
+pTPJ_comp = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                       data = pTPJ_df_comp)
 summary(pTPJ_comp)
 
 # age, nothing
-pTPJ_age = lmer(roi_mean ~ age_bi + (1|subjID),
+pTPJ_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = pTPJ_df_comp)
 summary(pTPJ_age)
 ```
@@ -467,7 +471,7 @@ all_nppi_dmn_df$age_bi = relevel(all_nppi_dmn_df$age_bi, ref = "younger")
 ```{r}
 # make long format df
 dlpfc_df = all_nppi_dmn_df %>% 
-  select(subjID, age_bi, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar) %>% 
   pivot_longer(
     cols = starts_with("dlpfc_"), # A helpful way to select columns
     names_to = "partner",
@@ -476,7 +480,7 @@ dlpfc_df = all_nppi_dmn_df %>%
   ) %>% 
   mutate(partner = as.factor(partner),
          subjID = as.factor(subjID),
-         age_bi = as.factor(age_bi))
+         age_bi = as.factor(age_bi), sex = as.factor(sex))
 ```
 
 #### similar vs dissimilar, nothing
@@ -484,17 +488,17 @@ dlpfc_df = all_nppi_dmn_df %>%
 dlpfc_df_similar = filter(dlpfc_df, partner %in% c("similar", "dissimilar"))
 
 # partner * age_bi, nothing
-dlpfc_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+dlpfc_similar_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                          data = dlpfc_df_similar)
 summary(dlpfc_similar_age)
 
 # partner, nothing
-dlpfc_similar = lmer(roi_mean ~ partner + (1|subjID),
+dlpfc_similar = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = dlpfc_df_similar)
 summary(dlpfc_similar)
 
 # age, nothing
-dlpfc_age = lmer(roi_mean ~ age_bi + (1|subjID),
+dlpfc_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                  data = dlpfc_df_similar)
 summary(dlpfc_age)
 ```
@@ -502,9 +506,9 @@ summary(dlpfc_age)
 #### human vs computer, nothing
 ```{r}
 dlpfc_df_comp = all_nppi_dmn_df %>% 
-  select(subjID, age_bi, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar) %>% 
   mutate(dlpfc_hum = 0.5 *(dlpfc_similar+dlpfc_dissimilar)) %>% 
-  select(subjID, age_bi, dlpfc_comp, dlpfc_hum) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, dlpfc_comp, dlpfc_hum) %>% 
   pivot_longer(
     cols = starts_with("dlpfc_"), # A helpful way to select columns
     names_to = "partner",
@@ -515,17 +519,17 @@ dlpfc_df_comp = all_nppi_dmn_df %>%
          subjID = as.factor(subjID))
 
 # partner * age_bi, nothing
-dlpfc_comp_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+dlpfc_comp_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                       data = dlpfc_df_comp)
 summary(dlpfc_comp_age)
 
 # partner, nothing
-dlpfc_comp = lmer(roi_mean ~ partner + (1|subjID),
+dlpfc_comp = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = dlpfc_df_comp)
 summary(dlpfc_comp)
 
 # age, nothing
-dlpfc_age = lmer(roi_mean ~ age_bi + (1|subjID),
+dlpfc_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                  data = dlpfc_df_comp)
 summary(dlpfc_age)
 ```
@@ -535,7 +539,7 @@ summary(dlpfc_age)
 ```{r}
 # make long format df
 antInsula_df = all_nppi_dmn_df %>% 
-  select(subjID, age_bi, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
   pivot_longer(
     cols = starts_with("antInsula_"), # A helpful way to select columns
     names_to = "partner",
@@ -544,7 +548,7 @@ antInsula_df = all_nppi_dmn_df %>%
   ) %>% 
   mutate(partner = as.factor(partner),
          subjID = as.factor(subjID),
-         age_bi = as.factor(age_bi))
+         age_bi = as.factor(age_bi), sex = as.factor(sex))
 ```
 
 #### similar vs dissimilar, nothing
@@ -552,17 +556,17 @@ antInsula_df = all_nppi_dmn_df %>%
 antInsula_df_similar = filter(antInsula_df, partner %in% c("similar", "dissimilar"))
 
 # partner * age_bi, nothing
-antInsula_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+antInsula_similar_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                              data = antInsula_df_similar)
 summary(antInsula_similar_age)
 
 # partner, nothing
-antInsula_similar = lmer(roi_mean ~ partner + (1|subjID),
+antInsula_similar = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                          data = antInsula_df_similar)
 summary(antInsula_similar)
 
 # age, nothing
-antInsula_age = lmer(roi_mean ~ age_bi + (1|subjID),
+antInsula_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = antInsula_df_similar)
 summary(antInsula_age)
 ```
@@ -570,9 +574,9 @@ summary(antInsula_age)
 #### human vs computer, nothing
 ```{r}
 antInsula_df_comp = all_nppi_dmn_df %>% 
-  select(subjID, age_bi, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
   mutate(antInsula_hum = 0.5 *(antInsula_similar+antInsula_dissimilar)) %>% 
-  select(subjID, age_bi, antInsula_comp, antInsula_hum) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, antInsula_comp, antInsula_hum) %>% 
   pivot_longer(
     cols = starts_with("antInsula_"), # A helpful way to select columns
     names_to = "partner",
@@ -583,17 +587,17 @@ antInsula_df_comp = all_nppi_dmn_df %>%
          subjID = as.factor(subjID))
 
 # partner * age_bi, nothing
-antInsula_comp_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+antInsula_comp_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                           data = antInsula_df_comp)
 summary(antInsula_comp_age)
 
 # partner, nothing
-antInsula_comp = lmer(roi_mean ~ partner + (1|subjID),
+antInsula_comp = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                       data = antInsula_df_comp)
 summary(antInsula_comp)
 
 # age, nothing
-antInsula_age = lmer(roi_mean ~ age_bi + (1|subjID),
+antInsula_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = antInsula_df_comp)
 summary(antInsula_age)
 ```
@@ -603,7 +607,7 @@ summary(antInsula_age)
 ```{r}
 # make long format df
 pTPJ_df = all_nppi_dmn_df %>% 
-  select(subjID, age_bi, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
   pivot_longer(
     cols = starts_with("pTPJ_"), # A helpful way to select columns
     names_to = "partner",
@@ -612,25 +616,25 @@ pTPJ_df = all_nppi_dmn_df %>%
   ) %>% 
   mutate(partner = as.factor(partner),
          subjID = as.factor(subjID),
-         age_bi = as.factor(age_bi))
+         age_bi = as.factor(age_bi), sex = as.factor(sex))
 ```
 
-#### similar vs dissimilar, nothing
+#### similar vs dissimilar, age
 ```{r}
 pTPJ_df_similar = filter(pTPJ_df, partner %in% c("similar", "dissimilar"))
 
 # partner * age_bi, nothing
-pTPJ_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+pTPJ_similar_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                         data = pTPJ_df_similar)
 summary(pTPJ_similar_age)
 
 # partner, nothing
-pTPJ_similar = lmer(roi_mean ~ partner + (1|subjID),
+pTPJ_similar = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                     data = pTPJ_df_similar)
 summary(pTPJ_similar)
 
-# age, nothing
-pTPJ_age = lmer(roi_mean ~ age_bi + (1|subjID),
+# age, p = 0.0312 (previously nothing without fmri covs)
+pTPJ_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                 data = pTPJ_df_similar)
 summary(pTPJ_age)
 ```
@@ -638,9 +642,9 @@ summary(pTPJ_age)
 #### human vs computer, nothing
 ```{r}
 pTPJ_df_comp = all_nppi_dmn_df %>% 
-  select(subjID, age_bi, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
   mutate(pTPJ_hum = 0.5 *(pTPJ_similar+pTPJ_dissimilar)) %>% 
-  select(subjID, age_bi, pTPJ_comp, pTPJ_hum) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, pTPJ_comp, pTPJ_hum) %>% 
   pivot_longer(
     cols = starts_with("pTPJ_"), # A helpful way to select columns
     names_to = "partner",
@@ -651,17 +655,17 @@ pTPJ_df_comp = all_nppi_dmn_df %>%
          subjID = as.factor(subjID))
 
 # partner * age_bi, nothing
-pTPJ_comp_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+pTPJ_comp_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = pTPJ_df_comp)
 summary(pTPJ_comp_age)
 
 # partner, nothing
-pTPJ_comp = lmer(roi_mean ~ partner + (1|subjID),
+pTPJ_comp = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                  data = pTPJ_df_comp)
 summary(pTPJ_comp)
 
 # age, nothing
-pTPJ_age = lmer(roi_mean ~ age_bi + (1|subjID),
+pTPJ_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                 data = pTPJ_df_comp)
 summary(pTPJ_age)
 ```
@@ -737,7 +741,7 @@ all_nppi_ecn_df$age_bi = relevel(all_nppi_ecn_df$age_bi, ref = "younger")
 ```{r}
 # make long format df
 dlpfc_df = all_nppi_ecn_df %>% 
-  select(subjID, age_bi, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar) %>% 
   pivot_longer(
     cols = starts_with("dlpfc_"), # A helpful way to select columns
     names_to = "partner",
@@ -746,25 +750,25 @@ dlpfc_df = all_nppi_ecn_df %>%
   ) %>% 
   mutate(partner = as.factor(partner),
          subjID = as.factor(subjID),
-         age_bi = as.factor(age_bi))
+         age_bi = as.factor(age_bi), sex = as.factor(sex))
 ```
 
-#### similar vs dissimilar, nothing
+#### similar vs dissimilar, nothing (sex???)
 ```{r}
 dlpfc_df_similar = filter(dlpfc_df, partner %in% c("similar", "dissimilar"))
 
 # partner * age_bi, nothing
-dlpfc_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+dlpfc_similar_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                          data = dlpfc_df_similar)
 summary(dlpfc_similar_age)
 
 # partner, nothing
-dlpfc_similar = lmer(roi_mean ~ partner + (1|subjID),
+dlpfc_similar = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = dlpfc_df_similar)
 summary(dlpfc_similar)
 
 # age, nothing
-dlpfc_age = lmer(roi_mean ~ age_bi + (1|subjID),
+dlpfc_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                  data = dlpfc_df_similar)
 summary(dlpfc_age)
 ```
@@ -772,9 +776,9 @@ summary(dlpfc_age)
 #### human vs computer, nothing
 ```{r}
 dlpfc_df_comp = all_nppi_ecn_df %>% 
-  select(subjID, age_bi, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, dlpfc_comp, dlpfc_similar, dlpfc_dissimilar) %>% 
   mutate(dlpfc_hum = 0.5 *(dlpfc_similar+dlpfc_dissimilar)) %>% 
-  select(subjID, age_bi, dlpfc_comp, dlpfc_hum) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, dlpfc_comp, dlpfc_hum) %>% 
   pivot_longer(
     cols = starts_with("dlpfc_"), # A helpful way to select columns
     names_to = "partner",
@@ -785,17 +789,17 @@ dlpfc_df_comp = all_nppi_ecn_df %>%
          subjID = as.factor(subjID))
 
 # partner * age_bi, nothing
-dlpfc_comp_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+dlpfc_comp_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                       data = dlpfc_df_comp)
 summary(dlpfc_comp_age)
 
 # partner, nothing
-dlpfc_comp = lmer(roi_mean ~ partner + (1|subjID),
+dlpfc_comp = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = dlpfc_df_comp)
 summary(dlpfc_comp)
 
 # age, nothing
-dlpfc_age = lmer(roi_mean ~ age_bi + (1|subjID),
+dlpfc_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                  data = dlpfc_df_comp)
 summary(dlpfc_age)
 ```
@@ -805,7 +809,7 @@ summary(dlpfc_age)
 ```{r}
 # make long format df
 antInsula_df = all_nppi_ecn_df %>% 
-  select(subjID, age_bi, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
   pivot_longer(
     cols = starts_with("antInsula_"), # A helpful way to select columns
     names_to = "partner",
@@ -814,7 +818,7 @@ antInsula_df = all_nppi_ecn_df %>%
   ) %>% 
   mutate(partner = as.factor(partner),
          subjID = as.factor(subjID),
-         age_bi = as.factor(age_bi))
+         age_bi = as.factor(age_bi), sex = as.factor(sex))
 ```
 
 #### similar vs dissimilar, nothing
@@ -822,17 +826,17 @@ antInsula_df = all_nppi_ecn_df %>%
 antInsula_df_similar = filter(antInsula_df, partner %in% c("similar", "dissimilar"))
 
 # partner * age_bi, nothing
-antInsula_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+antInsula_similar_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                              data = antInsula_df_similar)
 summary(antInsula_similar_age)
 
 # partner, nothing
-antInsula_similar = lmer(roi_mean ~ partner + (1|subjID),
+antInsula_similar = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                          data = antInsula_df_similar)
 summary(antInsula_similar)
 
 # age, nothing
-antInsula_age = lmer(roi_mean ~ age_bi + (1|subjID),
+antInsula_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = antInsula_df_similar)
 summary(antInsula_age)
 ```
@@ -840,9 +844,9 @@ summary(antInsula_age)
 #### human vs computer, partner
 ```{r}
 antInsula_df_comp = all_nppi_ecn_df %>% 
-  select(subjID, age_bi, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, antInsula_comp, antInsula_similar, antInsula_dissimilar) %>% 
   mutate(antInsula_hum = 0.5 *(antInsula_similar+antInsula_dissimilar)) %>% 
-  select(subjID, age_bi, antInsula_comp, antInsula_hum) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, antInsula_comp, antInsula_hum) %>% 
   pivot_longer(
     cols = starts_with("antInsula_"), # A helpful way to select columns
     names_to = "partner",
@@ -853,17 +857,17 @@ antInsula_df_comp = all_nppi_ecn_df %>%
          subjID = as.factor(subjID))
 
 # partner * age_bi, nothing
-antInsula_comp_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+antInsula_comp_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                           data = antInsula_df_comp)
 summary(antInsula_comp_age)
 
 # partner, p = 0.002
-antInsula_comp = lmer(roi_mean ~ partner + (1|subjID),
+antInsula_comp = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                       data = antInsula_df_comp)
 summary(antInsula_comp)
 
 # age, nothing
-antInsula_age = lmer(roi_mean ~ age_bi + (1|subjID),
+antInsula_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = antInsula_df_comp)
 summary(antInsula_age)
 ```
@@ -873,7 +877,7 @@ summary(antInsula_age)
 ```{r}
 # make long format df
 pTPJ_df = all_nppi_ecn_df %>% 
-  select(subjID, age_bi, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
   pivot_longer(
     cols = starts_with("pTPJ_"), # A helpful way to select columns
     names_to = "partner",
@@ -882,7 +886,7 @@ pTPJ_df = all_nppi_ecn_df %>%
   ) %>% 
   mutate(partner = as.factor(partner),
          subjID = as.factor(subjID),
-         age_bi = as.factor(age_bi))
+         age_bi = as.factor(age_bi), sex = as.factor(sex))
 ```
 
 #### similar vs dissimilar, nothing
@@ -890,17 +894,17 @@ pTPJ_df = all_nppi_ecn_df %>%
 pTPJ_df_similar = filter(pTPJ_df, partner %in% c("similar", "dissimilar"))
 
 # partner * age_bi, nothing
-pTPJ_similar_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+pTPJ_similar_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                         data = pTPJ_df_similar)
 summary(pTPJ_similar_age)
 
 # partner, nothing
-pTPJ_similar = lmer(roi_mean ~ partner + (1|subjID),
+pTPJ_similar = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                     data = pTPJ_df_similar)
 summary(pTPJ_similar)
 
 # age, nothing
-pTPJ_age = lmer(roi_mean ~ age_bi + (1|subjID),
+pTPJ_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                 data = pTPJ_df_similar)
 summary(pTPJ_age)
 ```
@@ -908,9 +912,9 @@ summary(pTPJ_age)
 #### human vs computer, nothing
 ```{r}
 pTPJ_df_comp = all_nppi_ecn_df %>% 
-  select(subjID, age_bi, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, pTPJ_comp, pTPJ_similar, pTPJ_dissimilar) %>% 
   mutate(pTPJ_hum = 0.5 *(pTPJ_similar+pTPJ_dissimilar)) %>% 
-  select(subjID, age_bi, pTPJ_comp, pTPJ_hum) %>% 
+  select(subjID, age_bi, tsnr, sex, fd_mean, RT, pTPJ_comp, pTPJ_hum) %>% 
   pivot_longer(
     cols = starts_with("pTPJ_"), # A helpful way to select columns
     names_to = "partner",
@@ -921,17 +925,17 @@ pTPJ_df_comp = all_nppi_ecn_df %>%
          subjID = as.factor(subjID))
 
 # partner * age_bi, nothing
-pTPJ_comp_age = lmer(roi_mean ~ partner * age_bi + (1|subjID),
+pTPJ_comp_age = lmer(roi_mean ~ partner * age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                      data = pTPJ_df_comp)
 summary(pTPJ_comp_age)
 
 # partner, nothing
-pTPJ_comp = lmer(roi_mean ~ partner + (1|subjID),
+pTPJ_comp = lmer(roi_mean ~ partner + sex + tsnr + fd_mean + RT + (1|subjID),
                  data = pTPJ_df_comp)
 summary(pTPJ_comp)
 
 # age, nothing
-pTPJ_age = lmer(roi_mean ~ age_bi + (1|subjID),
+pTPJ_age = lmer(roi_mean ~ age_bi + sex + tsnr + fd_mean + RT + (1|subjID),
                 data = pTPJ_df_comp)
 summary(pTPJ_age)
 ```
