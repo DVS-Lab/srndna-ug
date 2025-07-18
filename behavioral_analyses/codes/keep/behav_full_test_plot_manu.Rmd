@@ -82,7 +82,9 @@ library(performance)
 library(lattice)
 library(sjPlot)
 library(DHARMa)
-library(equatiomatic)
+
+library(sjPlot)
+library(stargazer)
 ```
 
 # dir and sub info
@@ -151,14 +153,13 @@ offer_age_mlm = glmer(accept ~ offer * age_bi +
 summary(offer_age_mlm)
 ```
 
-# BH1_2 accept ~ offer, SIG
+# BH1_2 accept ~ offer * age, SIG
 ```{r}
-all_trials_human_df = all_trials_human_df %>% mutate(offer_sd = as.numeric(scale(offer))) 
-offer_mlm = glmer(accept ~ offer + 
+offer_age_mlm = glmer(accept ~ offer * age_bi +
                           (1+offer|subjID), 
                         data = all_trials_human_df, 
                         family = binomial)
-summary(offer_mlm)
+summary(offer_age_mlm)
 ```
 
 # BH1_3 accept ~ offer + age, age not sig
@@ -177,6 +178,38 @@ offer_similar_mlm_4 = glmer(accept ~ offer + ingroup +
                         data = all_trials_human_df, 
                         family = binomial)
 summary(offer_similar_mlm_4)
+```
+
+# BH1_5 accept ~ offer, SIG
+```{r}
+offer_mlm = glmer(accept ~ offer + 
+                          (1+offer|subjID), 
+                        data = all_trials_human_df, 
+                        family = binomial)
+summary(offer_mlm)
+```
+
+# table of estimates
+```{r}
+stargazer_output1 <- capture.output(stargazer(offer_age_mlm, offer_ingroup_mlm, offer_age_mlm_3, offer_similar_mlm_4, type="text",star.cutoffs=.05,star.char="*", notes="*p<0.05",notes.append=F,
+          out = paste(figure_dir, "behavior_tbl1.txt", sep = "/")))
+stargazer_output1
+write.csv(stargazer_output1, 
+          file = paste(figure_dir, "behavior_tbl1.csv", sep = "/"), row.names = FALSE)
+
+stargazer_output2 = capture.output(stargazer(
+  # offer_ingroup_mlm, offer_age_mlm, 
+          # offer_age_mlm_3, offer_similar_mlm_4,
+          offer_mlm,
+          type="text",star.cutoffs=.05,star.char="*",
+          notes="*p<0.05",notes.append=F,
+          out = paste(figure_dir, "behavior_tbl2.txt", sep = "/")))
+stargazer_output2
+write.csv(stargazer_output2, 
+          file = paste(figure_dir, "behavior_tbl2.csv", sep = "/"), row.names = FALSE)
+
+
+
 ```
 
 # two-step exploratory
