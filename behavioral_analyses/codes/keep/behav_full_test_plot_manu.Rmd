@@ -189,6 +189,58 @@ offer_mlm = glmer(accept ~ offer +
 summary(offer_mlm)
 ```
 
+# fig accept ~ offer * age
+```{r}
+offer_age_fig_mlm = glmer(accept ~ offer * age_bi +
+                          (1+offer|subjID), 
+                        data = all_trials_human_df, 
+                        family = binomial)
+summary(offer_age_fig_mlm)
+```
+
+# fig rate percent ~ offer * age
+## acceptance percent per offer per sub
+```{r}
+sub_offer_percent_colnames = c("subjID", "offer", "percent")
+sub_offer_percent_df = as.data.frame(matrix(ncol = length(sub_offer_percent_colnames), 
+                                       nrow = nrow(sublist_final)*10))
+colnames(sub_offer_percent_df) = sub_offer_percent_colnames
+
+for (sub_s in 1:nrow(sublist_final)) {
+  # sub_s = 1
+  # print(sub_s)
+  sub_s_str = sublist_final$subjID[sub_s]
+  sub_s_df = filter(all_trials_human_df, subjID == sub_s_str)
+  
+  for (offer_o in 1:10) {
+    # offer_o = 1
+    # print(offer_o)
+    sub_s_o_df = all_trials_human_df %>% 
+      filter(subjID == sub_s_str & offer == offer_o)
+    sub_s_o_percent = sum(sub_s_o_df$accept == "1")/nrow(sub_s_o_df)
+    
+    n_current = (sub_s-1)*10 + offer_o
+    # print(n_current)
+    sub_offer_percent_df$subjID[n_current] = sub_s_str
+    sub_offer_percent_df$offer[n_current] = offer_o
+    sub_offer_percent_df$percent[n_current] = sub_s_o_percent
+  }
+}
+
+sub_offer_percent_age_df = merge(sub_offer_percent_df, indiv_df,
+                                 by.x = "subjID", by.y = "participant_id")
+sub_offer_percent_age_df$age_bi = relevel(as.factor(sub_offer_percent_age_df$age_bi),
+                                          ref = "younger")
+```
+
+## percent ~ offer * age
+```{r}
+offer_age_percent_mlm = lmer(percent ~ offer * age_bi +
+                          (1+offer|subjID),
+                        data = sub_offer_percent_age_df)
+summary(offer_age_percent_mlm)
+```
+
 # table of estimates
 ```{r}
 stargazer_output1 <- capture.output(stargazer(offer_age_mlm, offer_ingroup_mlm, offer_age_mlm_3, offer_similar_mlm_4, type="text",star.cutoffs=.05,star.char="*", notes="*p<0.05",notes.append=F,
@@ -290,7 +342,7 @@ in_out_rand_age_df = merge(in_out_rand_df, indiv_df,
 summary(lm(in_out_rand_logit~age_bi, in_out_rand_age_df))
 ```
 
-# figure, accept ~ offer
+# figure
 ## plot param setup
 ```{r}
 axis_title = 12
@@ -320,20 +372,14 @@ annotate_text = 4
 w = 3.4
 h = 3.4*1.25
 ```
-## prepare df for ggplot
-```{r}
-plot_df = all_trials_human_df %>% 
-  mutate(participant_id = subjID) %>% 
-  select(participant_id, accept, 
-         age_bi, offer)
-```
 
-## plot and save
+## accept ~ offer
+### prepare df for ggplot
 ```{r}
 set.seed(1234)
 
 pred_offer_age_prob <-Effect(c("offer"), offer_mlm, 
-                             xlevels = list(offer = 1:10) )
+                             xlevels = list(offer = 1:10))
 pred_offer_age_prob_df<-data.frame(pred_offer_age_prob)
 
 m_params = model_parameters(offer_mlm, effects = "fixed")
@@ -342,7 +388,10 @@ p_val = m_params[m_params$Parameter == "offer", "p"]
 if (p_val < 0.001) {
   p_val = 0.001
 }
+```
 
+### plot and save
+```{r}
 plot_offer =
 ggplot(pred_offer_age_prob_df, aes(x=offer,y=fit)) +
   geom_line(linewidth = line_width) +
@@ -351,20 +400,23 @@ ggplot(pred_offer_age_prob_df, aes(x=offer,y=fit)) +
                 width=.1) +
   # scale_color_manual(values = color_age) +
   # scale_color_manual(values = c("#E69F00", "#56B4E9", "#009E73")) +
-  labs(x = "Offer Size in $", y = "Predicted P(Accept)", color = "Age", 
+  labs(x = "Offer Size in $", y = "Probability (Accept)", color = "Age", 
        title = "",) + 
+  scale_x_continuous(
+    breaks = c(1:10)) +
   coord_cartesian(xlim=c(1, 10), ylim = c(0,1)) +
-  annotate("text", 
-           x = -Inf, y = Inf, 
-           label = sprintf("p < %.3f", p_val), 
-           hjust = -0.2,
-           vjust = 2, 
-           size = annotate_text, color = "black") +
+  # annotate("text", 
+  #          x = -Inf, y = Inf, 
+  #          label = sprintf("p < %.3f", p_val), 
+  #          hjust = -0.2,
+  #          vjust = 2, 
+  #          size = annotate_text, color = "black") +
   theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
         axis.text.x = element_text(size = axis_text), 
         axis.text.y = element_text(size = axis_text), 
         axis.title.x = element_text(size = axis_title, face="bold"), 
-        axis.title.y = element_text(size = axis_title, face="bold"))
+        axis.title.y = element_text(size = axis_title, face="bold"),
+        panel.grid.minor = element_blank())
 
 plot_offer
 
@@ -372,6 +424,115 @@ ggsave(paste(figure_dir, "behavior_offer_manu.png", sep = "/"),
        plot_offer, width = w, height = h/1.75, unit = "in", dpi=300)
 ```
 
+## percent ~ offer * age_bi
+### prepare df for ggplot
+```{r}
+percent_summary_df <- all_trials_human_df %>%
+  group_by(age_bi, offer) %>% 
+  mutate(accept_check = accept == "1") %>% 
+  summarise(
+    trial_count = n(),
+    avg_percent_accept = sum(accept_check)/trial_count,
+    .groups = 'drop' # Recommended to drop grouping after summarise
+  )
+```
+
+### plot
+```{r}
+plot_offer_age_percent =
+  ggplot(percent_summary_df, aes(x=offer,y=avg_percent_accept, fill = age_bi)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+  # scale_color_manual(values = color_age) +
+  # scale_color_manual(values = c("#E69F00", "#56B4E9", "#009E73")) +
+  labs(x = "Offer Size in $", y = "Percentage (Accept)", fill = "Age Group", 
+       title = "",) + 
+  scale_x_continuous(
+    breaks = c(1:10)) +
+  coord_cartesian(xlim=c(1, 10), ylim = c(0,1)) +
+  # annotate("text", 
+  #          x = -Inf, y = Inf, 
+  #          label = sprintf("p < %.3f", p_val), 
+  #          hjust = -0.2,
+  #          vjust = 2, 
+  #          size = annotate_text, color = "black") +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"),
+        panel.grid.minor = element_blank(),
+        legend.position = "bottom")
+
+plot_offer_age_percent
+
+# ggsave(paste(figure_dir, "behavior_offer_age_percent_manu.png", sep = "/"),
+#        plot_offer_age_percent, width = w, height = h/1.75, unit = "in", dpi=300)
+```
+
+
+## accpet ~ offer * age_bi
+### prepare df for ggplot
+```{r}
+set.seed(1234)
+
+pred_offer_age_prob <-effect(c("offer:age_bi"), offer_age_fig_mlm,
+                                xlevels = list(offer = 1:10))
+pred_offer_age_prob_df<-data.frame(pred_offer_age_prob)
+
+percent_m_params = model_parameters(offer_age_fig_mlm, effects = "fixed")
+```
+
+### plot
+```{r}
+plot_offer_age_prob =
+  ggplot(pred_offer_age_prob_df, aes(x=offer,y=fit, color = age_bi)) +
+  geom_line(linewidth = line_width) +
+  geom_point(size = point_size-1) +
+  geom_errorbar(aes(ymin = fit-0.5*se, ymax = fit+0.5*se),
+                width=.1) +
+  # scale_color_manual(values = color_age) +
+  # scale_color_manual(values = c("#E69F00", "#56B4E9", "#009E73")) +
+  labs(x = "Offer Size in $", y = "Probability (Accept)", color = "Age Group", 
+       title = "",) + 
+  scale_x_continuous(
+    breaks = c(1:10)) +
+  coord_cartesian(xlim=c(1, 10), ylim = c(0,1)) +
+  # annotate("text", 
+  #          x = -Inf, y = Inf, 
+  #          label = sprintf("p < %.3f", p_val), 
+  #          hjust = -0.2,
+  #          vjust = 2, 
+  #          size = annotate_text, color = "black") +
+  theme(axis.line = element_line(linewidth = 1, colour = "black", linetype=1),
+        axis.text.x = element_text(size = axis_text), 
+        axis.text.y = element_text(size = axis_text), 
+        axis.title.x = element_text(size = axis_title, face="bold"), 
+        axis.title.y = element_text(size = axis_title, face="bold"),
+        panel.grid.minor = element_blank(),
+        legend.position = "bottom")
+
+plot_offer_age_prob
+
+# ggsave(paste(figure_dir, "behavior_offer_manu.png", sep = "/"),
+#        plot_offer, width = w, height = h/1.75, unit = "in", dpi=300)
+```
+
+## put together with panel index and save
+```{r}
+beh_figure <- ggarrange(
+  plot_offer_age_percent, plot_offer_age_prob, # List of plots to arrange
+  ncol = 1,                # Arrange in a single column
+  nrow = 2,                # Arrange in two rows
+  labels = c("A", "B"),    # Add panel labels
+  common.legend = TRUE,    # Create a shared, common legend
+  legend = "bottom"        # Position the common legend at the bottom
+)
+
+beh_figure
+
+ggsave(paste(figure_dir, "behavior_prob_percent_manu.png", sep = "/"),
+       beh_figure, width = w, height = h*2/1.6, unit = "in", dpi=300)
+```
 
 
 
