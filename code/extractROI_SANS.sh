@@ -10,20 +10,25 @@ TASK="ultimatum"
 MAINOUTPUT0=${maindir}/derivatives/fsl/L3_model-02_task-${TASK}_n47_flame1+2
 #MAINOUTPUT=${maindir}/derivatives/fsl/L3_SANS
 
-outputdir=${maindir}/imaging_plots_SANS
+#outputdir=${maindir}/imaging_plots_SANS
+outputdir=${maindir}/imaging_plots_reg1
 
 mkdir -p $outputdir
 
 # activation: ROI name and other path information
 #for ROI in 'hum-com_alpha_ageBI_act' 'in-out_alpha_ageBI_act'; do
 #for ROI in 'dmn_p_in-out_y-o'; do
-for ROI in 'ecn_p_in-out_o-y_sens-logit'; do
+#for ROI in 'ecn_p_in-out_o-y_sens-logit'; do
 #for ROI in 'act_p_soc-nonsoc'; do
+#for ROI in 'act_p_in-out_o-y_norm-logit'; do
+for ROI in 'bi_nanRemoved_resliced_seed-pTPJ' 'bi_nanRemoved_resliced_dlpfc_sphere5_brain' 'bi_nanRemoved_resliced_anteriorinsula_sphere5_mask'; do
 
-	MASK=${maindir}/masks_SANS/${ROI}.nii.gz
+	MASK=${maindir}/masks_reg1/${ROI}.nii.gz
+	
 #	TYPE='nppi-dmn'
 	TYPE='nppi-ecn'
 #	TYPE='act'
+	
 	for COPENUM in 2 4 6; do # acts
 		cnum_padded=`zeropad ${COPENUM} 2`
 
