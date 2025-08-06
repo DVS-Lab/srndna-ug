@@ -20,7 +20,7 @@ for copeinfo in "7 in_p-out_p" "9 in-out"; do
 #for copeinfo in "8 soc_p-nonsoc_p" "10 soc-nonsoc"; do
 
 # split copeinfo variable
-set -- $copeinfo
+set -- "$copeinfo"
 copenum="$1"
 copename="$2"
 

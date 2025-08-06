@@ -36,12 +36,12 @@ mkdir -p "$MAINOUTPUT"
 ### --- Two groups with covariates ------------------------------
 # set outputs and check for existing
 cnum_pad=$(zeropad "${copenum}" 2)
-OUTPUT="${MAINOUTPUT}/L3_task-${task}_${REPLACEME}_cnum-${cnum_pad}_cname-${copename}_twogroup_wCovs_in-out_norm2_logit"
+OUTPUT="${MAINOUTPUT}/L3_task-${task}_${REPLACEME}_cnum-${cnum_pad}_cname-${copename}_twogroup_wCovs_in-out_sensitivity2_logit_yoke"
 if [ -e "${OUTPUT}.gfeat/cope1.feat/cluster_mask_zstat1.nii.gz" ]; then
 
 # run randomise if output doesn't exist and the contrasts (copes) are valid
 cd "${OUTPUT}.gfeat/cope1.feat"
-if [ ! -e randomise_tfce_corrp_tstat4.nii.gz ] && [ "${copenum}" -ge "${copenum_thresh_randomise}" ]; then
+if [ ! -e "randomise_tfce_corrp_tstat4.nii.gz" ] && [ "${copenum}" -ge "${copenum_thresh_randomise}" ]; then
 randomise -i filtered_func_data.nii.gz -o randomise -d design.mat -t design.con -m mask.nii.gz -T -c 2.6 -n 10000
 fi
 
@@ -53,21 +53,28 @@ rm -rf "${OUTPUT}.gfeat"
 # create template and run FEAT analyses
 #ITEMPLATE="${maindir}/templates/L3_template_n${N}_${task}_twogroup_wCovs.fsf"
 
-ITEMPLATE="${maindir}/templates/L3_template_n${N}_${task}_twogroup_wCovs_in-out_norm2_logit.fsf"
-OTEMPLATE="${MAINOUTPUT}/L3_task-${task}_${REPLACEME}_copenum-${copenum}_twogroup_wCovs_in-out_norm2_logit.fsf"
+ITEMPLATE="${maindir}/templates/L3_template_n${N}_${task}_twogroup_wCovs_in-out_sensitivity2_logit_yoke.fsf"
+OTEMPLATE="${MAINOUTPUT}/L3_task-${task}_${REPLACEME}_copenum-${copenum}_twogroup_wCovs_in-out_sensitivity2_logit_yoke.fsf"
 
-sed -e "s@OUTPUT@${OUTPUT}@g" \
+echo "OUTPUT: '$OUTPUT'"
+echo "COPENUM: '$copenum'"
+echo "REPLACEME: '$REPLACEME'"
+echo "BASEDIR: '$maindir'"
+
+
+sed \
+-e "s@OUTPUT@${OUTPUT}@g" \
 -e "s@COPENUM@${copenum}@g" \
 -e "s@REPLACEME@${REPLACEME}@g" \
 -e "s@BASEDIR@${maindir}@g" \
-< "${ITEMPLATE}" > "${OTEMPLATE}"
+< "${ITEMPLATE}"
+> "${OTEMPLATE}"
 feat "${OTEMPLATE}"
 
 # delete unused files
 rm -rf "${OUTPUT}.gfeat/cope${cope}.feat/stats/res4d.nii.gz"
 rm -rf "${OUTPUT}.gfeat/cope${cope}.feat/stats/corrections.nii.gz"
 rm -rf "${OUTPUT}.gfeat/cope${cope}.feat/stats/threshac1.nii.gz"
-#rm -rf "${OUTPUT}.gfeat/cope${cope}.feat/filtered_func_data.nii.gz"
 rm -rf "${OUTPUT}.gfeat/cope${cope}.feat/var_filtered_func_data.nii.gz"
 
 fi
