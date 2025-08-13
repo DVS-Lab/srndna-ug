@@ -1,0 +1,205 @@
+---
+title: "demographics_wrangle_srndnaUGR"
+author: "Jen Yang"
+date: "2025-08-13, last modified 2025-08-13"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    hightlight: zenburn
+    toc_depth: 6
+---
+
+```{r clean, include=FALSE}
+# clean environment
+rm(list = ls())
+```
+
+# Load libraries
+```{r libraries, message=FALSE, warning=TRUE, include=FALSE}
+library(car)
+library(plyr)
+library(foreign)
+library(pscl)
+library(boot)
+library(MASS)
+library(robust)
+library(sfsmisc)
+library(ggplot2)
+library(reshape2)
+library(ppcor)
+library(ggrepel)
+library(Hmisc)
+library(tidyverse)
+library(sandwich)
+library(ggpubr)
+library(interactions)
+library(knitr)
+library(twowaytests)
+library(ggfortify)
+library(interactions)
+library(broom)
+library(patchwork)
+library(robustbase)
+library(lmtest)
+library(modelr)
+library(Rmisc)
+library(cowplot)
+library(readr)
+library(PupillometryR)
+library(ggpp)
+library(estimatr)
+library(skedastic)
+library(ggpubr)
+library(lubridate)
+library(readxl)
+library(gridExtra)
+library(scales)
+library(rstudioapi)
+library(jsonlite)
+library(rjson)
+library(readr)
+library(emmeans)
+library(mediation)
+library(here)
+library(lme4)
+library(broom.mixed)
+library(easyRT)
+library(parameters)
+library(effectsize)
+library(effects)
+library(DHARMa)
+library(ggeffects)
+library(performance)
+library(ggtext)
+library(lmerTest)
+```
+
+# set directories
+```{r}
+gitrepo_path = "/Users/momocco/Documents/GitHub/srndna-ug/behavioral_analyses"
+
+data_dir = paste(gitrepo_path,"data", sep = "/")
+codes_dir = paste(gitrepo_path, "codes", sep = "/")
+fit_dir = paste(gitrepo_path,"fits", sep = "/")
+figure_dir = paste(gitrepo_path,"figures", sep = "/")
+```
+
+# participant list
+```{r}
+# load sub list
+participants_50 = "participant_check.csv"
+
+participants_50_df = read.csv(file = paste(data_dir, participants_50, sep = "/"), header = TRUE)
+
+participants_47 = "participant_L3_47.csv"
+
+participants_47_df = read.csv(file = paste(data_dir, participants_47, sep = "/"), header = TRUE)
+
+participants_df = merge(participants_47_df, participants_50_df, all.x = T,
+                        by.x = "subjID", by.y = "participant_id") %>% 
+  select(subjID, younger, older, age, sex, trial_total) %>% 
+  mutate(age_bi = case_when(younger == 1 ~ "younger",
+                            older == 1 ~ "older"))
+
+all_trials_df = read.csv(
+  file = paste(data_dir, "all_trials.csv", sep = "/"), 
+  header = TRUE) %>% filter(subjID %in% participants_df$subjID)
+
+length(unique(all_trials_df$subjID))
+
+all_trials_human_df = merge(all_trials_df, participants_df, 
+                      all.x = T,
+                      by = "subjID") %>% 
+  mutate(age_bi = relevel(as.factor(age_bi), ref = "younger"),
+         ingroup = as.factor(ingroup),
+         accept = as.factor(accept)) %>% 
+  filter(human == 1)
+```
+
+# demographics
+```{r}
+sum(participants_df$younger)
+mean(participants_df$age[participants_df$younger == 1]) 
+sd(participants_df$age[participants_df$younger == 1])
+sum(participants_df$younger == 1 & participants_df$sex == "M" )
+
+
+sum(participants_df$older)
+mean(participants_df$age[participants_df$older == 1]) 
+sd(participants_df$age[participants_df$older == 1])
+sum(participants_df$older == 1 & participants_df$sex == "M" )
+```
+
+# is miss related to age? Nope.
+```{r}
+miss_age_m = lm(trial_total ~ age_bi, participants_df)
+summary(miss_age_m)
+```
+
+# is RT related to age? partner? both?
+```{r}
+# no three-way interaction
+# RT_age_partner_m = lmer(response_time ~
+#                           age_bi * ingroup * accept + 
+#                           (1 + ingroup + accept|subjID), 
+#                         data = all_trials_human_df)
+# summary(RT_age_partner_m)
+
+# age_bi*decision interaction
+RT_age_accept_m = lmer(response_time ~
+                          age_bi * accept + ingroup +
+                          (1 + ingroup + accept|subjID), 
+                        data = all_trials_human_df)
+summary(RT_age_accept_m)
+
+# older adults are faster to accept compared to younger adults
+all_accept1_df = filter(all_trials_human_df, accept == "1")
+RT_age_accept1_m = lmer(response_time ~
+                          age_bi + ingroup +
+                          (1 + ingroup|subjID), 
+                        data = all_accept1_df)
+summary(RT_age_accept1_m)
+
+# no age difference in reject
+all_accept0_df = filter(all_trials_human_df, accept == "0")
+RT_age_accept0_m = lmer(response_time ~
+                          age_bi + ingroup +
+                          (1 + ingroup|subjID), 
+                        data = all_accept0_df)
+summary(RT_age_accept0_m)
+```
+# plot
+## set plot parameters
+```{r}
+axis_title = 12
+axis_ticks = 10
+axis_text = 12
+axis_label = 12
+
+legend_all = 12
+
+annotate_text = 4
+axis_line_width = 1
+fit_line_width = 2
+
+data_point_alpha = 0.5
+data_point_size = 3*0.8
+
+mean_point_size = 3
+
+line_width = 1
+point_size = 3
+
+summary_point_alpha = 1
+summary_point_size = 3
+
+annotate_text = 4
+
+w = 3.4
+h = 3.4*1.25
+```
+
