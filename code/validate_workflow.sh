@@ -12,6 +12,13 @@ PYTHONPYCACHEPREFIX="${TMPDIR:-/tmp}/srndna-ug-pycache" \
     python3 -m py_compile "$script_dir/audit_task_events.py"
 echo "PASS: active Python syntax"
 
+if command -v Rscript >/dev/null 2>&1; then
+    Rscript -e "parse(file='$script_dir/analyze_reviewer_behavior.R')" >/dev/null
+    echo "PASS: active R syntax"
+else
+    echo "SKIP: Rscript is not installed"
+fi
+
 cd "$project_root"
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 

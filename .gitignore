@@ -151,3 +151,6 @@ masks/*.nii.gz
 *.out
 *.log
 bids/sourcedata
+
+# Local-only reviewer derivatives containing participant-level rows
+results/reviewer/private/

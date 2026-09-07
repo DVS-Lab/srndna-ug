@@ -51,9 +51,10 @@ class TaskEventAuditTests(unittest.TestCase):
                 encoding="utf-8",
             )
             output = base / "output"
-            result = audit(base / "bids", sample, output)
+            private = base / "private"
+            result = audit(base / "bids", sample, output, private)
             self.assertEqual(result, {"participants": 1, "runs": 1, "trials": 2, "misses": 1})
-            with (output / "missed_trials_by_participant.tsv").open(newline="") as stream:
+            with (private / "missed_trials_by_participant.tsv").open(newline="") as stream:
                 row = next(csv.DictReader(stream, delimiter="\t"))
             self.assertEqual(row["missed_similar"], "1")
 

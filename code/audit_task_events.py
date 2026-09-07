@@ -123,7 +123,9 @@ def mean_sd(values: list[float]) -> tuple[float, float]:
     return statistics.mean(values), statistics.stdev(values) if len(values) > 1 else math.nan
 
 
-def audit(bids_root: Path, sample_path: Path, output_dir: Path) -> dict[str, object]:
+def audit(
+    bids_root: Path, sample_path: Path, output_dir: Path, private_output_dir: Path
+) -> dict[str, object]:
     sample = participant_sample(sample_path)
     trials: list[Trial] = []
     run_records: list[tuple[str, str, int, int]] = []
@@ -198,8 +200,8 @@ def audit(bids_root: Path, sample_path: Path, output_dir: Path) -> dict[str, obj
         },
     ]
 
-    write_tsv(output_dir / "task_trial_source_data.tsv", list(trial_rows[0]), trial_rows)
-    write_tsv(output_dir / "missed_trials_by_participant.tsv", list(participant_rows[0]), participant_rows)
+    write_tsv(private_output_dir / "task_trial_source_data.tsv", list(trial_rows[0]), trial_rows)
+    write_tsv(private_output_dir / "missed_trials_by_participant.tsv", list(participant_rows[0]), participant_rows)
     write_tsv(output_dir / "task_event_summary.tsv", ["metric", "value", "detail"], summary_rows)
     return {"participants": len(sample), "runs": len(run_records), "trials": len(trials), "misses": sum(t.missed for t in trials)}
 
@@ -210,12 +212,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--bids-root", type=Path, default=root / "bids")
     parser.add_argument("--sample", type=Path, default=root / "behavioral_analyses" / "data" / "participant_L3_47.csv")
     parser.add_argument("--output-dir", type=Path, default=root / "results" / "reviewer" / "tables")
+    parser.add_argument(
+        "--private-output-dir",
+        type=Path,
+        default=root / "results" / "reviewer" / "private",
+        help="ignored local directory for participant-level rows",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    result = audit(args.bids_root, args.sample, args.output_dir)
+    result = audit(args.bids_root, args.sample, args.output_dir, args.private_output_dir)
     print("PASS: " + ", ".join(f"{key}={value}" for key, value in result.items()))
     return 0
 
