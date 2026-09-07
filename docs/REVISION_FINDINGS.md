@@ -46,7 +46,8 @@ The submitted score does not differ detectably by age group: younger mean
 -0.0419 (SD = 0.4640), older mean 0.0202 (SD = 0.6182), younger-minus-older
 difference -0.0621, 95% CI [-0.3882, 0.2641], Welch p = .702. Positive values
 mean a steeper offer-acceptance slope for similar than dissimilar partners;
-negative values mean the reverse.
+negative values mean the reverse. The standardized difference is Hedges'
+g = -0.11 (approximate 95% CI [-0.68, 0.46]).
 
 **Server pending:** Re-fit the focal ECN group result with the unified score
 only after the exact production design and inputs are established. Do not claim

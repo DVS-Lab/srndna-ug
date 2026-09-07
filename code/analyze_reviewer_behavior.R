@@ -200,6 +200,15 @@ write_tsv(sensitivity_diagnostics, file.path(table_dir, "fairness_sensitivity_di
 
 # Participant-level age comparison of the submitted sensitivity measure.
 sensitivity_age <- t.test(submitted_metric_tracked ~ age_group, data = sensitivity)
+younger_values <- sensitivity$submitted_metric_tracked[sensitivity$age_group == "younger"]
+older_values <- sensitivity$submitted_metric_tracked[sensitivity$age_group == "older"]
+n_y <- length(younger_values)
+n_o <- length(older_values)
+pooled_sd <- sqrt(((n_y - 1) * var(younger_values) + (n_o - 1) * var(older_values)) / (n_y + n_o - 2))
+cohens_d <- (mean(younger_values) - mean(older_values)) / pooled_sd
+hedges_correction <- 1 - 3 / (4 * (n_y + n_o) - 9)
+hedges_g <- hedges_correction * cohens_d
+hedges_g_se <- hedges_correction * sqrt((n_y + n_o) / (n_y * n_o) + cohens_d^2 / (2 * (n_y + n_o - 2)))
 sensitivity_group_summary <- aggregate(
   submitted_metric_tracked ~ age_group,
   data = sensitivity,
@@ -219,7 +228,10 @@ write_tsv(
     conf_high = sensitivity_age$conf.int[2],
     statistic = unname(sensitivity_age$statistic),
     degrees_freedom = unname(sensitivity_age$parameter),
-    p_value = sensitivity_age$p.value
+    p_value = sensitivity_age$p.value,
+    hedges_g = hedges_g,
+    hedges_g_conf_low = hedges_g - 1.96 * hedges_g_se,
+    hedges_g_conf_high = hedges_g + 1.96 * hedges_g_se
   ),
   file.path(table_dir, "fairness_sensitivity_age_test.tsv")
 )
@@ -313,7 +325,7 @@ ggsave(file.path(figure_dir, "acceptance_curves.png"), acceptance_plot, width = 
 sensitivity_plot <- ggplot(sensitivity, aes(x = age_group, y = submitted_metric_tracked, color = age_group)) +
   geom_violin(aes(fill = age_group), alpha = 0.15, color = NA, width = 0.8) +
   geom_boxplot(width = 0.18, outlier.shape = NA, alpha = 0.25) +
-  geom_jitter(width = 0.08, height = 0, size = 2, alpha = 0.75) +
+  geom_jitter(position = position_jitter(width = 0.08, height = 0, seed = 20260907), size = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey40") +
   scale_color_manual(values = c(younger = "#345995", older = "#D1495B"), guide = "none") +
   scale_fill_manual(values = c(younger = "#345995", older = "#D1495B"), guide = "none") +

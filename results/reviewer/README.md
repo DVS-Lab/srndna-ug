@@ -30,7 +30,9 @@ make reviewer-behavior
   group (younger-minus-older mean difference -0.0621, 95% CI [-0.3882,
   0.2641], Welch p = .702). Positive scores mean that acceptance changes more
   steeply with offer for similar than dissimilar partners; negative scores mean
-  the reverse. A score of zero means no partner difference in offer slope.
+  the reverse. A score of zero means no partner difference in offer slope. The
+  standardized difference is Hedges' g = -0.11 (approximate 95% CI [-0.68,
+  0.46]).
 - There are 113 missed trials among 6,768 trials (1.67%). Older participants
   missed 3.45 trials on average versus 1.48 for younger participants; the
   participant-level difference is imprecise (younger-minus-older -1.97, 95%
