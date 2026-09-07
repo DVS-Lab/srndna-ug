@@ -23,7 +23,8 @@ while (($#)); do
 done
 
 [[ -d "$fmriprep_root" && -d "$group_dir" && -n "$output_dir" ]] || { usage; exit 2; }
-mkdir -p "$output_dir/design" "$output_dir/headers" "$output_dir/cluster-tables"
+mkdir -p "$output_dir/design" "$output_dir/headers" "$output_dir/cluster-tables" \
+    "$output_dir/fmriprep-provenance"
 
 {
     date -u '+collected_utc=%Y-%m-%dT%H:%M:%SZ'
@@ -32,6 +33,9 @@ mkdir -p "$output_dir/design" "$output_dir/headers" "$output_dir/cluster-tables"
     command -v fslhd || true
     command -v feat || true
     if command -v fslversion >/dev/null 2>&1; then fslversion; fi
+    if [[ -n "${FSLDIR:-}" && -f "${FSLDIR}/etc/fslversion" ]]; then
+        echo "FSLDIR_version=$(<"${FSLDIR}/etc/fslversion")"
+    fi
     if command -v python3 >/dev/null 2>&1; then python3 --version; fi
 } > "$output_dir/environment.txt"
 
@@ -39,12 +43,21 @@ find "$fmriprep_root" -maxdepth 3 -type f \
     \( -name dataset_description.json -o -name '*desc-about.html' -o -name '*CITATION*' \) \
     -print | sort > "$output_dir/fmriprep-provenance-files.txt"
 
+provenance_index=0
+while IFS= read -r source; do
+    [[ -f "$source" ]] || continue
+    provenance_index=$((provenance_index + 1))
+    target_name="$(printf '%03d_%s' "$provenance_index" "$(basename "$source")")"
+    cp -p "$source" "$output_dir/fmriprep-provenance/$target_name"
+done < "$output_dir/fmriprep-provenance-files.txt"
+
 while IFS= read -r source; do
     [[ -f "$source" ]] || continue
     target="$output_dir/design/$(basename "$source")"
     cp -p "$source" "$target"
 done < <(find "$group_dir" -maxdepth 2 -type f \
-    \( -name design.fsf -o -name design.mat -o -name design.con -o -name design.grp -o -name design.fts \) \
+    \( -name design.fsf -o -name design.mat -o -name design.con -o -name design.grp -o -name design.fts \
+       -o -name smoothness -o -name resels.dof -o -name dof \) \
     -print | sort)
 
 while IFS= read -r source; do
@@ -60,7 +73,8 @@ while IFS= read -r image; do
     fslhd "$image" > "$output_dir/headers/${name}.fslhd.txt"
     fslstats "$image" -V > "$output_dir/headers/${name}.volume.txt"
 done < <(find "$group_dir" -maxdepth 4 -type f \
-    \( -name 'zstat*.nii.gz' -o -name 'cluster_mask_zstat*.nii.gz' -o -name 'thresh_zstat*.nii.gz' -o -name 'cope*.nii.gz' \) \
+    \( -name 'zstat*.nii.gz' -o -name 'cluster_mask_zstat*.nii.gz' -o -name 'thresh_zstat*.nii.gz' \
+       -o -name 'cope*.nii.gz' -o -name 'mask.nii.gz' \) \
     -print | sort)
 
 if command -v sha256sum >/dev/null 2>&1; then
