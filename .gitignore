@@ -136,10 +136,9 @@ dmypy.json
 participants.tsv
 .heudiconv
 
-# imaging output
-bids/**/*.nii.gz
-bids/**/*.json
-bids/**/**/*.nii.gz
+# Local source/imaging datasets. The repository carries only the curated,
+# analysis-support subset under source_data/.
+/bids/
 derivatives
 fmapless_subs
 sub-*.html
@@ -150,7 +149,13 @@ masks/*.nii.gz
 .~*#
 *.out
 *.log
-bids/sourcedata
+/behavioral_analyses/archive/
+/code_archive/
+
+# Never add imaging payloads to the curated source-data mirror.
+/source_data/bids/**/*.nii
+/source_data/bids/**/*.nii.gz
+/source_data/bids/**/*.dcm
 
 # Local-only reviewer derivatives containing participant-level rows
 results/reviewer/private/

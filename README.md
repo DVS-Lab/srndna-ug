@@ -31,7 +31,8 @@ Exact behavioral package versions are written to
 
 ## Repository map
 
-- `bids/`: tracked BIDS events/metadata and task source. NIfTI data are ignored.
+- `source_data/bids/`: curated Ultimatum events TSVs in a BIDS-like layout.
+- `source_data/partner_ratings/`: coded Bargaining partner-rating inputs.
 - `behavioral_analyses/data/`: submitted cleaned behavioral and covariate inputs.
 - `code/`: active revision audits plus legacy preprocessing/FEAT scripts.
 - `templates/`: submitted and later FSL templates; these are provenance
@@ -53,7 +54,9 @@ provenance. The machine-readable result index is
 Reviewer scripts write participant-level derived rows under
 `results/reviewer/private/`. That directory is ignored and remains local.
 Only aggregate reviewer tables and figures belong in the active repository.
-Raw DICOMs and other directly identifying source material are not included.
+Raw DICOMs, MRI data, the full BIDS dataset, and other directly identifying
+source material are not included. A local `bids/` directory is ignored. See
+`source_data/README.md` for the narrow set of analysis inputs retained here.
 
 The analyses were **not preregistered**. Legacy text claiming otherwise was
 incorrect and has been removed. Reviewer-requested work is labeled as revision
@@ -87,9 +90,10 @@ performed.
 
 Many older shell scripts and notebooks retain lab-specific absolute paths and
 represent exploratory or superseded analyses. They remain for provenance while
-the resubmission audit identifies the exact submitted result chain. Do not
-assume that a file is active merely because it is tracked. The modern entry
-points above are path-portable and covered by `make test`.
+the resubmission audit identifies the exact submitted result chain. Unrelated
+DDM/RL experiments and a generic RL tutorial were removed from the active tree.
+Do not assume that a file is active merely because it is tracked. The modern
+entry points above are path-portable and covered by `make test`.
 
 ## Acknowledgments
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit ultimatum-game timing and missed trials from canonical BIDS events.
+"""Audit ultimatum-game timing and missed trials from curated BIDS events.
 
 The BIDS converter labels misses only as ``missed_trial``. This script recovers
 their partner from the enclosing block instead of incorrectly treating every
@@ -209,7 +209,7 @@ def audit(
 def parse_args() -> argparse.Namespace:
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--bids-root", type=Path, default=root / "bids")
+    parser.add_argument("--bids-root", type=Path, default=root / "source_data" / "bids")
     parser.add_argument("--sample", type=Path, default=root / "behavioral_analyses" / "data" / "participant_L3_47.csv")
     parser.add_argument("--output-dir", type=Path, default=root / "results" / "reviewer" / "tables")
     parser.add_argument(

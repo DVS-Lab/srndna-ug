@@ -340,7 +340,7 @@ rating_rows <- list()
 for (participant in as.character(participants$subjID)) {
   numeric_id <- sub("^sub-", "", participant)
   for (session in 1:2) {
-    path <- file.path(project_root, "bids", "stimuli", "psychopy", "logs", numeric_id, sprintf("sub%s_Bargaining-Ratings-%d.csv", numeric_id, session))
+    path <- file.path(project_root, "source_data", "partner_ratings", numeric_id, sprintf("sub%s_Bargaining-Ratings-%d.csv", numeric_id, session))
     if (!file.exists(path)) next
     rating <- read.csv(path, stringsAsFactors = FALSE)
     partner_code <- suppressWarnings(as.integer(rating$Partner))

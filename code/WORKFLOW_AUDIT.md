@@ -59,7 +59,7 @@ not a substitute for those outputs.
 | Inference | Established | The manuscript reports FLAME 1+2 with voxel Z > 3.1 and cluster-corrected p < .05. The two focal network clusters contain 26 and 23 nonzero voxels in the tracked masks. Small-cluster robustness remains a required server-side audit. |
 | Output grid | Unresolved | Tracked focal masks report 2.973 x 2.973 x 3.220 mm voxels, whereas the manuscript reports 2.97 x 2.97 x 2.80 mm acquisition voxels. Acquisition and normalized output grids may legitimately differ, but the Methods must label each explicitly after production headers are checked. |
 | fMRIPrep version | Unresolved | The manuscript says fMRIPrep 20.2.3. The earliest tracked wrapper names 20.1.0 and the current wrapper uses 23.2.1. The analyzed derivative's HTML/`dataset_description.json` or container record must establish the production version. |
-| OpenNeuro version | Provisional | The manuscript cites ds003745 version 2.0.2. The tracked BIDS changelog reaches 2.1.1. Analyses should retain the exact analyzed snapshot while public availability can point to the current dataset. |
+| OpenNeuro version | Provisional | The manuscript cites ds003745 version 2.0.2. The BIDS changelog formerly committed to this repository reached 2.1.1. Analyses should retain the exact analyzed snapshot while public availability can point to the current dataset. |
 | Current L3 shell script | Historical/defective | `code/L3stats_SANS.sh` has a split redirection that truncates the rendered FSF. It cannot be treated as a safe reproduction path. Submitted outputs predate the current defect; revision checks must use the audited, render-first server command instead. |
 | DMN influence diagnostic | Revision analysis | A descriptive ROI diagnostic identifies sub-138 above a 4/n Cook's-distance screen and sub-154 near that screen. Because the ROI is selected from the group result, these are not independent hypothesis tests and no participant is labeled an outlier solely from this plot. A leave-one-participant-out image-level check is proposed. |
 | Tracked L3 matrix diagnostics | Revision audit | Both focal tracked templates have 47 unique input paths, a single group-membership value, and full column rank. Scaled condition numbers are 4.54-4.56 and the maximum no-intercept design variance factor is 4.62 (driven by mean FD). Production `design.mat` files must still be compared to these templates. |
@@ -97,6 +97,13 @@ moved to a verified local archive. The active checkout is now about 3.9 GB,
 of which about 3.7 GB is `.git`; current behavioral materials are about 157 MB.
 The tracked archive manifest records source paths, sizes, hashes, and Git blob
 IDs without embedding the local archive location.
+
+The full BIDS dataset and unrelated task/stimulus logs are no longer tracked.
+Only compact Ultimatum events and Bargaining partner ratings needed by the
+revision workflow remain under `source_data/`. The experimental DDM/RL model
+directory and generic RL tutorial were also removed because neither contributes
+to the manuscript or revision analyses. These removals are ordinary commits;
+their prior blobs remain in history.
 
 This normal-commit cleanup retains every prior blob in Git history. Actually
 shrinking `.git` requires a coordinated history rewrite and force-push,
