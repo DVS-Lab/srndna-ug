@@ -93,22 +93,24 @@ GB in `behavioral_analyses`, including about 3.0 GB of tracked fit objects and
 1.1 GB of figures. The largest Git blobs are generated CSV/RDA fit artifacts
 (roughly 24-67 MB each). On 2026-09-07, 4,218 clearly generated fit and
 historical diagnostic-figure files (4.03 GiB) were SHA-256 inventoried and
-moved to a verified local archive. The active checkout is now about 3.9 GB,
-of which about 3.7 GB is `.git`; current behavioral materials are about 157 MB.
-The tracked archive manifest records source paths, sizes, hashes, and Git blob
-IDs without embedding the local archive location.
+moved to a verified local archive. The tracked archive manifest records source
+paths, sizes, hashes, and their pre-rewrite Git blob IDs without embedding the
+local archive location.
 
 The full BIDS dataset and unrelated task/stimulus logs are no longer tracked.
 Only compact Ultimatum events and Bargaining partner ratings needed by the
 revision workflow remain under `source_data/`. The experimental DDM/RL model
 directory and generic RL tutorial were also removed because neither contributes
-to the manuscript or revision analyses. These removals are ordinary commits;
-their prior blobs remain in history.
+to the manuscript or revision analyses.
 
-This normal-commit cleanup retains every prior blob in Git history. Actually
-shrinking `.git` requires a coordinated history rewrite and force-push,
-invalidating existing clones and commit IDs. No history rewrite is authorized
-or performed by this revision workflow.
+With explicit authorization, repository history was rewritten on 2026-09-07 to
+purge the archived artifacts, every historical generated file under
+`behavioral_analyses/fits/`, the unrelated RL/DDM implementation and tutorial,
+and the legacy root `bids/` tree. Three commits containing only purged material
+became empty and were dropped; all retained commits received new IDs. After
+repacking, `.git` is approximately 142 MiB and the complete checkout is
+approximately 340 MiB. Existing clones must be resynchronized as described in
+`docs/HISTORY_REWRITE.md`; a normal pull must not be used across the rewrite.
 
 ## Reviewer-response interpretation guardrails
 

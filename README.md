@@ -77,23 +77,25 @@ and preserve the submitted result.
 
 ## Repository size
 
-The initial checkout included 4.03 GiB of generated behavioral fit CSVs and
-historical diagnostic figures. Those files were hashed, recorded in
-`logs/records/generated-artifact-archive.tsv`, and moved to a verified local
-archive. They are ignored in the active tree but remain recoverable locally and
-from earlier commits. This reduces the working material substantially but does
-not shrink the existing Git object database. A true repository-size reduction
-requires a coordinated history rewrite and force-push, which has not been
-performed.
+The initial checkout was approximately 8 GB, including a 3.70 GiB Git object
+database dominated by generated RL/HBDM fits and diagnostic figures. On
+2026-09-07, 4,218 generated files (4.03 GiB in the working tree) were hashed,
+recorded in `logs/records/generated-artifact-archive.tsv`, and moved to a
+verified local archive. Git history was then rewritten to remove those files,
+older generated contents of `behavioral_analyses/fits/`, unrelated RL/DDM
+source and tutorial code, and the legacy root `bids/` tree. The resulting Git
+object database is approximately 142 MiB. See `docs/HISTORY_REWRITE.md` before
+resynchronizing a clone made before the rewrite.
 
 ## Historical workflows
 
 Many older shell scripts and notebooks retain lab-specific absolute paths and
 represent exploratory or superseded analyses. They remain for provenance while
 the resubmission audit identifies the exact submitted result chain. Unrelated
-DDM/RL experiments and a generic RL tutorial were removed from the active tree.
-Do not assume that a file is active merely because it is tracked. The modern
-entry points above are path-portable and covered by `make test`.
+DDM/RL experiments, generated model fits, and a generic RL tutorial were removed
+from both the active tree and Git history. Do not assume that a file is active
+merely because it is tracked. The modern entry points above are path-portable
+and covered by `make test`.
 
 ## Acknowledgments
 
