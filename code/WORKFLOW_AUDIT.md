@@ -62,6 +62,7 @@ not a substitute for those outputs.
 | OpenNeuro version | Provisional | The manuscript cites ds003745 version 2.0.2. The tracked BIDS changelog reaches 2.1.1. Analyses should retain the exact analyzed snapshot while public availability can point to the current dataset. |
 | Current L3 shell script | Historical/defective | `code/L3stats_SANS.sh` has a split redirection that truncates the rendered FSF. It cannot be treated as a safe reproduction path. Submitted outputs predate the current defect; revision checks must use the audited, render-first server command instead. |
 | DMN influence diagnostic | Revision analysis | A descriptive ROI diagnostic identifies sub-138 above a 4/n Cook's-distance screen and sub-154 near that screen. Because the ROI is selected from the group result, these are not independent hypothesis tests and no participant is labeled an outlier solely from this plot. A leave-one-participant-out image-level check is proposed. |
+| Tracked L3 matrix diagnostics | Revision audit | Both focal tracked templates have 47 unique input paths, a single group-membership value, and full column rank. Scaled condition numbers are 4.54-4.56 and the maximum no-intercept design variance factor is 4.62 (driven by mean FD). Production `design.mat` files must still be compared to these templates. |
 
 ## Required read-only server audit
 

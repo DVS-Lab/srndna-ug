@@ -65,6 +65,18 @@ make reviewer-behavior
 - `figures/acceptance_curves.png` and
   `figures/fairness_sensitivity_distribution.png`: reviewer-ready plots with
   their source data in `tables/`.
+- `tables/focal_cluster_inventory.tsv`: checksums, grids, voxel counts, and
+  physical volumes for the three tracked focal masks.
+- `tables/l3_design_*.tsv` and `l3_contrasts.tsv`: parsed group-design rank,
+  conditioning, per-EV diagnostics, input counts, group membership, and exact
+  contrasts for the two submitted focal models. Both tracked designs are full
+  rank with 47 unique inputs; the maximum design variance factor is 4.62.
+- `tables/dmn_roi_influence_summary.tsv`: descriptive selected-ROI diagnostics
+  and leave-one-out coefficient range. Participant rows remain in `private/`.
+
+Production imaging provenance and image-level robustness remain server-gated.
+See `docs/SERVER_IMAGING_AUDIT.md`; the collection script is strictly
+read-only and does not run FEAT or permutation inference.
 
 Participant-level event, sensitivity, rating, and completeness tables are
 written to the ignored `private/` directory. They use study identifiers but no

@@ -154,3 +154,4 @@ bids/sourcedata
 
 # Local-only reviewer derivatives containing participant-level rows
 results/reviewer/private/
+logs/audits/

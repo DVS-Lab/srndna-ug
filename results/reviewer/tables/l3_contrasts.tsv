@@ -1,0 +1,13 @@
+template_id	contrast_index	contrast_name	contrast_vector
+submitted_dmn_age	1	younger	1 0 0 0 0 0
+submitted_dmn_age	2	older	0 1 0 0 0 0
+submitted_dmn_age	3	younger-older	1 -1 0 0 0 0
+submitted_dmn_age	4	older-younger	-1 1 0 0 0 0
+submitted_ecn_sensitivity	1	O-Y_InOut	0 0 0 0 0 0 -1 1
+submitted_ecn_sensitivity	2	Y-O_InOut	0 0 0 0 0 0 1 -1
+submitted_ecn_sensitivity	3	Y-O	0 0 0 0 1 -1 0 0
+submitted_ecn_sensitivity	4	O-Y	0 0 0 0 -1 1 0 0
+submitted_ecn_sensitivity	5	Y_InOut_pos	0 0 0 0 0 0 1 0
+submitted_ecn_sensitivity	6	Y_InOut_neg	0 0 0 0 0 0 -1 0
+submitted_ecn_sensitivity	7	O_inOut_pos	0 0 0 0 0 0 0 1
+submitted_ecn_sensitivity	8	O_inOut_neg	0 0 0 0 0 0 0 -1
