@@ -5,11 +5,13 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 project_root="$(dirname "$script_dir")"
 
-bash -n "$script_dir/validate_workflow.sh" "$script_dir/audit_server_imaging.sh"
+bash -n "$script_dir/validate_workflow.sh" "$script_dir/audit_server_imaging.sh" \
+    "$script_dir/run_logged.sh"
 echo "PASS: active shell syntax"
 
 PYTHONPYCACHEPREFIX="${TMPDIR:-/tmp}/srndna-ug-pycache" \
-    python3 -m py_compile "$script_dir/audit_task_events.py" "$script_dir/audit_image_headers.py"
+    python3 -m py_compile "$script_dir/audit_task_events.py" "$script_dir/audit_image_headers.py" \
+    "$script_dir/archive_generated_artifacts.py"
 echo "PASS: active Python syntax"
 
 if command -v Rscript >/dev/null 2>&1; then

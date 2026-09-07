@@ -155,3 +155,17 @@ bids/sourcedata
 # Local-only reviewer derivatives containing participant-level rows
 results/reviewer/private/
 logs/audits/
+logs/runs/
+
+# Generated behavioral fit objects and historical diagnostic figures are kept
+# in the verified local archive recorded by logs/records/generated-artifact-archive.tsv.
+behavioral_analyses/fits/
+behavioral_analyses/figures/z_archive/
+behavioral_analyses/figures/SANS_archive/
+behavioral_analyses/figures/ugRL_*/
+behavioral_analyses/figures/computer_fit/
+behavioral_analyses/figures/human_fit/
+behavioral_analyses/figures/ingroup_fit/
+behavioral_analyses/figures/outgroup_fit/
+behavioral_analyses/figures/mean/
+behavioral_analyses/figures/median/

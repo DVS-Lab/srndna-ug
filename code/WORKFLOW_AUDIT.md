@@ -88,17 +88,20 @@ new versioned directory.
 
 ## Repository-size audit and cleanup boundary
 
-The checkout is approximately 8 GB: roughly 3.7 GB in `.git` and 4.2 GB in
-`behavioral_analyses`, including about 3.0 GB of tracked fit objects and 1.1 GB
-of figures. The largest Git blobs are generated CSV/RDA fit artifacts (roughly
-24-67 MB each). They are present in current history, so merely moving working
-files does not shrink existing clones.
+The initial checkout was approximately 8 GB: roughly 3.7 GB in `.git` and 4.2
+GB in `behavioral_analyses`, including about 3.0 GB of tracked fit objects and
+1.1 GB of figures. The largest Git blobs are generated CSV/RDA fit artifacts
+(roughly 24-67 MB each). On 2026-09-07, 4,218 clearly generated fit and
+historical diagnostic-figure files (4.03 GiB) were SHA-256 inventoried and
+moved to a verified local archive. The active checkout is now about 3.9 GB,
+of which about 3.7 GB is `.git`; current behavioral materials are about 157 MB.
+The tracked archive manifest records source paths, sizes, hashes, and Git blob
+IDs without embedding the local archive location.
 
-Safe modernization can archive generated artifacts outside the repository,
-add ignore rules, and delete them in a normal commit while retaining prior Git
-history. Actually shrinking `.git` requires a coordinated history rewrite and
-force-push, invalidating existing clones and commit IDs. No history rewrite is
-authorized or performed by this revision workflow.
+This normal-commit cleanup retains every prior blob in Git history. Actually
+shrinking `.git` requires a coordinated history rewrite and force-push,
+invalidating existing clones and commit IDs. No history rewrite is authorized
+or performed by this revision workflow.
 
 ## Reviewer-response interpretation guardrails
 
