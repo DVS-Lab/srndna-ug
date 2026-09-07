@@ -91,6 +91,14 @@ parse_template <- function(label, path) {
       sd = apply(design, 2, sd),
       design_variance_factor = factors
     ),
+    correlations = do.call(rbind, lapply(combn(seq_len(nevs), 2, simplify = FALSE), function(pair) {
+      data.frame(
+        template_id = label,
+        ev_1 = titles[pair[1]],
+        ev_2 = titles[pair[2]],
+        correlation = cor(design[, pair[1]], design[, pair[2]])
+      )
+    })),
     contrasts = do.call(rbind, contrast_rows)
   )
 }
@@ -98,6 +106,7 @@ parse_template <- function(label, path) {
 audits <- Map(parse_template, names(templates), templates)
 write.table(do.call(rbind, lapply(audits, `[[`, "summary")), file.path(output_dir, "l3_design_summary.tsv"), sep = "\t", row.names = FALSE, quote = FALSE)
 write.table(do.call(rbind, lapply(audits, `[[`, "evs")), file.path(output_dir, "l3_design_ev_diagnostics.tsv"), sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(do.call(rbind, lapply(audits, `[[`, "correlations")), file.path(output_dir, "l3_ev_correlations.tsv"), sep = "\t", row.names = FALSE, quote = FALSE)
 write.table(do.call(rbind, lapply(audits, `[[`, "contrasts")), file.path(output_dir, "l3_contrasts.tsv"), sep = "\t", row.names = FALSE, quote = FALSE)
 
 if (any(vapply(audits, function(x) x$summary$matrix_rank != x$summary$n_evs, logical(1)))) stop("rank-deficient tracked L3 design")
