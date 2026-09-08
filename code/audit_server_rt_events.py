@@ -95,6 +95,16 @@ def event_counts(path: Path) -> tuple[int, int]:
     return responded, rt_rows
 
 
+def remap_path(path: Path, mappings: list[tuple[Path, Path]]) -> Path:
+    for old_root, new_root in mappings:
+        try:
+            relative = path.relative_to(old_root)
+        except ValueError:
+            continue
+        return new_root / relative
+    return path
+
+
 def audit(
     bids_root: Path,
     ev_root: Path,
@@ -102,7 +112,9 @@ def audit(
     sample: Path,
     output_dir: Path,
     tracked_summary: Path | None = None,
+    path_mappings: list[tuple[Path, Path]] | None = None,
 ) -> dict[str, object]:
+    path_mappings = path_mappings or []
     run_rows: list[dict[str, object]] = []
     for participant in sample_ids(sample):
         for run in ("01", "02"):
@@ -116,7 +128,9 @@ def audit(
             matrix_path = feat_dir / "design.mat"
             fsf_lines = fsf_path.read_text(encoding="utf-8", errors="replace").splitlines() if fsf_path.is_file() else []
             custom = {index: fsf_value(fsf_lines, f"custom{index}") for index in range(1, 10)}
-            custom_paths = {index: Path(value) if value else None for index, value in custom.items()}
+            custom_paths = {
+                index: remap_path(Path(value), path_mappings) if value else None for index, value in custom.items()
+            }
 
             default_rt = ev_root / participant / "ultimatum-rt" / f"run-{run}_event_RT.txt"
             default_rt_pmod = ev_root / participant / "ultimatum-rt" / f"run-{run}_event_RT_pmod.txt"
@@ -223,12 +237,39 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="optional aggregate-only TSV suitable for version control; never contains run rows or server paths",
     )
+    parser.add_argument(
+        "--path-map",
+        action="append",
+        default=[],
+        metavar="OLD=NEW",
+        help="remap a stale absolute FSF path prefix while reading; may be repeated",
+    )
     return parser.parse_args()
+
+
+def parse_path_mappings(values: list[str]) -> list[tuple[Path, Path]]:
+    mappings: list[tuple[Path, Path]] = []
+    for value in values:
+        if "=" not in value:
+            raise ValueError(f"invalid --path-map {value!r}; expected OLD=NEW")
+        old, new = value.split("=", 1)
+        if not old or not new:
+            raise ValueError(f"invalid --path-map {value!r}; expected nonempty OLD=NEW")
+        mappings.append((Path(old), Path(new)))
+    return mappings
 
 
 def main() -> int:
     args = parse_args()
-    audit(args.bids_root, args.ev_root, args.l1_root, args.sample, args.output_dir, args.tracked_summary)
+    audit(
+        args.bids_root,
+        args.ev_root,
+        args.l1_root,
+        args.sample,
+        args.output_dir,
+        args.tracked_summary,
+        parse_path_mappings(args.path_map),
+    )
     return 0
 
 

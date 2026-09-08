@@ -34,6 +34,7 @@ python3 code/audit_server_rt_events.py \
   --bids-root source_data/bids \
   --ev-root /ZPOOL/data/projects/srndna-ultimatum/derivatives/fsl/EVfiles \
   --l1-root /ZPOOL/data/projects/srndna-ultimatum/derivatives/fsl \
+  --path-map /data/projects/srndna-ultimatum=/ZPOOL/data/projects/srndna-ultimatum \
   --output-dir logs/audits/server/rt-production-legacy \
   --tracked-summary results/reviewer/tables/production_rt_ev_audit.tsv
 ```
@@ -77,6 +78,10 @@ The focal cope 7 and condition-stacked cope 4/6 inputs therefore exist in the
 template-named store. The next RT audit must use legacy `--ev-root` and
 `--l1-root` arguments. The current `srndna-ug` derivative mirror is not a
 substitute for that production tree.
+
+`--path-map` changes only how the audit resolves retained absolute path strings;
+it does not modify an FSF or create a symlink. The old `/data/projects` values
+remain preserved as production provenance.
 
 ## Questions the bundle must resolve
 

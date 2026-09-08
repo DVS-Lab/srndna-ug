@@ -10,10 +10,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "code"))
 
-from audit_server_rt_events import audit, correlation, parse_vest_matrix
+from audit_server_rt_events import audit, correlation, parse_path_mappings, parse_vest_matrix, remap_path
 
 
 class ServerRTEventAuditTests(unittest.TestCase):
+    def test_stale_fsf_path_can_be_remapped_without_editing_fsf(self) -> None:
+        mappings = parse_path_mappings(["/data/projects/old=/ZPOOL/data/projects/old"])
+        self.assertEqual(
+            remap_path(Path("/data/projects/old/derivatives/file.txt"), mappings),
+            Path("/ZPOOL/data/projects/old/derivatives/file.txt"),
+        )
+        self.assertEqual(remap_path(Path("/other/file.txt"), mappings), Path("/other/file.txt"))
+
     def test_vest_parser_and_correlation(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "design.mat"
