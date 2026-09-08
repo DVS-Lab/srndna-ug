@@ -72,6 +72,22 @@ result as descriptive/exploratory. The task source confirms that the partner,
 offer, and selected response remained visible through the approximately 3.5-s
 epoch, so first-level task regressors do not isolate deliberation.
 
+### RT nuisance-event construction: production verification required
+
+The curated BIDS event files contain 6,655 responded task trials, but only
+5,724 matching `event_RT` rows. All 805 responded first trials of blocks lack
+the companion row. An additional 126 non-first omissions occur in sub-143;
+both of that participant's runs contain no `event_RT` rows at all. Thus 931
+responded trials (13.99%) lack the source row used by the RT 3-column
+conversion. The substantive task-event rows remain present for these trials.
+
+This is a source-event audit, not evidence that the production EVs or FEAT
+design necessarily have the same omissions. The exact production
+`run-*_event_RT.txt`, `run-*_event_RT_pmod.txt`, rendered `design.fsf`, and
+`design.mat` files must be checked next. Do not silently regenerate EVs or
+rerun L1. First establish the production magnitude and assess the limited role
+of RT as a nuisance regressor.
+
 ### Partner ratings
 
 There are 41 complete unique pre-task administrations and 39 complete unique
@@ -132,7 +148,9 @@ author-pending and must not redefine the primary result.
    probabilities, and confirmation that no post-statistics ROI mask was used.
 5. Corrected main effects, within-age simple effects, and social-versus-computer
    results from existing contrasts.
-6. First-level design correlations and RT/offer-modulator estimability.
+6. First-level design correlations and RT/offer-modulator estimability,
+   including whether the production RT EVs reproduce the 805 block-first-trial
+   and 126 additional sub-143 source-event omissions.
 7. Exact behavior of robust FLAME outlier deweighting in the production FSL
    version, including compatibility, settings, and diagnostic outputs; do not
    run it without author approval.

@@ -37,6 +37,10 @@ audit directories to the analyst for review before any rerun.
    and 23-voxel ECN clusters under the submitted Z = 3.1 and p = .05 settings?
 5. Are the sex, tSNR, FD, RT, and group-specific sensitivity EVs centered and
    sufficiently non-collinear in the production matrix?
+6. Do the production RT 3-column EVs omit every responded first trial of a
+   block, and do both sub-143 runs omit all RT events, as the curated BIDS
+   source-event audit indicates? Are the affected trials retained in the main
+   task EVs and what is the resulting design-matrix relationship?
 
 ## Analyses deliberately excluded from this audit
 

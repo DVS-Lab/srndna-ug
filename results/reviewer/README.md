@@ -43,6 +43,11 @@ make reviewer-behavior
   prespecified reviewer model; neither the similarity main effect nor the age
   interaction is detectable. This secondary analysis should be presented as
   descriptive/exploratory rather than a new central claim.
+- The curated BIDS files contain 6,655 responded task trials but only 5,724
+  companion `event_RT` rows. All 805 responded first trials of blocks lack the
+  RT row; 126 additional omissions are the non-first trials in both sub-143
+  runs, which contain no `event_RT` rows. Production 3-column EV and FEAT
+  verification is required before interpreting the modeled consequence.
 - Explicit ratings offer no evidence that similar and dissimilar human
   partners were rated differently on the recorded traits (all paired p > .38).
   Forty-one pre-task and 39 post-task records are complete and unique. Four
@@ -60,6 +65,9 @@ make reviewer-behavior
   interpretation-relevant diagnostics, and aggregate age comparison.
 - `tables/task_event_summary.tsv` and `missed_trials_*.tsv`: aggregate
   event/timing and miss results.
+- `tables/rt_event_construction_summary.tsv`: aggregate source-BIDS evidence
+  for missing companion RT-event rows. Run-level details remain in the ignored
+  `private/rt_event_omissions_by_run.tsv`.
 - `tables/response_time_*.tsv`: exact response-time model and group summaries.
 - `tables/partner_ratings_human_contrasts.tsv`: aggregate human-partner rating
   contrasts.

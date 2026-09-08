@@ -36,6 +36,8 @@ class Trial:
     response_time_raw: float | None
     offer: float | None
     block: str
+    block_start: float
+    rt_event_present: bool
 
 
 def read_rows(path: Path, delimiter: str = "\t") -> list[dict[str, str]]:
@@ -65,6 +67,7 @@ def parse_event_file(path: Path, participant: str, run: str) -> tuple[list[Trial
     )
     if not blocks:
         raise ValueError(f"no block rows in {path}")
+    rt_onsets = [float(row["onset"]) for row in rows if row["trial_type"] == "event_RT"]
 
     trials: list[Trial] = []
     for row in rows:
@@ -75,7 +78,7 @@ def parse_event_file(path: Path, participant: str, run: str) -> tuple[list[Trial
         preceding = [(start, label) for start, label in blocks if start <= onset]
         if not preceding:
             raise ValueError(f"trial precedes every block in {path}: onset {onset}")
-        block = max(preceding)[1]
+        block_start, block = max(preceding)
         partner = partner_from_block(block)
         if trial_type != "missed_trial" and partner not in trial_type:
             raise ValueError(f"trial/block partner mismatch in {path}: {trial_type}, {block}")
@@ -90,6 +93,8 @@ def parse_event_file(path: Path, participant: str, run: str) -> tuple[list[Trial
                 response_time_raw=number(row.get("response_time", "")),
                 offer=number(row.get("Offer", "")),
                 block=block,
+                block_start=block_start,
+                rt_event_present=any(math.isclose(onset, rt_onset, abs_tol=1e-5) for rt_onset in rt_onsets),
             )
         )
     return sorted(trials, key=lambda trial: trial.onset), len(blocks)
@@ -163,12 +168,57 @@ def audit(
                 "response_selection_time": "" if trial.response_time_raw is None else f"{trial.response_time_raw - 1:.6f}",
                 "offer": "" if trial.offer is None else f"{trial.offer:g}",
                 "block": trial.block,
+                "block_start": f"{trial.block_start:.6f}",
+                "rt_event_present": int(trial.rt_event_present),
             }
         )
     for run_trials in by_run.values():
         for current, following in zip(run_trials, run_trials[1:]):
             gap = following.onset - current.onset - current.duration
             (within_gaps if current.block == following.block else between_gaps).append(gap)
+
+    rt_run_rows: list[dict[str, object]] = []
+    responded_trials = [trial for trial in trials if not trial.missed]
+    first_trial_keys: set[tuple[str, str, float, float]] = set()
+    for run_key, run_trials in by_run.items():
+        block_trials: dict[float, list[Trial]] = defaultdict(list)
+        for trial in run_trials:
+            block_trials[trial.block_start].append(trial)
+        first_trial_keys.update(
+            (run_key[0], run_key[1], block_start, min(block_values, key=lambda value: value.onset).onset)
+            for block_start, block_values in block_trials.items()
+        )
+        run_responded = [trial for trial in run_trials if not trial.missed]
+        run_missing = [trial for trial in run_responded if not trial.rt_event_present]
+        run_first = [
+            trial
+            for trial in run_responded
+            if (trial.participant, trial.run, trial.block_start, trial.onset) in first_trial_keys
+        ]
+        rt_run_rows.append(
+            {
+                "participant": run_key[0],
+                "run": run_key[1],
+                "responded_trials": len(run_responded),
+                "rt_event_rows_present": sum(trial.rt_event_present for trial in run_responded),
+                "responded_trials_missing_rt_event": len(run_missing),
+                "first_block_trials": len(run_first),
+                "first_block_trials_missing_rt_event": sum(not trial.rt_event_present for trial in run_first),
+                "nonfirst_trials_missing_rt_event": sum(
+                    not trial.rt_event_present and trial not in run_first for trial in run_responded
+                ),
+            }
+        )
+
+    first_trials = [
+        trial
+        for trial in responded_trials
+        if (trial.participant, trial.run, trial.block_start, trial.onset) in first_trial_keys
+    ]
+    nonfirst_trials = [trial for trial in responded_trials if trial not in first_trials]
+    missing_rt_events = [trial for trial in responded_trials if not trial.rt_event_present]
+    nonfirst_missing = [trial for trial in nonfirst_trials if not trial.rt_event_present]
+    nonfirst_participants = Counter(trial.participant for trial in nonfirst_missing)
 
     participant_rows: list[dict[str, object]] = []
     for participant, group in sample.items():
@@ -191,6 +241,26 @@ def audit(
         {"metric": "runs", "value": len(run_records), "detail": "ultimatum event files"},
         {"metric": "trials", "value": len(trials), "detail": "one row per task trial"},
         {"metric": "missed_trials", "value": sum(trial.missed for trial in trials), "detail": "all partners"},
+        {
+            "metric": "responded_trials_missing_event_RT_row",
+            "value": len(missing_rt_events),
+            "detail": "source BIDS event construction; production 3-column EV still requires verification",
+        },
+        {
+            "metric": "first_block_trials_missing_event_RT_row",
+            "value": sum(not trial.rt_event_present for trial in first_trials),
+            "detail": f"of {len(first_trials)} responded first trials at block onset",
+        },
+        {
+            "metric": "nonfirst_trials_missing_event_RT_row",
+            "value": len(missing_rt_events) - sum(not trial.rt_event_present for trial in first_trials),
+            "detail": "responded trials outside block onset",
+        },
+        {
+            "metric": "runs_with_missing_event_RT_row",
+            "value": sum(row["responded_trials_missing_rt_event"] > 0 for row in rt_run_rows),
+            "detail": f"of {len(rt_run_rows)} runs",
+        },
         {"metric": "trial_duration_mean_seconds", "value": f"{duration_mean:.9f}", "detail": f"SD={duration_sd:.9f}"},
         {"metric": "within_block_gap_mean_seconds", "value": f"{within_mean:.9f}", "detail": f"SD={within_sd:.9f}"},
         {
@@ -200,9 +270,46 @@ def audit(
         },
     ]
 
+    def rt_summary_row(scope: str, values: list[Trial], affected_runs: int, detail: str) -> dict[str, object]:
+        missing = sum(not trial.rt_event_present for trial in values)
+        return {
+            "scope": scope,
+            "evidence_level": "curated_BIDS_events_only",
+            "responded_task_trials": len(values),
+            "companion_event_RT_present": len(values) - missing,
+            "companion_event_RT_missing": missing,
+            "missing_percent": "" if not values else f"{100 * missing / len(values):.6f}",
+            "affected_runs": affected_runs,
+            "total_runs": len(rt_run_rows),
+            "detail": detail,
+        }
+
+    rt_summary_rows = [
+        rt_summary_row(
+            "all_responded_trials",
+            responded_trials,
+            sum(row["responded_trials_missing_rt_event"] > 0 for row in rt_run_rows),
+            "production 3-column EVs and FEAT designs still require verification",
+        ),
+        rt_summary_row(
+            "responded_first_trial_of_block",
+            first_trials,
+            sum(row["first_block_trials_missing_rt_event"] > 0 for row in rt_run_rows),
+            "systematic block-first-trial source-event omission",
+        ),
+        rt_summary_row(
+            "responded_nonfirst_trials",
+            nonfirst_trials,
+            sum(row["nonfirst_trials_missing_rt_event"] > 0 for row in rt_run_rows),
+            ";".join(f"{participant}:{count}" for participant, count in sorted(nonfirst_participants.items())),
+        ),
+    ]
+
     write_tsv(private_output_dir / "task_trial_source_data.tsv", list(trial_rows[0]), trial_rows)
     write_tsv(private_output_dir / "missed_trials_by_participant.tsv", list(participant_rows[0]), participant_rows)
+    write_tsv(private_output_dir / "rt_event_omissions_by_run.tsv", list(rt_run_rows[0]), rt_run_rows)
     write_tsv(output_dir / "task_event_summary.tsv", ["metric", "value", "detail"], summary_rows)
+    write_tsv(output_dir / "rt_event_construction_summary.tsv", list(rt_summary_rows[0]), rt_summary_rows)
     return {"participants": len(sample), "runs": len(run_records), "trials": len(trials), "misses": sum(t.missed for t in trials)}
 
 
