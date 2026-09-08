@@ -11,14 +11,15 @@ make reviewer-behavior
 
 ## Headline behavioral results
 
-- The intended maximal logistic mixed model converges without singularity in
-  R 4.5.2 / lme4 2.0.1. The Offer x Age Group x Partner Similarity coefficient
+- The intended logistic mixed model with participant-specific intercepts and
+  offer-size slopes converges without singularity in R 4.5.2 / lme4 2.0.1.
+  The Offer x Age Group x Partner Similarity coefficient
   is 0.06665 (SE 0.09452, z = 0.705, p = .481, Wald 95% CI [-0.11861,
   0.25191]; 47 participants, 4,439 trials). Five `allFit` optimizers agree on
   the estimate and all converge without singularity.
 - A random-intercept robustness model also yields no three-way interaction:
   beta = 0.02579, SE = 0.09227, z = 0.279, p = .780, 95% CI [-0.15506,
-  0.20663]. It should not replace the better-supported converged maximal model.
+  0.20663]. It should not replace the better-supported intended slope model.
 - The submitted two-model fairness-sensitivity score is exactly reproducible
   up to numerical tolerance (r > .999999999; maximum absolute discrepancy
   4.2e-6). A unified uncorrelated random-effects model is nonsingular; its
@@ -53,7 +54,7 @@ make reviewer-behavior
 
 - `tables/primary_acceptance_models.tsv`: fixed effects, uncertainty, sample
   sizes, convergence, and singularity for the primary and robustness models.
-- `tables/primary_optimizer_diagnostics.tsv`: maximal-model agreement across
+- `tables/primary_optimizer_diagnostics.tsv`: primary-model agreement across
   optimizers.
 - `tables/fairness_sensitivity_*.tsv`: unified model,
   interpretation-relevant diagnostics, and aggregate age comparison.
@@ -76,9 +77,11 @@ make reviewer-behavior
 - `tables/dmn_roi_influence_summary.tsv`: descriptive selected-ROI diagnostics
   and leave-one-out coefficient range. Participant rows remain in `private/`.
 
-Production imaging provenance and image-level robustness remain server-gated.
-See `docs/SERVER_IMAGING_AUDIT.md`; the collection script is strictly
-read-only and does not run FEAT or permutation inference.
+Production imaging provenance remains server-gated. See
+`docs/SERVER_IMAGING_AUDIT.md`; the collection script is strictly read-only and
+does not run FEAT, permutation inference, reduced-nuisance models, or
+participant-deletion analyses. Robust FLAME deweighting and any genuinely
+missing L3 contrast remain separate author-pending decisions.
 
 Participant-level event, sensitivity, rating, and completeness tables are
 written to the ignored `private/` directory. They use study identifiers but no

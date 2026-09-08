@@ -6,7 +6,8 @@ This document records what can be established from the submitted manuscript,
 tracked repository, and reviewer materials before any inferential result is
 changed. It separates the submitted analysis from revision analyses and from
 proposed server-side checks. Git history remains the provenance record for
-files later removed from the active checkout.
+retained files; `docs/HISTORY_REWRITE.md` records the authorized removal of
+generated and unrelated historical material.
 
 ## Status vocabulary
 
@@ -28,8 +29,8 @@ The machine-readable companion is
 | Analysis sample | Established | `behavioral_analyses/data/participant_L3_47.csv` contains 47 participants (25 younger, 22 older). Human-partner response data contain 4,439 responded trials. |
 | Outcome and coding | Established | Trial acceptance is binary. The reconstructed model uses dissimilar partner and younger age as reference levels, with offer centered at its observed mean. Coding will be printed in revision tables rather than left implicit. |
 | Submitted fixed effects | Established | `Offer * PartnerSimilarity * AgeGroup`. The submitted text said the maximal random-effects model failed and reported a simplified model. |
-| Maximal random effects | Revision analysis | With R 4.5.2/lme4 2.0.1 and `bobyqa` (`maxfun=200000`), `(1 + centered_offer | participant)` converges without a singular fit. All five available `allFit` optimizers agree. The three-way coefficient is 0.06665 (SE 0.09452, z 0.705, p 0.481; Wald 95% CI -0.11861 to 0.25191). The maximal model should now be primary; the random-intercept model is a robustness result. |
-| Random-intercept sensitivity | Revision analysis | The three-way coefficient is about 0.02579 (SE 0.09227, z 0.279, p 0.780; Wald 95% CI -0.1551 to 0.2066). Its likelihood is materially worse than the converged maximal model. |
+| Intended random intercept/slope model | Revision analysis | With R 4.5.2/lme4 2.0.1 and `bobyqa` (`maxfun=200000`), `(1 + centered_offer | participant)` converges without a singular fit. All five available `allFit` optimizers agree. The three-way coefficient is 0.06665 (SE 0.09452, z 0.705, p 0.481; Wald 95% CI -0.11861 to 0.25191). This intended participant-intercept and offer-slope model is primary; the random-intercept model is a secondary robustness result. |
+| Random-intercept sensitivity | Revision analysis | The three-way coefficient is about 0.02579 (SE 0.09227, z 0.279, p 0.780; Wald 95% CI -0.1551 to 0.2066). Its likelihood is materially worse than the converged intended slope model. |
 | Submitted fairness-sensitivity score | Established | Separate partner-specific logistic random-slope models can reproduce `in_out_sensitivity_indiv_logit.csv` to numerical precision (maximum absolute discrepancy below 7e-6). The score is the similar-partner offer slope minus the dissimilar-partner offer slope. |
 | Unified fairness-sensitivity model | Revision analysis | A single correlated random-effects model is singular. An uncorrelated random-effects specification converges without singularity and estimates a fixed Offer x Similarity effect of -0.05299 (SE 0.06223, z -0.851, p 0.395). The participant interaction-slope SD is 0.1557. Its shrunken participant slopes correlate r=0.672 with the submitted two-model score, so the quantities are related but not interchangeable. |
 
@@ -56,12 +57,12 @@ not a substitute for those outputs.
 | First-level activation model | Established | `templates/L1_task-ultimatum_model-02_type-act.fsf` specifies nine EVs: computer/similar/dissimilar constants and offer parametric modulators, RT constant and RT parametric modulator, and missed trials. Contrasts 7-10 encode similar-minus-dissimilar offer modulation, social-minus-computer offer modulation, similar-minus-dissimilar constant, and social-minus-computer constant. |
 | Network PPI model | Established | The tracked nPPI template has 28 EVs and 11 contrasts. The manuscript uses ten-network simultaneous regression and targets network 3 (DMN) or 7 (ECN). Network-map origin and exact production template checksum remain unresolved. |
 | Group structure for submitted contrasts | Established | The submitted DMN analysis takes one participant-level similar-minus-dissimilar contrast per participant and tests age groups with sex, tSNR, mean FD, and RT covariates. The submitted ECN analysis adds age-group-specific fairness-sensitivity covariates. Thus the submitted design does not duplicate each participant as two independent rows. |
-| Inference | Established | The manuscript reports FLAME 1+2 with voxel Z > 3.1 and cluster-corrected p < .05. The two focal network clusters contain 26 and 23 nonzero voxels in the tracked masks. Small-cluster robustness remains a required server-side audit. |
+| Inference | Established/production pending | The manuscript reports FLAME 1+2 with voxel Z > 3.1 and cluster-corrected p < .05. The two focal network clusters contain 26 and 23 nonzero voxels in the tracked masks. The required server audit must recover the exact production threshold command, search mask, smoothness/GRF quantities, corrected probabilities, and minimum significant cluster extent. Small extent alone does not motivate alternative inference. |
 | Output grid | Unresolved | Tracked focal masks report 2.973 x 2.973 x 3.220 mm voxels, whereas the manuscript reports 2.97 x 2.97 x 2.80 mm acquisition voxels. Acquisition and normalized output grids may legitimately differ, but the Methods must label each explicitly after production headers are checked. |
 | fMRIPrep version | Unresolved | The manuscript says fMRIPrep 20.2.3. The earliest tracked wrapper names 20.1.0 and the current wrapper uses 23.2.1. The analyzed derivative's HTML/`dataset_description.json` or container record must establish the production version. |
 | OpenNeuro version | Provisional | The manuscript cites ds003745 version 2.0.2. The BIDS changelog formerly committed to this repository reached 2.1.1. Analyses should retain the exact analyzed snapshot while public availability can point to the current dataset. |
 | Current L3 shell script | Historical/defective | `code/L3stats_SANS.sh` has a split redirection that truncates the rendered FSF. It cannot be treated as a safe reproduction path. Submitted outputs predate the current defect; revision checks must use the audited, render-first server command instead. |
-| DMN influence diagnostic | Revision analysis | A descriptive ROI diagnostic identifies sub-138 above a 4/n Cook's-distance screen and sub-154 near that screen. Because the ROI is selected from the group result, these are not independent hypothesis tests and no participant is labeled an outlier solely from this plot. A leave-one-participant-out image-level check is proposed. |
+| DMN influence diagnostic | Revision analysis | A descriptive ROI diagnostic identifies sub-138 above a 4/n Cook's-distance screen and sub-154 near that screen. Because the ROI is selected from the same group result, it cannot justify deleting either participant or rerunning the model after participant exclusion. The only possible image-level sensitivity analysis currently under consideration is FLAME robust outlier deweighting with all 47 participants, pending production-version audit and author approval. |
 | Tracked L3 matrix diagnostics | Revision audit | Both focal tracked templates have 47 unique input paths, a single group-membership value, and full column rank. Scaled condition numbers are 4.54-4.56 and the maximum no-intercept design variance factor is 4.62 (driven by mean FD). Production `design.mat` files must still be compared to these templates. |
 
 ## Required read-only server audit
@@ -76,15 +77,19 @@ derivative tree. It must capture:
    `design.grp`, cluster tables, and relevant log files;
 3. input counts, participant order, cope mapping, covariate columns, rank,
    condition number, variance-inflation diagnostics, and group membership;
-4. cluster extent and corrected p-values under the submitted threshold plus
-   transparent voxelwise/permutation or leave-one-out sensitivity checks if
-   computationally approved;
+4. the exact submitted cluster-inference command, search mask, smoothness/GRF
+   quantities, cluster extent and corrected p-values, and the minimum
+   significant extent at the recorded Z = 3.1 and p = .05 parameters;
 5. main effects, within-age simple effects, and the computer condition from
-   already-estimated first-level contrasts before any new FEAT run is proposed.
+   already-estimated outputs before any new L3 contrast is proposed; and
+6. actual first-level activation/nPPI design estimability and the complete RT
+   event-construction chain, including the possible first-trial RT omission.
 
-The audit is non-mutating. Any image-level re-estimation or permutation test
-must be reviewed and launched on the designated Linux host, with outputs in a
-new versioned directory.
+The audit is non-mutating. It does not prepare or run permutation/TFCE,
+tSNR-removal, participant-deletion, or unified-sensitivity ECN analyses. After
+the production audit, robust FLAME deweighting or genuinely missing L3
+contrasts may be proposed in versioned directories, but only after a separate
+scientific decision.
 
 ## Repository-size audit and cleanup boundary
 

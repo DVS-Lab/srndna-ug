@@ -26,9 +26,9 @@ Suggested replacement:
 > 0.0667 (SE = 0.0945, z = 0.705, p = .481, 95% CI [-0.1186, 0.2519]; 47
 > participants, 4,439 trials). A random-intercept-only robustness model led to
 > the same inferential conclusion (β = 0.0258, SE = 0.0923, z = 0.279,
-> p = .780, 95% CI [-0.1551, 0.2066]). We now report the converged maximal model
-> as primary and avoid interpreting the nonsignificant interaction as evidence
-> of equivalence.
+> p = .780, 95% CI [-0.1551, 0.2066]). We now report the intended
+> random-intercept and random-offer-slope model as primary and avoid
+> interpreting the nonsignificant interaction as evidence of equivalence.
 
 ## Completed reviewer analyses
 
@@ -49,9 +49,12 @@ mean a steeper offer-acceptance slope for similar than dissimilar partners;
 negative values mean the reverse. The standardized difference is Hedges'
 g = -0.11 (approximate 95% CI [-0.68, 0.46]).
 
-**Server pending:** Re-fit the focal ECN group result with the unified score
-only after the exact production design and inputs are established. Do not claim
-neural robustness from the behavioral correlation alone.
+**Author decision pending:** First compare the estimands, scaling, shrinkage,
+distribution, age association, and r = .672 correspondence of the submitted
+and unified participant measures. Do not construct or run a new ECN group model
+unless that comparison supports it and the author decides it is scientifically
+useful. The behavioral correlation is not evidence of equivalence or neural
+robustness.
 
 ### Missed trials and response time
 
@@ -88,17 +91,19 @@ limitation remains.
 Both focal tracked L3 templates contain 47 unique participant inputs, are full
 rank, and use one group-membership value. Scaled condition numbers are 4.54 and
 4.56. The maximum no-intercept design variance factor is 4.62. tSNR and mean FD
-are strongly correlated (r = -0.796), so reduced-nuisance robustness is
-warranted for the focal group results even though the tracked matrices remain
-estimable.
+are correlated (r = -0.796); this is a descriptive design fact, not a
+methodological defect or a reason to remove either prespecified nuisance
+covariate. No reduced-nuisance model is planned.
 
 The selected DMN ROI diagnostic has one participant above Cook's 4/n screening
 threshold. Across descriptive leave-one-participant-out fits, the older-group
 coefficient ranges from -16.55 to -13.66 and remains small-p in every fit. This
 does not answer the inferential concern because the ROI was selected from the
-group result. The reviewer response should say the descriptive plot is not
-driven by a single observation, while reserving the corrected image-level
-claim for the server analysis.
+group result. It must not be used to exclude sub-138 or any other participant.
+After production provenance is established, the audit should explain whether
+the installed FSL version supports robust FLAME outlier deweighting for this
+FLAME 1+2 model. Such a complete-sample sensitivity analysis remains
+author-pending and must not redefine the primary result.
 
 ## Established task and model details
 
@@ -128,9 +133,13 @@ claim for the server analysis.
 5. Corrected main effects, within-age simple effects, and social-versus-computer
    results from existing contrasts.
 6. First-level design correlations and RT/offer-modulator estimability.
-7. Image-level leave-one-out, reduced-nuisance, and alternate-inference
-   robustness for the two focal clusters.
-8. ECN focal-result robustness to the unified behavioral interaction slope.
+7. Exact behavior of robust FLAME outlier deweighting in the production FSL
+   version, including compatibility, settings, and diagnostic outputs; do not
+   run it without author approval.
+8. A statistical comparison of the submitted and unified sensitivity measures;
+   do not build a new ECN L3 model without a subsequent scientific decision.
+9. An inventory classifying main/simple/computer-effect requests as existing,
+   descriptive, genuinely new, or not scientifically recommended.
 
 Use `docs/SERVER_IMAGING_AUDIT.md` to collect the evidence. Do not run the
 tracked `L3stats_SANS.sh`; its current FSF redirection is defective.

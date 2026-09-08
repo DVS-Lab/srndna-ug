@@ -32,24 +32,25 @@ audit directories to the analyst for review before any rerun.
    focal group maps are on a 2.973 x 2.973 x 3.220 mm normalized grid?
 3. Do production `design.mat`, `design.con`, `design.grp`, and `design.fsf`
    match the tracked 47-input, one-contrast-per-participant reconstruction?
-4. What are the exact corrected p-values, extents, peaks, and smoothness values
-   for the 26-voxel DMN and 23-voxel ECN clusters?
+4. What are the exact corrected p-values, extents, peaks, search mask,
+   smoothness/GRF values, and minimum significant extents for the 26-voxel DMN
+   and 23-voxel ECN clusters under the submitted Z = 3.1 and p = .05 settings?
 5. Are the sex, tSNR, FD, RT, and group-specific sensitivity EVs centered and
    sufficiently non-collinear in the production matrix?
 
-## Conditional image-level work
+## Analyses deliberately excluded from this audit
 
-After the read-only audit, create new versioned output directories for any
-approved robustness work. Do not overwrite submitted results. Candidate checks
-are:
+Do not prepare or run permutation/TFCE inference, a model dropping tSNR,
+participant-deletion or leave-one-participant-out FLAME models, or an automatic
+ECN rerun with the unified behavioral slope. The production audit is intended
+to reconstruct the submitted inference and inventory existing outputs.
 
-- permutation/voxelwise inference for the two focal contrasts;
-- leave-one-participant-out refits for influence;
-- within-age simple effects using explicit estimable contrasts;
-- main effects and social-versus-computer contrasts already supported by the
-  first-level model.
+After the audit, possible robust FLAME outlier deweighting with all 47
+participants may be described for author consideration. Genuinely missing
+main/simple effects may likewise be proposed only after existing outputs are
+inventoried. Any approved analysis must use a new versioned directory and must
+not overwrite or relabel the submitted result.
 
-The exact commands depend on the audited production matrix, masks, exchangeability
-structure, and FSL version. Writing generic `randomise` commands before those
-facts are known would create avoidable scientific risk, so this repository
-deliberately gates execution on the provenance bundle.
+The exact commands depend on the audited production matrix, masks, and FSL
+version. This repository therefore gates all execution on the provenance bundle
+and a subsequent scientific decision.
