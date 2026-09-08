@@ -68,6 +68,9 @@ make reviewer-behavior
 - `tables/rt_event_construction_summary.tsv`: aggregate source-BIDS evidence
   for missing companion RT-event rows. Run-level details remain in the ignored
   `private/rt_event_omissions_by_run.tsv`.
+- `tables/production_rt_ev_audit.tsv`: aggregate production-server inventory
+  of current RT EVs and retained activation designs. Participant/run rows and
+  absolute server paths remain under ignored `logs/audits/`.
 - `tables/response_time_*.tsv`: exact response-time model and group summaries.
 - `tables/partner_ratings_human_contrasts.tsv`: aggregate human-partner rating
   contrasts.
@@ -85,7 +88,9 @@ make reviewer-behavior
 - `tables/dmn_roi_influence_summary.tsv`: descriptive selected-ROI diagnostics
   and leave-one-out coefficient range. Participant rows remain in `private/`.
 
-Production imaging provenance remains server-gated. See
+Production imaging provenance remains server-gated. The RT audit has verified
+92/94 analysis-sample runs and isolated both sub-143 runs for provenance
+tracing; this does not authorize an L1 rerun. See
 `docs/SERVER_IMAGING_AUDIT.md`; the collection script is strictly read-only and
 does not run FEAT, permutation inference, reduced-nuisance models, or
 participant-deletion analyses. Robust FLAME deweighting and any genuinely

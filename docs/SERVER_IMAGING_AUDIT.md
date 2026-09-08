@@ -34,12 +34,24 @@ python3 code/audit_server_rt_events.py \
   --bids-root source_data/bids \
   --ev-root /ZPOOL/data/projects/srndna-ug/derivatives/fsl/EVfiles \
   --l1-root /ZPOOL/data/projects/srndna-ug/derivatives/fsl \
-  --output-dir logs/audits/server/rt-production
+  --output-dir logs/audits/server/rt-production \
+  --tracked-summary results/reviewer/tables/production_rt_ev_audit.tsv
 ```
 
-Return the printed `PASS` and `SUB143` lines plus
-`logs/audits/server/rt-production/rt_production_summary.tsv`. The detailed
-run table remains in the ignored audit directory and must not be committed.
+The optional tracked output contains aggregate counts only and is safe to
+commit. Return the printed `PASS` and `SUB143` lines plus the ignored audit
+directory for private review. Do not commit
+`logs/audits/server/rt-production/rt_production_by_run.tsv`: it contains
+participant/run rows and absolute production paths.
+
+The 2026-09-07 production run found rendered activation FSFs for all 94
+analysis-sample runs. Ninety-two retained `design.mat` files had current RT and
+RT-pmod EVs whose row counts matched the curated source `event_RT` counts, and
+both original RT columns were nonconstant. The only exceptions were both
+sub-143 runs: their rendered FSFs remain, but their current EV files, three
+main-task EV files, and `design.mat` were not found. No rerun is authorized by
+this finding. Trace whether those runs contributed to L2/L3 and whether
+historical FEAT artifacts exist before deciding how to handle them.
 
 ## Questions the bundle must resolve
 

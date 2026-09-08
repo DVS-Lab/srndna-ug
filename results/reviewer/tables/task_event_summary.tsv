@@ -3,7 +3,7 @@ participants	47	analysis sample
 runs	94	ultimatum event files
 trials	6768	one row per task trial
 missed_trials	113	all partners
-responded_trials_missing_event_RT_row	931	source BIDS event construction; production 3-column EV still requires verification
+responded_trials_missing_event_RT_row	931	source BIDS event construction; see production RT audit for the isolated sub-143 exception
 first_block_trials_missing_event_RT_row	805	of 805 responded first trials at block onset
 nonfirst_trials_missing_event_RT_row	126	responded trials outside block onset
 runs_with_missing_event_RT_row	94	of 94 runs

@@ -95,7 +95,14 @@ def event_counts(path: Path) -> tuple[int, int]:
     return responded, rt_rows
 
 
-def audit(bids_root: Path, ev_root: Path, l1_root: Path, sample: Path, output_dir: Path) -> dict[str, object]:
+def audit(
+    bids_root: Path,
+    ev_root: Path,
+    l1_root: Path,
+    sample: Path,
+    output_dir: Path,
+    tracked_summary: Path | None = None,
+) -> dict[str, object]:
     run_rows: list[dict[str, object]] = []
     for participant in sample_ids(sample):
         for run in ("01", "02"):
@@ -178,6 +185,8 @@ def audit(bids_root: Path, ev_root: Path, l1_root: Path, sample: Path, output_di
     ]
     write_tsv(output_dir / "rt_production_by_run.tsv", run_rows)
     write_tsv(output_dir / "rt_production_summary.tsv", summary_rows)
+    if tracked_summary is not None:
+        write_tsv(tracked_summary, summary_rows)
     sub143 = [row for row in run_rows if row["participant"] == "sub-143"]
     print("PASS: " + ", ".join(f"{row['metric']}={row['value']}" for row in summary_rows))
     for row in sub143:
@@ -209,12 +218,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--l1-root", type=Path, required=True)
     parser.add_argument("--sample", type=Path, default=root / "behavioral_analyses" / "data" / "participant_L3_47.csv")
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--tracked-summary",
+        type=Path,
+        help="optional aggregate-only TSV suitable for version control; never contains run rows or server paths",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    audit(args.bids_root, args.ev_root, args.l1_root, args.sample, args.output_dir)
+    audit(args.bids_root, args.ev_root, args.l1_root, args.sample, args.output_dir, args.tracked_summary)
     return 0
 
 

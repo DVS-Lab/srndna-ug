@@ -61,13 +61,19 @@ class ServerRTEventAuditTests(unittest.TestCase):
                     encoding="utf-8",
                 )
             output = base / "output"
-            result = audit(base / "bids", base / "ev", l1_root, sample, output)
+            tracked_summary = base / "tracked" / "summary.tsv"
+            result = audit(base / "bids", base / "ev", l1_root, sample, output, tracked_summary)
             self.assertEqual(result["analysis_sample_runs_expected"], 2)
             self.assertEqual(result["rt_files_found_now"], 2)
             with (output / "rt_production_by_run.tsv").open(newline="") as stream:
                 rows = list(csv.DictReader(stream, delimiter="\t"))
             self.assertEqual(rows[0]["source_responded_trials"], "2")
             self.assertEqual(rows[0]["rt_file_rows_now"], "1")
+            with tracked_summary.open(newline="") as stream:
+                summary = list(csv.DictReader(stream, delimiter="\t"))
+            self.assertEqual(summary[0]["metric"], "analysis_sample_runs_expected")
+            self.assertNotIn("participant", summary[0])
+            self.assertNotIn("rt_file_path_from_fsf", summary[0])
 
 
 if __name__ == "__main__":

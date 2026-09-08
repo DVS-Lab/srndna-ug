@@ -244,7 +244,7 @@ def audit(
         {
             "metric": "responded_trials_missing_event_RT_row",
             "value": len(missing_rt_events),
-            "detail": "source BIDS event construction; production 3-column EV still requires verification",
+            "detail": "source BIDS event construction; see production RT audit for the isolated sub-143 exception",
         },
         {
             "metric": "first_block_trials_missing_event_RT_row",
@@ -289,7 +289,7 @@ def audit(
             "all_responded_trials",
             responded_trials,
             sum(row["responded_trials_missing_rt_event"] > 0 for row in rt_run_rows),
-            "production 3-column EVs and FEAT designs still require verification",
+            "production verified for 92/94 runs; both sub-143 runs require downstream provenance tracing",
         ),
         rt_summary_row(
             "responded_first_trial_of_block",

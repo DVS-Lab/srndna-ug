@@ -72,7 +72,7 @@ result as descriptive/exploratory. The task source confirms that the partner,
 offer, and selected response remained visible through the approximately 3.5-s
 epoch, so first-level task regressors do not isolate deliberation.
 
-### RT nuisance-event construction: production verification required
+### RT nuisance-event construction: production exception isolated
 
 The curated BIDS event files contain 6,655 responded task trials, but only
 5,724 matching `event_RT` rows. All 805 responded first trials of blocks lack
@@ -81,12 +81,20 @@ both of that participant's runs contain no `event_RT` rows at all. Thus 931
 responded trials (13.99%) lack the source row used by the RT 3-column
 conversion. The substantive task-event rows remain present for these trials.
 
-This is a source-event audit, not evidence that the production EVs or FEAT
-design necessarily have the same omissions. The exact production
-`run-*_event_RT.txt`, `run-*_event_RT_pmod.txt`, rendered `design.fsf`, and
-`design.mat` files must be checked next. Do not silently regenerate EVs or
-rerun L1. First establish the production magnitude and assess the limited role
-of RT as a nuisance regressor.
+The read-only production audit found all 94 rendered activation FSFs. For 92
+runs, the current RT and RT-pmod files match the number of source `event_RT`
+rows, all three main-task EV files are present, and the retained `design.mat`
+contains nonconstant original RT and RT-pmod columns. The only unresolved runs
+are both runs of sub-143: their FSFs remain, but current RT, RT-pmod, main-task
+EVs, and `design.mat` files are absent. The tracked sub-143 source event TSVs
+are byte-identical to OpenNeuro ds003745 snapshot 2.0.2 and retain all 72
+responses per run, but contain no `event_RT` rows.
+
+Do not silently regenerate EVs or rerun L1. First trace whether historical
+sub-143 L1 outputs fed L2/L3 and whether small retained logs or statistics can
+establish the submitted design. The source BIDS TSVs are public; the FSL
+3-column EVs are generated derivatives and should be reproducibly rebuilt only
+if a rerun is later approved.
 
 ### Partner ratings
 
@@ -148,9 +156,9 @@ author-pending and must not redefine the primary result.
    probabilities, and confirmation that no post-statistics ROI mask was used.
 5. Corrected main effects, within-age simple effects, and social-versus-computer
    results from existing contrasts.
-6. First-level design correlations and RT/offer-modulator estimability,
-   including whether the production RT EVs reproduce the 805 block-first-trial
-   and 126 additional sub-143 source-event omissions.
+6. Remaining first-level design correlations and RT/offer-modulator
+   estimability, including downstream provenance for both sub-143 runs. The
+   other 92 activation designs and current RT EV row counts are verified.
 7. Exact behavior of robust FLAME outlier deweighting in the production FSL
    version, including compatibility, settings, and diagnostic outputs; do not
    run it without author approval.
