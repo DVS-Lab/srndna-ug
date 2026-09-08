@@ -1,0 +1,10 @@
+analysis_type	entry	input_index	path
+act	outputdir		/data/projects/srndna-ultimatum/derivatives/fsl/sub-143/L2_task-ultimatum_model-02_type-act_sm-6
+act	feat_file	1	/data/projects/srndna-ultimatum/derivatives/fsl/sub-143/L1_task-ultimatum_model-02_type-act_run-01_sm-6.feat
+act	feat_file	2	/data/projects/srndna-ultimatum/derivatives/fsl/sub-143/L1_task-ultimatum_model-02_type-act_run-02_sm-6.feat
+nppi-dmn	outputdir		/data/projects/srndna-ultimatum/derivatives/fsl/sub-143/L2_task-ultimatum_model-02_type-nppi-dmn_sm-6
+nppi-dmn	feat_file	1	/data/projects/srndna-ultimatum/derivatives/fsl/sub-143/L1_task-ultimatum_model-02_type-nppi-dmn_run-01_sm-6.feat
+nppi-dmn	feat_file	2	/data/projects/srndna-ultimatum/derivatives/fsl/sub-143/L1_task-ultimatum_model-02_type-nppi-dmn_run-02_sm-6.feat
+nppi-ecn	outputdir		/data/projects/srndna-ultimatum/derivatives/fsl/sub-143/L2_task-ultimatum_model-02_type-nppi-ecn_sm-6
+nppi-ecn	feat_file	1	/data/projects/srndna-ultimatum/derivatives/fsl/sub-143/L1_task-ultimatum_model-02_type-nppi-ecn_run-01_sm-6.feat
+nppi-ecn	feat_file	2	/data/projects/srndna-ultimatum/derivatives/fsl/sub-143/L1_task-ultimatum_model-02_type-nppi-ecn_run-02_sm-6.feat

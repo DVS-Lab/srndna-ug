@@ -8,6 +8,13 @@ The repository contains behavioral/task data, analysis code, FSL templates,
 network and ROI masks, and compact revision outputs. MRI images are distributed
 through OpenNeuro dataset `ds003745`, not through this Git repository.
 
+This `DVS-Lab/srndna-ug` repository and its `main` branch are the repository of
+record for this paper. The older `srndna` and `srndna-datapaper` repositories
+remain historical/upstream sources, while the server directory
+`srndna-ultimatum` stores legacy production derivatives. See
+`docs/REPOSITORY_OF_RECORD.md`; do not merge those Git histories or treat a
+partial derivative mirror as authoritative.
+
 ## Current reproducible entry points
 
 From the repository root:
@@ -43,6 +50,8 @@ Exact behavioral package versions are written to
 - `logs/records/`: the manuscript-result manifest and durable audit records.
 - `docs/SERVER_IMAGING_AUDIT.md`: read-only handoff for production imaging
   provenance and the gate before any image-level rerun.
+- `docs/REPOSITORY_OF_RECORD.md`: canonical ownership and boundaries among the
+  paper repository, OpenNeuro source data, and legacy production derivatives.
 
 Start with `code/WORKFLOW_AUDIT.md`. It distinguishes established submitted
 analyses, revision analyses, provisional reconstructions, and unresolved

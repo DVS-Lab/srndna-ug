@@ -112,6 +112,17 @@ sub-143 at input 34 and would resolve to the relevant L2 cope 7; the separate
 81 for copes 4 and 6. The exact legacy root, L2 input declarations, and
 submitted L3 `design.fsf` are therefore decisive.
 
+The legacy-root follow-up found all nine queried sub-143 L2 outputs:
+activation, DMN nPPI, and ECN nPPI copes 4, 6, and 7, dated August 2021. The
+retained L2 FSFs declare the two corresponding legacy L1 runs as inputs. Thus
+sub-143 had the exact cope 7 files required by the focal 47-input templates and
+the cope 4/6 files required by the condition-stacked templates. This resolves
+the apparent missing-output problem as a split between the current derivative
+mirror and the legacy production store. It does not yet resolve the RT design:
+the legacy L1 `design.mat` and EV files must be audited directly. A rendered L3
+FSF referencing sub-143 was not found by the initial legacy-tree scan, so the
+actual submitted L3 output directory also remains to be located.
+
 ### Partner ratings
 
 There are 41 complete unique pre-task administrations and 39 complete unique

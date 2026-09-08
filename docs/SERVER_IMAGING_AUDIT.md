@@ -72,6 +72,14 @@ using L2 copes 4 and 6. The current-tree shells therefore do not establish that
 the submitted models lacked sub-143. Audit the exact legacy root and its L3
 outputs before any regeneration.
 
+The legacy-root check found all nine queried sub-143 L2 cope images
+(activation, DMN nPPI, and ECN nPPI; copes 4, 6, and 7), with August 2021
+timestamps. Its L2 FSFs point to the two legacy L1 runs for each analysis type.
+The focal cope 7 and condition-stacked cope 4/6 inputs therefore exist in the
+template-named store. The next RT audit must use legacy `--ev-root` and
+`--l1-root` arguments. The current `srndna-ug` derivative mirror is not a
+substitute for that production tree.
+
 ## Questions the bundle must resolve
 
 1. Which fMRIPrep version/container produced the analyzed BOLD files? The

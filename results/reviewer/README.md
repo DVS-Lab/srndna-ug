@@ -81,6 +81,9 @@ make reviewer-behavior
   `tables/l3_template_sub143_inputs.tsv`: declared input counts and exact
   sub-143 entries across every tracked L3 template, including unresolved
   substitution placeholders.
+- `tables/sub143_legacy_production_inventory.tsv` and
+  `tables/sub143_legacy_l2_inputs.tsv`: existence metadata for the nine legacy
+  sub-143 L2 copes and the exact L1 inputs declared by their L2 FSFs.
 - `tables/response_time_*.tsv`: exact response-time model and group summaries.
 - `tables/partner_ratings_human_contrasts.tsv`: aggregate human-partner rating
   contrasts.
