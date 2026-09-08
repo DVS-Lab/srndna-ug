@@ -24,6 +24,23 @@ Replace the paths with the exact production directories; do not point at a
 newer preprocessing tree merely because it is convenient. Return the two
 audit directories to the analyst for review before any rerun.
 
+For the RT stop-condition audit, use the 47-person tracked sample and the exact
+production FSL tree. This command reads current EV files plus the retained
+rendered activation FSFs/design matrices. It does not recreate an EV or invoke
+FEAT:
+
+```bash
+python3 code/audit_server_rt_events.py \
+  --bids-root source_data/bids \
+  --ev-root /ZPOOL/data/projects/srndna-ug/derivatives/fsl/EVfiles \
+  --l1-root /ZPOOL/data/projects/srndna-ug/derivatives/fsl \
+  --output-dir logs/audits/server/rt-production
+```
+
+Return the printed `PASS` and `SUB143` lines plus
+`logs/audits/server/rt-production/rt_production_summary.tsv`. The detailed
+run table remains in the ignored audit directory and must not be committed.
+
 ## Questions the bundle must resolve
 
 1. Which fMRIPrep version/container produced the analyzed BOLD files? The

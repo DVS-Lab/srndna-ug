@@ -6,6 +6,7 @@
 | --- | --- | --- |
 | `validate_workflow.sh` | Shell/Python/R syntax, unit tests, task-event audit, and optional FSL header checks | No |
 | `audit_task_events.py` | Reconstruct one task row per BIDS trial, recover the partner for misses, and audit timing | No |
+| `audit_server_rt_events.py` | Compare the 47-person source RT rows, production 3-column EV files, rendered activation FSFs, and retained design-matrix RT columns | No |
 | `analyze_reviewer_behavior.R` | Primary/refit logistic models, unified sensitivity, misses, RT, ratings, figures, and exact tables | No |
 | `audit_image_headers.py` | Checksum and inspect tracked focal masks with `fslhd`/`fslstats` | No |
 | `audit_l3_designs.R` | Parse tracked submitted L3 templates; audit inputs, rank, conditioning, EVs, and contrasts | No |
@@ -33,10 +34,10 @@ are collected; their presence does not make them safe to run.
 
 ## Server work
 
-The only active server-side command at this stage is the read-only provenance
-collector documented in `../docs/SERVER_IMAGING_AUDIT.md`. It intentionally
-does not provide generic FEAT or permutation commands before the production
-design, masks, software versions, and exchangeability assumptions are verified.
+The only active server-side commands at this stage are the read-only provenance
+and RT-design audits documented in `../docs/SERVER_IMAGING_AUDIT.md`. They
+intentionally do not provide generic FEAT or permutation commands before the
+production design, masks, and software versions are verified.
 
 ## Tests
 
@@ -44,7 +45,8 @@ design, masks, software versions, and exchangeability assumptions are verified.
 make test
 ```
 
-Synthetic tests cover missed-trial partner recovery and image-header parsing.
+Synthetic tests cover missed-trial partner recovery, RT-EV/design matching, and
+image-header parsing.
 The validation target also runs the event audit against the current 47-person
 sample and checks that active revision scripts contain no personal absolute
 paths.

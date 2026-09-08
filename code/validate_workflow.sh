@@ -11,7 +11,7 @@ echo "PASS: active shell syntax"
 
 PYTHONPYCACHEPREFIX="${TMPDIR:-/tmp}/srndna-ug-pycache" \
     python3 -m py_compile "$script_dir/audit_task_events.py" "$script_dir/audit_image_headers.py" \
-    "$script_dir/archive_generated_artifacts.py"
+    "$script_dir/audit_server_rt_events.py" "$script_dir/archive_generated_artifacts.py"
 echo "PASS: active Python syntax"
 
 if command -v Rscript >/dev/null 2>&1; then
@@ -34,7 +34,8 @@ fi
 
 if grep -En '/Users/[^/]+|/home/[^/]+' \
     "$script_dir/audit_task_events.py" "$script_dir/audit_image_headers.py" \
-    "$script_dir/audit_l3_designs.R" "$script_dir/audit_roi_influence.R"; then
+    "$script_dir/audit_server_rt_events.py" "$script_dir/audit_l3_designs.R" \
+    "$script_dir/audit_roi_influence.R"; then
     echo "ERROR: active reviewer workflow contains a personal absolute path" >&2
     exit 1
 fi
