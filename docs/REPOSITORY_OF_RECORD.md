@@ -13,10 +13,11 @@ external datasets and derivatives:
   and submission-facing documentation.
 - OpenNeuro `ds003745` owns the public BIDS dataset. The analyzed snapshot must
   be identified explicitly; the manuscript cites version 2.0.2.
-- `/ZPOOL/data/projects/srndna-ultimatum` is the legacy production-derivative
-  root named by the submitted FSL templates. It is evidence storage, not a
-  second repository of record. NIfTI/FEAT payloads remain there and are
-  referenced by inventories and checksums rather than copied into Git.
+- `/ZPOOL/data/projects/srndna-ultimatum` is a confirmed non-Git legacy
+  production-derivative root named by the submitted FSL templates. It is
+  evidence storage, not a second repository of record. NIfTI/FEAT payloads
+  remain there and are referenced by inventories and checksums rather than
+  copied into Git.
 - `/ZPOOL/data/projects/srndna-ug` is the current Linux checkout/work area. Its
   local derivative mirror must not be assumed to be authoritative when it
   differs from the template-named legacy root.
@@ -38,6 +39,10 @@ checkout. If a rerun is approved later, render a new versioned FSF from a
 portable template; never edit an old production FSF and relabel it as the
 submitted analysis.
 
-The local Git identity of the legacy production root remains to be recorded.
-Whether it is an old checkout, a directory copied from another repository, or
-a data-only tree does not change the designation above.
+The Linux identity audit found that `/ZPOOL/data/projects/srndna-ug` is a clean
+checkout of the canonical GitHub repository. The legacy production root has a
+different device/inode identity and is not a Git worktree. The historical
+`/data/projects/srndna-ultimatum` path embedded in rendered FSFs no longer
+exists; it records the mount layout used when the analyses were run. The exact
+machine-readable inventory is
+`results/reviewer/tables/repository_root_inventory.tsv`.

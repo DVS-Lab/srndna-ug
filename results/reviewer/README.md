@@ -68,15 +68,17 @@ make reviewer-behavior
 - `tables/rt_event_construction_summary.tsv`: aggregate source-BIDS evidence
   for missing companion RT-event rows. Run-level details remain in the ignored
   `private/rt_event_omissions_by_run.tsv`.
-- `tables/production_rt_ev_audit.tsv`: aggregate production-server inventory
-  of current RT EVs and retained activation designs. The full 94-run table
-  remains under ignored `logs/audits/`; narrowly relevant paths may be retained
-  in compact provenance inventories.
+- `tables/current_mirror_rt_ev_audit.tsv`: aggregate inventory of the partial
+  derivative mirror under the current `srndna-ug` Linux checkout. It is not the
+  authoritative production audit.
+- `tables/production_rt_ev_audit.tsv`: reserved for the corresponding audit of
+  the non-Git legacy production root. The full 94-run table remains under
+  ignored `logs/audits/`; narrowly relevant paths may be retained in compact
+  provenance inventories.
 - `tables/sub143_imaging_provenance_inventory.tsv`: small-file presence, size,
   and timestamps for the isolated sub-143 exception in the current
   `srndna-ug` tree. It contains no image payload or participant-level
-  measurement; the template-named legacy production root remains to be
-  checked.
+  measurement; the legacy production root is inventoried separately.
 - `tables/l3_template_input_inventory.tsv` and
   `tables/l3_template_sub143_inputs.tsv`: declared input counts and exact
   sub-143 entries across every tracked L3 template, including unresolved
@@ -84,6 +86,9 @@ make reviewer-behavior
 - `tables/sub143_legacy_production_inventory.tsv` and
   `tables/sub143_legacy_l2_inputs.tsv`: existence metadata for the nine legacy
   sub-143 L2 copes and the exact L1 inputs declared by their L2 FSFs.
+- `tables/repository_root_inventory.tsv`: Linux identity check establishing the
+  canonical clean Git checkout, the distinct non-Git production store, and the
+  obsolete historical mount path.
 - `tables/response_time_*.tsv`: exact response-time model and group summaries.
 - `tables/partner_ratings_human_contrasts.tsv`: aggregate human-partner rating
   contrasts.

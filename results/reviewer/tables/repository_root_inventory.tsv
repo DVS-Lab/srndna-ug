@@ -1,0 +1,4 @@
+path	exists	canonical	device_inode	is_git	git_head	git_branch	git_origin	tracked_files	modified_tracked	untracked_files	role
+/ZPOOL/data/projects/srndna-ug	1	/ZPOOL/data/projects/srndna-ug	37:15155848	1	b6a90213e5c45a481e3dc83a4cfbb912ccb1d52d	main	https://github.com/DVS-Lab/srndna-ug.git	857	0	0	canonical Linux checkout
+/ZPOOL/data/projects/srndna-ultimatum	1	/ZPOOL/data/projects/srndna-ultimatum	37:2912826	0							legacy production derivatives
+/data/projects/srndna-ultimatum	0			0							historical path embedded in rendered FSFs

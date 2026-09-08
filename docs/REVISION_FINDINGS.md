@@ -72,7 +72,7 @@ result as descriptive/exploratory. The task source confirms that the partner,
 offer, and selected response remained visible through the approximately 3.5-s
 epoch, so first-level task regressors do not isolate deliberation.
 
-### RT nuisance-event construction: production exception isolated
+### RT nuisance-event construction: legacy production audit pending
 
 The curated BIDS event files contain 6,655 responded task trials, but only
 5,724 matching `event_RT` rows. All 805 responded first trials of blocks lack
@@ -81,13 +81,13 @@ both of that participant's runs contain no `event_RT` rows at all. Thus 931
 responded trials (13.99%) lack the source row used by the RT 3-column
 conversion. The substantive task-event rows remain present for these trials.
 
-The read-only production audit found all 94 rendered activation FSFs. For 92
-runs, the current RT and RT-pmod files match the number of source `event_RT`
-rows, all three main-task EV files are present, and the retained `design.mat`
-contains nonconstant original RT and RT-pmod columns. The only unresolved runs
-are both runs of sub-143: their FSFs remain, but current RT, RT-pmod, main-task
-EVs, and `design.mat` files are absent. The tracked sub-143 source event TSVs
-are byte-identical to OpenNeuro ds003745 snapshot 2.0.2 and retain all 72
+The initial read-only audit inspected the current `srndna-ug` derivative
+mirror, not the legacy production store. It found all 94 rendered activation
+FSFs. For 92 runs, the current RT and RT-pmod files match the number of source
+`event_RT` rows, all three main-task EV files are present, and the retained
+`design.mat` contains nonconstant original RT and RT-pmod columns. Both
+sub-143 runs are incomplete in that mirror. The tracked sub-143 source event
+TSVs are byte-identical to OpenNeuro ds003745 snapshot 2.0.2 and retain all 72
 responses per run, but contain no `event_RT` rows.
 
 Do not silently regenerate EVs or rerun L1. First trace whether historical

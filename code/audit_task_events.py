@@ -289,7 +289,7 @@ def audit(
             "all_responded_trials",
             responded_trials,
             sum(row["responded_trials_missing_rt_event"] > 0 for row in rt_run_rows),
-            "production verified for 92/94 runs; both sub-143 runs require downstream provenance tracing",
+            "current derivative mirror verified for 92/94 runs; legacy production L1 audit pending",
         ),
         rt_summary_row(
             "responded_first_trial_of_block",

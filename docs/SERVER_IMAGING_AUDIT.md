@@ -32,9 +32,9 @@ FEAT:
 ```bash
 python3 code/audit_server_rt_events.py \
   --bids-root source_data/bids \
-  --ev-root /ZPOOL/data/projects/srndna-ug/derivatives/fsl/EVfiles \
-  --l1-root /ZPOOL/data/projects/srndna-ug/derivatives/fsl \
-  --output-dir logs/audits/server/rt-production \
+  --ev-root /ZPOOL/data/projects/srndna-ultimatum/derivatives/fsl/EVfiles \
+  --l1-root /ZPOOL/data/projects/srndna-ultimatum/derivatives/fsl \
+  --output-dir logs/audits/server/rt-production-legacy \
   --tracked-summary results/reviewer/tables/production_rt_ev_audit.tsv
 ```
 
@@ -43,14 +43,12 @@ commit. Small text inventories and production paths may also be committed when
 they are useful for provenance. Do not commit NIfTI payloads or tables of
 participant-level measurements merely because their paths are safe to share.
 
-The 2026-09-07 production run found rendered activation FSFs for all 94
-analysis-sample runs. Ninety-two retained `design.mat` files had current RT and
-RT-pmod EVs whose row counts matched the curated source `event_RT` counts, and
-both original RT columns were nonconstant. The only exceptions were both
-sub-143 runs: their rendered FSFs remain, but their current EV files, three
-main-task EV files, and `design.mat` were not found. No rerun is authorized by
-this finding. Trace whether those runs contributed to L2/L3 and whether
-historical FEAT artifacts exist before deciding how to handle them.
+The initial 2026-09-07 run targeted the current `srndna-ug` derivative mirror,
+not the production root. It found 92/94 retained activation designs with
+matching current RT EV counts and nonconstant RT columns; both sub-143 runs
+were incomplete. That result is retained as
+`results/reviewer/tables/current_mirror_rt_ev_audit.tsv` and must not be
+described as the production audit.
 
 A targeted follow-up of the current `/ZPOOL/data/projects/srndna-ug` tree is
 tracked in
