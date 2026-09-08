@@ -96,6 +96,22 @@ establish the submitted design. The source BIDS TSVs are public; the FSL
 3-column EVs are generated derivatives and should be reproducibly rebuilt only
 if a rerun is later approved.
 
+The targeted sub-143 inventory found incomplete FEAT shells rather than
+retained statistical outputs in the current `srndna-ug` tree. Both activation
+L1 runs have rendered FSFs but no `design.mat`, `design.con`, or cope 7. The
+expected DMN and ECN nPPI L1 artifacts were not found. Each activation/DMN/ECN
+L2 directory has a rendered FSF, matrix, and contrasts, but no cope 4, 6, or 7
+image.
+
+This current-tree result is not the final production verdict. Every tracked L3
+template includes sub-143, and every input path points to the legacy
+`/ZPOOL/data/projects/srndna-ultimatum` root rather than the audited
+`/ZPOOL/data/projects/srndna-ug` root. The focal 47-input templates specify
+sub-143 at input 34 and would resolve to the relevant L2 cope 7; the separate
+94-input condition-stacked templates specify that participant at inputs 34 and
+81 for copes 4 and 6. The exact legacy root, L2 input declarations, and
+submitted L3 `design.fsf` are therefore decisive.
+
 ### Partner ratings
 
 There are 41 complete unique pre-task administrations and 39 complete unique

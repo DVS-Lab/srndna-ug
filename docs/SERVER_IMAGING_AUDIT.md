@@ -39,10 +39,9 @@ python3 code/audit_server_rt_events.py \
 ```
 
 The optional tracked output contains aggregate counts only and is safe to
-commit. Return the printed `PASS` and `SUB143` lines plus the ignored audit
-directory for private review. Do not commit
-`logs/audits/server/rt-production/rt_production_by_run.tsv`: it contains
-participant/run rows and absolute production paths.
+commit. Small text inventories and production paths may also be committed when
+they are useful for provenance. Do not commit NIfTI payloads or tables of
+participant-level measurements merely because their paths are safe to share.
 
 The 2026-09-07 production run found rendered activation FSFs for all 94
 analysis-sample runs. Ninety-two retained `design.mat` files had current RT and
@@ -52,6 +51,26 @@ sub-143 runs: their rendered FSFs remain, but their current EV files, three
 main-task EV files, and `design.mat` were not found. No rerun is authorized by
 this finding. Trace whether those runs contributed to L2/L3 and whether
 historical FEAT artifacts exist before deciding how to handle them.
+
+A targeted follow-up of the current `/ZPOOL/data/projects/srndna-ug` tree is
+tracked in
+`results/reviewer/tables/sub143_imaging_provenance_inventory.tsv`. Both
+activation L1 directories retain rendered `design.fsf` files but not
+`design.mat`, `design.con`, or cope 7. The expected DMN and ECN nPPI L1
+artifacts were not found at those names. All three L2 directories retain
+`design.fsf`, `design.mat`, and `design.con`, but none retains cope 4, 6, or 7
+outputs. No scanned FSF in that current derivative tree referenced the expected
+sub-143 L2 path.
+
+Critically, all 15 tracked L3 templates explicitly include sub-143, but their
+input paths use the legacy root `/ZPOOL/data/projects/srndna-ultimatum`, not the
+current clone root `/ZPOOL/data/projects/srndna-ug`. The nine 47-input generic
+templates place sub-143 at input 34; after substitution, the focal DMN/ECN
+models expect that participant's L2 cope 7. The six 94-input condition-stacked
+templates include 47 participants twice and place sub-143 at inputs 34 and 81,
+using L2 copes 4 and 6. The current-tree shells therefore do not establish that
+the submitted models lacked sub-143. Audit the exact legacy root and its L3
+outputs before any regeneration.
 
 ## Questions the bundle must resolve
 

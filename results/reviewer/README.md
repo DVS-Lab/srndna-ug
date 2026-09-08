@@ -69,8 +69,18 @@ make reviewer-behavior
   for missing companion RT-event rows. Run-level details remain in the ignored
   `private/rt_event_omissions_by_run.tsv`.
 - `tables/production_rt_ev_audit.tsv`: aggregate production-server inventory
-  of current RT EVs and retained activation designs. Participant/run rows and
-  absolute server paths remain under ignored `logs/audits/`.
+  of current RT EVs and retained activation designs. The full 94-run table
+  remains under ignored `logs/audits/`; narrowly relevant paths may be retained
+  in compact provenance inventories.
+- `tables/sub143_imaging_provenance_inventory.tsv`: small-file presence, size,
+  and timestamps for the isolated sub-143 exception in the current
+  `srndna-ug` tree. It contains no image payload or participant-level
+  measurement; the template-named legacy production root remains to be
+  checked.
+- `tables/l3_template_input_inventory.tsv` and
+  `tables/l3_template_sub143_inputs.tsv`: declared input counts and exact
+  sub-143 entries across every tracked L3 template, including unresolved
+  substitution placeholders.
 - `tables/response_time_*.tsv`: exact response-time model and group summaries.
 - `tables/partner_ratings_human_contrasts.tsv`: aggregate human-partner rating
   contrasts.

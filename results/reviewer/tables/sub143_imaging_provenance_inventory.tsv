@@ -1,0 +1,44 @@
+artifact	exists	bytes	modified
+act/run-01/design.fsf	1	39983	2024-09-16 10:16:14.728049209 -0400
+act/run-01/design.mat	0		
+act/run-01/design.con	0		
+act/run-01/cope7	0		
+act/run-02/design.fsf	1	39983	2024-09-16 10:16:15.975058316 -0400
+act/run-02/design.mat	0		
+act/run-02/design.con	0		
+act/run-02/cope7	0		
+act/L2/design.fsf	1	8447	2024-09-16 11:22:15.428963697 -0400
+act/L2/design.mat	1	87	2024-09-16 11:22:15.472964043 -0400
+act/L2/design.con	1	132	2024-09-16 11:22:15.472964043 -0400
+act/L2/cope-4	0		
+act/L2/cope-6	0		
+act/L2/cope-7	0		
+nppi-dmn/run-01/design.fsf	0		
+nppi-dmn/run-01/design.mat	0		
+nppi-dmn/run-01/design.con	0		
+nppi-dmn/run-01/cope7	0		
+nppi-dmn/run-02/design.fsf	0		
+nppi-dmn/run-02/design.mat	0		
+nppi-dmn/run-02/design.con	0		
+nppi-dmn/run-02/cope7	0		
+nppi-dmn/L2/design.fsf	1	8541	2024-10-13 21:32:09.206598516 -0400
+nppi-dmn/L2/design.mat	1	87	2024-10-13 21:32:09.245598845 -0400
+nppi-dmn/L2/design.con	1	132	2024-10-13 21:32:09.245598845 -0400
+nppi-dmn/L2/cope-4	0		
+nppi-dmn/L2/cope-6	0		
+nppi-dmn/L2/cope-7	0		
+nppi-ecn/run-01/design.fsf	0		
+nppi-ecn/run-01/design.mat	0		
+nppi-ecn/run-01/design.con	0		
+nppi-ecn/run-01/cope7	0		
+nppi-ecn/run-02/design.fsf	0		
+nppi-ecn/run-02/design.mat	0		
+nppi-ecn/run-02/design.con	0		
+nppi-ecn/run-02/cope7	0		
+nppi-ecn/L2/design.fsf	1	8541	2024-10-13 21:10:32.370262937 -0400
+nppi-ecn/L2/design.mat	1	87	2024-10-13 21:10:32.421263324 -0400
+nppi-ecn/L2/design.con	1	132	2024-10-13 21:10:32.421263324 -0400
+nppi-ecn/L2/cope-4	0		
+nppi-ecn/L2/cope-6	0		
+nppi-ecn/L2/cope-7	0		
+current_srndna_ug_fsf_references_to_sub143	0		
